@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useEffect } from "react";
 import { Link, useLocation } from "wouter";
+import { ArticleBreadcrumb, ArticleToc } from "@/components/ArticleToc";
 
 /**
  * コラム①「登録支援機関の選び方：料金相場・確認すべき7項目・登録番号の確認方法」
@@ -21,6 +22,15 @@ import { Link, useLocation } from "wouter";
 
 const CONTENT_BASE_DATE = "2026年7月16日";
 const PUBLISHED_DATE = "2026-07-16";
+
+const TOC_SECTIONS = [
+  { id: "zentei", label: "登録支援機関とは（30秒でわかる前提）" },
+  { id: "ryokin", label: "料金相場：月額の目安と内訳" },
+  { id: "check7", label: "契約前に確認すべき7項目" },
+  { id: "kakunin", label: "登録番号の確認方法（3ステップ）" },
+  { id: "faq", label: "よくある質問" },
+  { id: "shutten", label: "出典（一次情報）" },
+] as const;
 
 const FEE_ROWS = [
   {
@@ -151,17 +161,11 @@ export default function ColumnErabikata() {
       {/* ヒーロー：結論先頭 */}
       <div className="bg-brand text-brand-foreground py-12">
         <div className="container">
-          <div className="flex items-center gap-2 text-sm text-brand-foreground/60 mb-3">
-            <Link href="/">
-              <span className="hover:text-brand-foreground cursor-pointer">ホーム</span>
-            </Link>
-            <span>/</span>
-            <Link href="/columns">
-              <span className="hover:text-brand-foreground cursor-pointer">コラム</span>
-            </Link>
-            <span>/</span>
-            <span>登録支援機関の選び方</span>
-          </div>
+          <ArticleBreadcrumb
+            articleTitle="登録支援機関の選び方：料金相場・確認すべき7項目・登録番号の確認方法"
+            articlePath="/columns/shien-kikan-erabikata"
+            shortTitle="登録支援機関の選び方"
+          />
           <h1 className="text-3xl md:text-4xl font-bold mb-4 flex items-center gap-3">
             <ListChecks className="h-8 w-8 text-amber-accent shrink-0" />
             登録支援機関の選び方：料金相場・確認すべき7項目・登録番号の確認方法
@@ -188,8 +192,11 @@ export default function ColumnErabikata() {
       </div>
 
       <div className="container py-10 max-w-4xl space-y-10">
+        {/* 目次 */}
+        <ArticleToc sections={TOC_SECTIONS} />
+
         {/* 前提：登録支援機関とは */}
-        <section>
+        <section id="zentei" className="scroll-mt-20">
           <h2 className="text-xl font-bold mb-4">登録支援機関とは（30秒でわかる前提）</h2>
           <div className="space-y-4 text-sm leading-relaxed text-muted-foreground">
             <p>
@@ -204,7 +211,7 @@ export default function ColumnErabikata() {
         </section>
 
         {/* 料金相場 */}
-        <section>
+        <section id="ryokin" className="scroll-mt-20">
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
             <Wallet className="h-5 w-5 text-brand" />
             料金相場：月額の目安と内訳
@@ -244,7 +251,7 @@ export default function ColumnErabikata() {
         </section>
 
         {/* 7項目チェックリスト */}
-        <section>
+        <section id="check7" className="scroll-mt-20">
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
             <CheckCircle2 className="h-5 w-5 text-brand" />
             契約前に確認すべき7項目
@@ -264,7 +271,7 @@ export default function ColumnErabikata() {
         </section>
 
         {/* 登録番号の確認方法 */}
-        <section>
+        <section id="kakunin" className="scroll-mt-20">
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
             <Search className="h-5 w-5 text-brand" />
             登録番号の確認方法（3ステップ）
@@ -290,7 +297,7 @@ export default function ColumnErabikata() {
         </section>
 
         {/* FAQ */}
-        <section>
+        <section id="faq" className="scroll-mt-20">
           <h2 className="text-xl font-bold mb-4">よくある質問</h2>
           <div className="space-y-3">
             {FAQS.map((f) => (
@@ -307,7 +314,7 @@ export default function ColumnErabikata() {
         </section>
 
         {/* 出典 */}
-        <section>
+        <section id="shutten" className="scroll-mt-20">
           <h2 className="text-xl font-bold mb-4">出典（一次情報）</h2>
           <Card>
             <CardContent className="p-5 space-y-2 text-sm">

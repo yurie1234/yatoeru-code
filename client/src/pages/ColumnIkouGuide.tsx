@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useEffect } from "react";
 import { Link, useLocation } from "wouter";
+import { ArticleBreadcrumb, ArticleToc } from "@/components/ArticleToc";
 
 /**
  * コラム②「監理団体から監理支援機関への移行ガイド：2026年9月の期限までにやること」
@@ -21,6 +22,14 @@ import { Link, useLocation } from "wouter";
 
 const CONTENT_BASE_DATE = "2026年7月16日";
 const PUBLISHED_DATE = "2026-07-16";
+
+const TOC_SECTIONS = [
+  { id: "schedule", label: "移行スケジュール（確定済みの日付）" },
+  { id: "steps", label: "移行準備の6ステップ" },
+  { id: "awasete", label: "あわせて読む" },
+  { id: "faq", label: "よくある質問" },
+  { id: "shutten", label: "出典（一次情報）" },
+] as const;
 
 const TIMELINE_ROWS = [
   {
@@ -153,17 +162,11 @@ export default function ColumnIkouGuide() {
       {/* ヒーロー：結論先頭 */}
       <div className="bg-brand text-brand-foreground py-12">
         <div className="container">
-          <div className="flex items-center gap-2 text-sm text-brand-foreground/60 mb-3">
-            <Link href="/">
-              <span className="hover:text-brand-foreground cursor-pointer">ホーム</span>
-            </Link>
-            <span>/</span>
-            <Link href="/columns">
-              <span className="hover:text-brand-foreground cursor-pointer">コラム</span>
-            </Link>
-            <span>/</span>
-            <span>監理支援機関への移行ガイド</span>
-          </div>
+          <ArticleBreadcrumb
+            articleTitle="監理団体から監理支援機関への移行ガイド：2026年9月の期限までにやること"
+            articlePath="/columns/kanri-dantai-ikou-guide"
+            shortTitle="監理支援機関への移行ガイド"
+          />
           <h1 className="text-3xl md:text-4xl font-bold mb-4 flex items-center gap-3">
             <Milestone className="h-8 w-8 text-amber-accent shrink-0" />
             監理団体から監理支援機関への移行ガイド：2026年9月の期限までにやること
@@ -190,8 +193,11 @@ export default function ColumnIkouGuide() {
       </div>
 
       <div className="container py-10 max-w-4xl space-y-10">
+        {/* 目次 */}
+        <ArticleToc sections={TOC_SECTIONS} />
+
         {/* スケジュール */}
-        <section>
+        <section id="schedule" className="scroll-mt-20">
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
             <CalendarDays className="h-5 w-5 text-brand" />
             移行スケジュール（確定済みの日付）
@@ -228,7 +234,7 @@ export default function ColumnIkouGuide() {
         </section>
 
         {/* やることリスト */}
-        <section>
+        <section id="steps" className="scroll-mt-20">
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
             <ClipboardList className="h-5 w-5 text-brand" />
             移行準備の6ステップ
@@ -248,7 +254,7 @@ export default function ColumnIkouGuide() {
         </section>
 
         {/* 制度の変更点への内部リンク */}
-        <section>
+        <section id="awasete" className="scroll-mt-20">
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
             <ArrowRight className="h-5 w-5 text-brand" />
             あわせて読む
@@ -276,7 +282,7 @@ export default function ColumnIkouGuide() {
         </section>
 
         {/* FAQ */}
-        <section>
+        <section id="faq" className="scroll-mt-20">
           <h2 className="text-xl font-bold mb-4">よくある質問</h2>
           <div className="space-y-3">
             {FAQS.map((f) => (
@@ -293,7 +299,7 @@ export default function ColumnIkouGuide() {
         </section>
 
         {/* 出典 */}
-        <section>
+        <section id="shutten" className="scroll-mt-20">
           <h2 className="text-xl font-bold mb-4">出典（一次情報）</h2>
           <Card>
             <CardContent className="p-5 space-y-2 text-sm">
