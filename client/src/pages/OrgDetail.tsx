@@ -58,6 +58,8 @@ export default function OrgDetail() {
     script.type = "application/ld+json";
     script.id = "org-jsonld";
     script.textContent = JSON.stringify(jsonLd);
+    // SSRでheadに焼き込まれた同idのscriptとの重複を防ぐ
+    document.getElementById("org-jsonld")?.remove();
     document.head.appendChild(script);
     document.title = `${org.name}｜登録支援機関の詳細 - ヤトエル`;
     return () => {

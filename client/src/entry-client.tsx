@@ -1,14 +1,25 @@
 import { trpc } from "@/lib/trpc";
-import { COOKIE_NAME, UNAUTHED_ERR_MSG } from '@shared/const';
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { COOKIE_NAME, UNAUTHED_ERR_MSG } from "@shared/const";
+import {
+  HydrationBoundary,
+  QueryClient,
+  QueryClientProvider,
+  type DehydratedState,
+} from "@tanstack/react-query";
 import { httpBatchLink, TRPCClientError } from "@trpc/client";
-import { createRoot } from "react-dom/client";
+import { createRoot, hydrateRoot } from "react-dom/client";
 import superjson from "superjson";
+import { Router } from "wouter";
 import App from "./App";
 import { startLogin } from "./const";
 import "./index.css";
 
-const queryClient = new QueryClient();
+// テンプレート既定のQueryClient挙動は維持し、staleTimeのみ追加する。
+// staleTimeなしではハイドレート直後に全プリフェッチ済みクエリを再取得してしまう
+// （SSRで1回・クライアントで1回の二重フェッチ）。
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { staleTime: 30_000 } },
+});
 
 const redirectToLoginIfUnauthorized = (error: unknown) => {
   if (!(error instanceof TRPCClientError)) return;
@@ -72,10 +83,27 @@ const trpcClient = trpc.createClient({
   ],
 });
 
-createRoot(document.getElementById("root")!).render(
+const rawState = (window as unknown as { __RQ_STATE__?: unknown }).__RQ_STATE__;
+const dehydratedState = (
+  rawState ? superjson.deserialize(rawState as never) : undefined
+) as DehydratedState | undefined;
+
+const app = (
   <trpc.Provider client={trpcClient} queryClient={queryClient}>
     <QueryClientProvider client={queryClient}>
-      <App />
+      <HydrationBoundary state={dehydratedState}>
+        <Router>
+          <App />
+        </Router>
+      </HydrationBoundary>
     </QueryClientProvider>
   </trpc.Provider>
 );
+
+const rootEl = document.getElementById("root")!;
+// SSRフォールバック（空シェル）が配信された場合はhydrateではなく通常レンダーにする
+if (rootEl.firstChild) {
+  hydrateRoot(rootEl, app);
+} else {
+  createRoot(rootEl).render(app);
+}

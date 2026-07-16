@@ -162,6 +162,8 @@ export default defineConfig({
     },
   },
   envDir: path.resolve(import.meta.dirname),
+  // devの ssrLoadModule はこのconfigで解決するため、SSR configと同じ noExternal が必要
+  ssr: { noExternal: ["streamdown"] },
   root: path.resolve(import.meta.dirname, "client"),
   publicDir: path.resolve(import.meta.dirname, "client", "public"),
   build: {

@@ -5,24 +5,16 @@
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1" />
-    <title>ヤトエル｜特定技能・育成就労の登録支援機関データベース</title>
-    <!-- 2026-07-16 本番yatoeru.jp公開に伴いnoindex解除・robots.txt開放を同日実施 -->
-    <link rel="canonical" href="https://yatoeru.jp/" />
+    <!--app-head-->
     <link rel="alternate" type="application/rss+xml" title="ヤトエル｜登録支援機関登録簿の更新情報・解説記事" href="https://yatoeru.jp/rss.xml" />
-    <meta name="description" content="ヤトエルは全国11,000件超の登録支援機関を掲載する特定技能・育成就労の支援機関データベース。対応言語・地域・処分歴で検索でき、料金・受付状況は実確認済みの機関から順次公開（確認日表示）。外国人雇用の準備度チェックと最大５社への一括相談も無料。" />
-    <meta property="og:title" content="ヤトエル｜特定技能・育成就労の登録支援機関データベース" />
-    <meta property="og:description" content="全国11,000件超の登録支援機関を掲載。料金・受付状況は実確認済みの機関から順次公開。外国人雇用の準備度チェック無料。" />
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://yatoeru.jp/" />
-    <meta property="og:site_name" content="ヤトエル" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap" rel="stylesheet" />
   </head>
 
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <div id="root"><!--app-html--></div>
+    <script type="module" src="/src/entry-client.tsx"></script>
     <script
       defer
       src="%VITE_ANALYTICS_ENDPOINT%/umami"

@@ -8,6 +8,7 @@ import { registerStorageProxy } from "./storageProxy";
 import { appRouter } from "../routers";
 import { registrySyncHandler } from "../registrySync";
 import { rssHandler } from "../rss";
+import { sitemapHandler } from "../sitemap";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 
@@ -56,6 +57,7 @@ async function startServer() {
   app.post("/api/scheduled/registry-sync", registrySyncHandler);
   // RSS 2.0フィード（AI・メディアの巡回導線。登録簿差分記事＋コラムを配信）
   app.get("/rss.xml", rssHandler);
+  app.get("/sitemap.xml", sitemapHandler);
   // tRPC API
   app.use(
     "/api/trpc",
