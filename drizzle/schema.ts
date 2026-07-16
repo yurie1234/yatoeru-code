@@ -3,6 +3,7 @@ import {
   decimal,
   int,
   json,
+  mediumtext,
   mysqlEnum,
   mysqlTable,
   text,
@@ -188,8 +189,8 @@ export const proposals = mysqlTable("proposals", {
   id: int("id").autoincrement().primaryKey(),
   diagnosisId: int("diagnosisId"),
   companyName: varchar("companyName", { length: 255 }),
-  /** 生成された提案書本文（Markdown） */
-  content: text("content"),
+  /** 生成された提案書本文（Markdown、DB実体はMEDIUMTEXT） */
+  content: mediumtext("content"),
   email: varchar("email", { length: 320 }),
   userId: int("userId"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

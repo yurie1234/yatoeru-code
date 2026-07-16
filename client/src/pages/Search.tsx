@@ -82,8 +82,8 @@ export default function Search() {
         {/* フィルター */}
         <Card className="mb-8">
           <CardContent className="p-4 md:p-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-              <div className="relative md:col-span-1">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="relative col-span-2 md:col-span-1">
                 <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="機関名・住所で検索"
@@ -129,6 +129,11 @@ export default function Search() {
                 </SelectContent>
               </Select>
             </div>
+            {field !== ALL && (
+              <p className="text-xs text-muted-foreground mt-3">
+                ※ 入管庁の登録簿には対応分野の情報が含まれないため、分野情報が未登録の機関（対応可能性あり）も含めて表示しています。詳細は各機関へ直接ご確認ください。
+              </p>
+            )}
           </CardContent>
         </Card>
 

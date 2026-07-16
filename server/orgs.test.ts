@@ -143,3 +143,69 @@ describe("orgs.diagnoseUrl（URL診断）入力検証", () => {
     await expect(caller.orgs.diagnoseUrl({ url: "not a url" })).rejects.toThrow();
   });
 });
+
+describe("orgs.generateProposal（提案書生成・表の完結性）", () => {
+  beforeEach(() => {
+    insertMock.mockClear();
+  });
+
+  it("表の空白パディング暴走が圧縮され、初期費用表・スケジュール表が完結した内容が保存される", async () => {
+    const { invokeLLM } = await import("./_core/llm");
+    // 初期費用表とスケジュール表を含む完全な提案書（セル内に異常な連続空白を含む）
+    const pad = " ".repeat(500);
+    const mockContent = [
+      "# 特定技能外国人材導入提案書",
+      "## 4. 概算費用",
+      "**初期費用:**",
+      `| 項目${pad} | 費用目安（1名あたり）${pad} | 備考 |`,
+      "|---|---|---|",
+      `| 在留資格申請${pad} | 10万円～15万円 | 登録支援機関経由 |`,
+      "## 6. 今後のスケジュール案",
+      "| フェーズ | 期間 | 主な内容 | 担当 |",
+      "|---|---|---|---|",
+      "| 1. 検討・準備 | 1～2ヶ月 | 最終決定・予算確保 | 人事部 |",
+      "| 2. 募集・選考 | 3～5ヶ月 | 面接・内定 | 人事部 |",
+    ].join("\n");
+    vi.mocked(invokeLLM).mockResolvedValueOnce({
+      choices: [{ message: { content: mockContent }, finish_reason: "stop" }],
+    } as never);
+
+    const caller = createCaller();
+    const result = await caller.orgs.generateProposal({
+      diagnosisId: 1,
+      companyName: "テスト株式会社",
+      field: "外食業",
+      headcount: "3～5名",
+    });
+
+    // 連続空白が圧縮されている（4連以上のスペースがない）
+    expect(result.content).not.toMatch(/ {4,}/);
+    // 初期費用表のデータ行が残っている（ヘッダーだけで終わらない）
+    expect(result.content).toContain("在留資格申請");
+    // スケジュール表のデータ行が残っている
+    expect(result.content).toContain("募集・選考");
+    expect(insertMock).toHaveBeenCalledOnce();
+  });
+
+  it("finish_reason=lengthの場合は続きを追加生成して連結する", async () => {
+    const { invokeLLM } = await import("./_core/llm");
+    vi.mocked(invokeLLM)
+      .mockResolvedValueOnce({
+        choices: [{ message: { content: "## 6. スケジュール\n| フェーズ | 期間 |\n|---|---|\n| 1. 検討 | 1ヶ月 |" }, finish_reason: "length" }],
+      } as never)
+      .mockResolvedValueOnce({
+        choices: [{ message: { content: "| 2. 募集 | 3ヶ月 |\n| 3. 入国 | 6ヶ月 |" }, finish_reason: "stop" }],
+      } as never);
+
+    const caller = createCaller();
+    const result = await caller.orgs.generateProposal({
+      diagnosisId: 1,
+      companyName: "テスト株式会社",
+      field: "外食業",
+      headcount: "3～5名",
+    });
+
+    expect(result.content).toContain("1. 検討");
+    expect(result.content).toContain("3. 入国");
+  });
+});
