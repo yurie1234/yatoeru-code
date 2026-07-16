@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
-import { Building2, CheckCircle2, ChevronRight, Globe2, Search, ShieldCheck, Users } from "lucide-react";
+import { Building2, CheckCircle2, ChevronRight, Globe2, Menu, Search, ShieldCheck, Users, X } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 
@@ -29,6 +29,7 @@ export default function Home() {
   const [, setLocation] = useLocation();
   const [url, setUrl] = useState("");
   const [keyword, setKeyword] = useState("");
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const faqJsonLd = {
     "@context": "https://schema.org",
@@ -72,18 +73,39 @@ export default function Home() {
           </div>
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
             <Link href="/search" className="text-muted-foreground hover:text-foreground transition-colors">支援機関を探す</Link>
-            <Link href="/about" className="text-muted-foreground hover:text-foreground transition-colors">ヤトエルとは</Link>
             <Link href="/diagnose" className="text-muted-foreground hover:text-foreground transition-colors">支援機関マッチ診断</Link>
+            <Link href="/columns" className="text-muted-foreground hover:text-foreground transition-colors">コラム</Link>
+            <Link href="/updates" className="text-muted-foreground hover:text-foreground transition-colors">登録簿更新情報</Link>
+            <Link href="/about" className="text-muted-foreground hover:text-foreground transition-colors">ヤトエルとは</Link>
           </nav>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <Button variant="outline" className="hidden sm:flex" onClick={() => setLocation("/search")}>
               条件から探す
             </Button>
             <Button onClick={() => document.getElementById('diagnose-section')?.scrollIntoView({ behavior: 'smooth' })}>
               無料診断
             </Button>
+            <button
+              type="button"
+              className="md:hidden p-2 -mr-2 text-foreground"
+              aria-label={mobileOpen ? "メニューを閉じる" : "メニューを開く"}
+              onClick={() => setMobileOpen((v) => !v)}
+            >
+              {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
           </div>
         </div>
+        {mobileOpen && (
+          <div className="md:hidden border-t bg-background">
+            <nav className="container flex flex-col py-3 text-sm font-medium">
+              <Link href="/search" onClick={() => setMobileOpen(false)} className="py-2.5">支援機関を探す</Link>
+              <Link href="/diagnose" onClick={() => setMobileOpen(false)} className="py-2.5">支援機関マッチ診断</Link>
+              <Link href="/columns" onClick={() => setMobileOpen(false)} className="py-2.5">コラム</Link>
+              <Link href="/updates" onClick={() => setMobileOpen(false)} className="py-2.5">登録簿更新情報</Link>
+              <Link href="/about" onClick={() => setMobileOpen(false)} className="py-2.5">ヤトエルとは</Link>
+            </nav>
+          </div>
+        )}
       </header>
 
       <main className="flex-1">
@@ -339,7 +361,9 @@ export default function Home() {
               <ul className="space-y-2 text-brand-foreground/70">
                 <li><Link href="/search" className="hover:text-amber-accent transition-colors">支援機関を探す</Link></li>
                 <li><Link href="/diagnose" className="hover:text-amber-accent transition-colors">支援機関マッチ診断</Link></li>
-                
+                <li><Link href="/columns" className="hover:text-amber-accent transition-colors">コラム（実務解説）</Link></li>
+                <li><Link href="/updates" className="hover:text-amber-accent transition-colors">登録簿更新情報</Link></li>
+                <li><Link href="/guide/ikusei-shuro" className="hover:text-amber-accent transition-colors">育成就労制度ガイド</Link></li>
               </ul>
             </div>
             <div>
