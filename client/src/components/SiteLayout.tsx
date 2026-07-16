@@ -24,6 +24,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
             <Link href="/diagnose" className="text-muted-foreground hover:text-foreground transition-colors">支援機関マッチ診断</Link>
             <Link href="/stats" className="text-muted-foreground hover:text-foreground transition-colors">統計データ</Link>
             <Link href="/updates" className="text-muted-foreground hover:text-foreground transition-colors">登録簿更新情報</Link>
+            <Link href="/columns" className="text-muted-foreground hover:text-foreground transition-colors">コラム</Link>
           </nav>
           <div className="flex items-center gap-2">
             <Button className="hidden sm:flex" onClick={() => setLocation("/diagnose")}>
@@ -41,6 +42,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
               <Link href="/diagnose" onClick={() => setMobileOpen(false)} className="py-2">支援機関マッチ診断</Link>
               <Link href="/stats" onClick={() => setMobileOpen(false)} className="py-2">統計データ</Link>
               <Link href="/updates" onClick={() => setMobileOpen(false)} className="py-2">登録簿更新情報</Link>
+              <Link href="/columns" onClick={() => setMobileOpen(false)} className="py-2">コラム</Link>
             </nav>
           </div>
         )}
@@ -70,6 +72,8 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
                 <li><Link href="/updates" className="hover:text-amber-accent transition-colors">登録簿更新情報</Link></li>
                 <li><Link href="/guide/ikusei-shuro" className="hover:text-amber-accent transition-colors">育成就労制度ガイド</Link></li>
                 <li><Link href="/guide/kanri-shien-kikan" className="hover:text-amber-accent transition-colors">監理支援機関とは</Link></li>
+                <li><Link href="/columns" className="hover:text-amber-accent transition-colors">コラム（実務解説）</Link></li>
+                <li><a href="/rss.xml" className="hover:text-amber-accent transition-colors">RSSフィード</a></li>
               </ul>
             </div>
             <div>

@@ -5,6 +5,10 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Admin from "./pages/Admin";
+import ColumnErabikata from "./pages/ColumnErabikata";
+import ColumnIkouGuide from "./pages/ColumnIkouGuide";
+import Columns from "./pages/Columns";
+import ColumnShokaiVsShien from "./pages/ColumnShokaiVsShien";
 import Consult from "./pages/Consult";
 import Diagnose from "./pages/Diagnose";
 import Field from "./pages/Field";
@@ -35,6 +39,10 @@ function Router() {
       <Route path={"/proposal"} component={Proposal} />
       {/* <Route path={"/pricing"} component={Pricing} /> ← 検証期間中非公開（上記コメント参照） */}
       <Route path={"/stats"} component={Stats} />
+      <Route path={"/columns"} component={Columns} />
+      <Route path={"/columns/shien-kikan-erabikata"} component={ColumnErabikata} />
+      <Route path={"/columns/kanri-dantai-ikou-guide"} component={ColumnIkouGuide} />
+      <Route path={"/columns/shokai-vs-shien"} component={ColumnShokaiVsShien} />
       <Route path={"/updates"} component={Updates} />
       <Route path={"/updates/:baseDate"} component={UpdateDetail} />
       <Route path={"/region/:prefecture"} component={Region} />

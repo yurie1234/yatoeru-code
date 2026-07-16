@@ -157,6 +157,45 @@ export default function Home() {
           </div>
         </section>
 
+        {/* Columns Section（ファーストビュー直下の実務コラム導線） */}
+        <section className="py-14 border-b">
+          <div className="container max-w-5xl">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold">実務コラム：失敗しない支援機関選び</h2>
+              <Link href="/columns" className="text-sm text-brand hover:underline inline-flex items-center gap-1">
+                一覧を見る
+                <ChevronRight className="h-4 w-4" />
+              </Link>
+            </div>
+            <div className="grid md:grid-cols-3 gap-4">
+              <Link href="/columns/shien-kikan-erabikata">
+                <Card className="cursor-pointer transition-shadow hover:shadow-md h-full">
+                  <CardContent className="p-5">
+                    <h3 className="font-bold text-sm mb-1.5 leading-snug">登録支援機関の選び方：料金相場・確認すべき7項目</h3>
+                    <p className="text-xs text-muted-foreground leading-relaxed">月額平均約28,000円（入管庁調査）の相場と、契約前の確認項目を解説</p>
+                  </CardContent>
+                </Card>
+              </Link>
+              <Link href="/columns/kanri-dantai-ikou-guide">
+                <Card className="cursor-pointer transition-shadow hover:shadow-md h-full">
+                  <CardContent className="p-5">
+                    <h3 className="font-bold text-sm mb-1.5 leading-snug">監理団体から監理支援機関への移行ガイド</h3>
+                    <p className="text-xs text-muted-foreground leading-relaxed">2026年9月30日の期限までにやるべき準備6ステップ</p>
+                  </CardContent>
+                </Card>
+              </Link>
+              <Link href="/columns/shokai-vs-shien">
+                <Card className="cursor-pointer transition-shadow hover:shadow-md h-full">
+                  <CardContent className="p-5">
+                    <h3 className="font-bold text-sm mb-1.5 leading-snug">人材紹介会社と登録支援機関の違い</h3>
+                    <p className="text-xs text-muted-foreground leading-relaxed">委託前に登録番号を確認すべき理由と5分でできる確認手順</p>
+                  </CardContent>
+                </Card>
+              </Link>
+            </div>
+          </div>
+        </section>
+
         {/* Search Section */}
         <section className="py-20">
           <div className="container max-w-4xl">
