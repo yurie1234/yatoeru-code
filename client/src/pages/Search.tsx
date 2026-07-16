@@ -77,7 +77,7 @@ export default function Search() {
         <div className="container">
           <h1 className="text-2xl md:text-3xl font-bold mb-2">登録支援機関を探す</h1>
           <p className="text-muted-foreground text-sm">
-            全国{data?.total !== undefined ? data.total.toLocaleString() : "11,000"}件の登録支援機関から、条件に合うパートナーを検索・比較できます。
+            出入国在留管理庁の登録簿に基づく全国{data?.total !== undefined ? data.total.toLocaleString() : "11,000"}件を掲載。対応言語・地域・行政処分歴で検索できます（料金・受付状況は実確認済みの機関から順次公開）。
           </p>
         </div>
       </div>
@@ -245,7 +245,7 @@ export default function Search() {
                                     <li key={r.label}>・{r.label}（+{r.points}）</li>
                                   ))}
                                 </ul>
-                                <p className="mt-1.5 opacity-70">配点：分野40／地域30／言語20／信頼怗10</p>
+                                <p className="mt-1.5 opacity-70">配点：分野40／地域30／言語20／信頼性10</p>
                               </TooltipContent>
                             </Tooltip>
                           )}
