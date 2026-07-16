@@ -167,8 +167,12 @@ export async function setupVite(app: Express, server: Server) {
       const { render } = await vite.ssrLoadModule("/src/entry-server.tsx");
       const prefetch = await buildSsrPrefetch(req, res);
       const { html, dehydratedState, head } = await render(url, prefetch);
+      // NOTE: 本番のManusデプロイゲートウェイはアプリの404応答を横取りして
+      // プレースホルダ未置換のindex.htmlを200で直接返す（SPAフォールバック仕様）。
+      // これを回避するため、not-foundは200+noindex（soft-404）で返す。
+      // noindexメタはbuildHeadTagsがhead.notFoundから付与するのでSEO実害は小さい。
       res
-        .status(head.notFound ? 404 : 200)
+        .status(200)
         .set("Cache-Control", "no-cache")
         .type("html")
         .end(composeHtml(template, html, head, dehydratedState));
@@ -231,8 +235,10 @@ export function serveStatic(app: Express) {
         req.originalUrl,
         prefetch
       );
+      // 本番ゲートウェイの404横取り（生テンプレート200返却）回避のため、
+      // not-foundも200+noindex（soft-404）で返す。noindexメタはhead.notFound経由で付与済み。
       res
-        .status(head.notFound ? 404 : 200)
+        .status(200)
         .set("Cache-Control", "no-cache")
         .type("html")
         .end(composeHtml(template, html, head, dehydratedState));

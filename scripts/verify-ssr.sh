@@ -295,13 +295,16 @@ check "/admin"                         "<div" "ヤトエル" nocanon,noindex
 # redirect layer — one row per class:
 check_301 "/index.html"                "/"
 check_301 "/search/"                   "/search"
-check_404 "/org/99999999"
-check_404 "/definitely-not-a-route"
+# soft-404方式：本番ゲートウェイがアプリの404応答を横取りして生テンプレートを200で
+# 返すため、not-foundは200+noindexで配信する（nocanon,noindexフラグで検証）。
+# 存在しないorg ID：SSRではデータなしのため「戻る」ナビのみ描画される
+check "/org/99999999"                  "戻る" "ヤトエル" nocanon,noindex
+check "/definitely-not-a-route"        "Page Not Found" "ヤトエル" nocanon,noindex
 # static mount guard (KEEP this row): a bare directory path (dist/public/assets/
 # always exists) must NOT 301-loop with the trailing-slash normalizer — needs
 # express.static's redirect:false (playbook §6); it then falls through to the
 # SSR catch-all as a real 404 + noindex.
-check_404 "/assets"
+check "/assets"                        "Page Not Found" "ヤトエル" nocanon,noindex
 # ---------------------------------------------------------------------------
 
 echo "== Result: PASS=$PASS FAIL=$FAIL =="
