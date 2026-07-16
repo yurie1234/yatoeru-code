@@ -130,7 +130,7 @@ export default function OrgDetail() {
                       {new Date(data.org.verifiedAt).toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" })}
                     </div>
                     <p className="text-xs text-emerald-800/80 dark:text-emerald-300/80 mt-1">
-                      以下の項目は、運営が機関ご本人に直接確認した情報です（登録簿由来の情報とは区別して表示しています）。
+                      以下の項目は、運営が事業者に直接確認した情報です（登録簿由来の情報とは区別して表示しています）。
                     </p>
                     <div className="mt-3 space-y-2 text-sm text-emerald-900 dark:text-emerald-200">
                       {data.org.consultStatus !== "unknown" && (
@@ -258,7 +258,7 @@ export default function OrgDetail() {
               <CardContent className="p-4 text-xs text-muted-foreground leading-relaxed">
                 {data.org.verifiedAt && (
                   <p className="mb-2">
-                    「掲載情報 運営確認済み」と表示された項目は、運営が機関ご本人に直接確認した情報です。情報の確認・修正は全ての機関が無料で行え、有料掲載の有無とは一切関係ありません。
+                    「掲載情報 運営確認済み」と表示された項目は、運営が事業者に直接確認した情報です。情報の確認・修正は全ての機関が無料で行え、有料掲載の有無とは一切関係ありません。
                   </p>
                 )}
                 本ページの基本情報は、出入国在留管理庁が公表する「登録支援機関登録簿」に基づいています。最新の登録状況は

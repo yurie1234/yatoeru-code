@@ -163,7 +163,7 @@ export default function Home() {
               <div className="flex flex-col items-center justify-center space-y-2">
                 <ShieldCheck className="h-8 w-8 text-brand mb-2" />
                 <div className="text-3xl font-bold text-foreground">{stats?.verifiedCount ?? "-"}<span className="text-base font-medium">社</span></div>
-                <div className="text-sm text-muted-foreground">事業者本人確認済み</div>
+                <div className="text-sm text-muted-foreground">事業者確認済み</div>
               </div>
               <div className="flex flex-col items-center justify-center space-y-2">
                 <Users className="h-8 w-8 text-brand mb-2" />
@@ -374,7 +374,12 @@ export default function Home() {
             <div>
               <h3 className="font-bold mb-4">運営</h3>
               <ul className="space-y-2 text-brand-foreground/70">
-                <li><Link href="/about" className="hover:text-amber-accent transition-colors">運営会社</Link></li>
+                <li><Link href="/about" className="hover:text-amber-accent transition-colors">ヤトエルについて</Link></li>
+                <li>
+                  <a href="https://tenbouworks.jp/" target="_blank" rel="noopener noreferrer" className="hover:text-amber-accent transition-colors">
+                    運営会社（Tenbou Works）
+                  </a>
+                </li>
                 <li><Link href="/terms" className="hover:text-amber-accent transition-colors">利用規約</Link></li>
                 <li><Link href="/privacy" className="hover:text-amber-accent transition-colors">プライバシーポリシー</Link></li>
               </ul>

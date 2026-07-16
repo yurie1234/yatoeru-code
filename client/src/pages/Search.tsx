@@ -34,6 +34,10 @@ export default function Search() {
   const [page, setPage] = useState(1);
   // 並び順は親和性順のみ（標準順の切替は廃止。APIのsortパラメータ自体は互換のため残存）
   const sort = "affinity" as const;
+  // 検索条件（キーワード・都道府県・言語・分野）が何も指定されていない場合は、
+  // 親和性スコアを算定する根拠がないため表示しない（登録年月日順の一覧として扱う）
+  const hasCondition =
+    keyword.trim() !== "" || prefecture !== ALL || language !== ALL || field !== ALL;
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
   // URLパラメータの変化を反映
@@ -53,9 +57,10 @@ export default function Search() {
       field: field !== ALL ? field : undefined,
       page,
       limit: 20,
-      sort,
+      // 条件未指定時は親和性計算を行わず従来順（登録年月日順）で取得
+      sort: hasCondition ? sort : ("default" as const),
     }),
-    [keyword, prefecture, language, field, page, sort]
+    [keyword, prefecture, language, field, page, sort, hasCondition]
   );
 
   const { data, isLoading } = trpc.orgs.search.useQuery(queryInput);
@@ -174,10 +179,12 @@ export default function Search() {
               </p>
               <div className="flex items-center gap-1.5">
                 <ArrowDownWideNarrow className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">並び順：親和性順</span>
+                <span className="text-xs text-muted-foreground">
+                  並び順：{hasCondition ? "親和性順" : "標準（登録年月日順）"}
+                </span>
               </div>
             </div>
-            {sort === "affinity" && (
+            {sort === "affinity" && hasCondition && (
               <p className="text-xs text-muted-foreground mb-4 leading-relaxed rounded-md bg-muted/40 border px-3 py-2">
                 <Info className="h-3.5 w-3.5 inline-block mr-1 -mt-0.5" />
                 {AFFINITY_METHODOLOGY}
@@ -216,7 +223,7 @@ export default function Search() {
                               新規相談受付中{org.consultStatus === "open_active" ? "（積極受入）" : ""}
                             </Badge>
                           )}
-                          {sort === "affinity" && org.affinity && (
+                          {sort === "affinity" && hasCondition && org.affinity && (
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Badge
@@ -270,7 +277,7 @@ export default function Search() {
                             </p>
                           </div>
                         )}
-                        {sort === "affinity" && org.affinity && org.affinity.reasons.length > 0 && (
+                        {sort === "affinity" && hasCondition && org.affinity && org.affinity.reasons.length > 0 && (
                           <div className="flex flex-wrap gap-1.5 mt-2">
                             {org.affinity.reasons.slice(0, 4).map((r) => (
                               <Badge key={r.label} variant="outline" className="text-xs font-normal text-muted-foreground border-dashed">

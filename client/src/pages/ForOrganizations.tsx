@@ -39,7 +39,7 @@ export default function ForOrganizations() {
           </CardHeader>
           <CardContent className="text-sm leading-relaxed space-y-3">
             <p>
-              運営が機関ご本人に掲載内容を直接確認できた場合、機関ページに
+              運営が事業者に掲載内容を直接確認できた場合、機関ページに
               <span className="font-bold text-emerald-700">「掲載情報 運営確認済み：確認日」</span>
               を表示し、確認済みの項目（新規受入企業の相談受付状況・希望する相談条件・対応言語など）を登録簿由来の情報と区別して掲載します。
             </p>
@@ -80,7 +80,7 @@ export default function ForOrganizations() {
           <CardContent className="text-sm leading-relaxed space-y-4">
             <p>
               下記メールアドレス宛に、<strong>機関名・登録番号・ご担当者名・修正または確認したい内容</strong>をお送りください。
-              運営がご本人確認のうえ、通常5営業日以内に反映します。
+              運営が事業者に確認のうえ、通常5営業日以内に反映します。
             </p>
             <Button
               size="lg"

@@ -84,10 +84,20 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
                 <li><Link href="/region/大阪府" className="hover:text-amber-accent transition-colors">大阪府の支援機関</Link></li>
                 <li><Link href="/field/介護" className="hover:text-amber-accent transition-colors">介護分野の支援機関</Link></li>
               </ul>
+              <h3 className="font-bold mb-4 mt-8">運営</h3>
+              <ul className="space-y-2 text-brand-foreground/70">
+                <li><Link href="/about" className="hover:text-amber-accent transition-colors">ヤトエルについて</Link></li>
+                <li>
+                  <a href="https://tenbouworks.jp/" target="_blank" rel="noopener noreferrer" className="hover:text-amber-accent transition-colors">
+                    運営会社（Tenbou Works）
+                  </a>
+                </li>
+                <li><Link href="/for-organizations" className="hover:text-amber-accent transition-colors">支援機関の方へ</Link></li>
+              </ul>
             </div>
           </div>
           <div className="border-t border-brand-foreground/20 pt-8 text-center text-brand-foreground/50 text-sm">
-            &copy; {new Date().getFullYear()} ヤトエル All rights reserved.
+            &copy; {new Date().getFullYear()} ヤトエル / 運営：<a href="https://tenbouworks.jp/" target="_blank" rel="noopener noreferrer" className="hover:text-amber-accent transition-colors underline underline-offset-2">Tenbou Works</a> All rights reserved.
           </div>
         </div>
       </footer>

@@ -185,8 +185,8 @@ export const orgsRouter = router({
         .select()
         .from(supportOrgs)
         .where(whereClause)
-        // 有料プラン優先、次にレビュー数、最後にID
-        .orderBy(desc(supportOrgs.plan), desc(supportOrgs.reviewCount), desc(supportOrgs.id))
+        // 標準順＝登録年月日の古い順（中立な並び順。有料プランは並び順に影響させない）
+        .orderBy(supportOrgs.regDate, supportOrgs.id)
         .limit(input.limit)
         .offset((input.page - 1) * input.limit);
 

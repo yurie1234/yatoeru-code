@@ -44,6 +44,10 @@ export function About() {
       <p>
         出入国在留管理庁「登録支援機関登録簿」。統計データの引用は「ヤトエル調べ（出入国在留管理庁登録簿に基づく）」と明記のうえ、自由に行っていただけます。
       </p>
+      <h2>運営会社</h2>
+      <p>
+        ヤトエルは、<a href="https://tenbouworks.jp/" target="_blank" rel="noopener noreferrer">Tenbou Works（tenbouworks.jp）</a>が企画・運営しています。運営会社の詳細は公式サイトをご覧ください。
+      </p>
     </StaticShell>
   );
 }
