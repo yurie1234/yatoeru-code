@@ -198,3 +198,39 @@ export const proposals = mysqlTable("proposals", {
 
 export type Proposal = typeof proposals.$inferSelect;
 export type InsertProposal = typeof proposals.$inferInsert;
+
+/**
+ * 登録簿スナップショット（週次差分の基準。入管庁登録簿の取得履歴）
+ */
+export const registrySnapshots = mysqlTable("registry_snapshots", {
+  id: int("id").autoincrement().primaryKey(),
+  /** 入管庁発表の基準日 例: 2026-07-09 */
+  baseDate: varchar("baseDate", { length: 16 }).notNull().unique(),
+  /** 基準日時点の登録件数 */
+  totalCount: int("totalCount").notNull(),
+  /** 取得元ExcelのURL（出典明記用） */
+  sourceUrl: varchar("sourceUrl", { length: 512 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type RegistrySnapshot = typeof registrySnapshots.$inferSelect;
+export type InsertRegistrySnapshot = typeof registrySnapshots.$inferInsert;
+
+/**
+ * 登録簿差分（新規登録・抹消を機関単位で記録。週次差分記事のデータ源）
+ */
+export const registryChanges = mysqlTable("registry_changes", {
+  id: int("id").autoincrement().primaryKey(),
+  /** 対応するスナップショットID */
+  snapshotId: int("snapshotId").notNull(),
+  /** 差分種別: added=新規登録 / removed=抹消 */
+  changeType: mysqlEnum("changeType", ["added", "removed"]).notNull(),
+  regNo: varchar("regNo", { length: 32 }).notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  prefecture: varchar("prefecture", { length: 16 }),
+  regDate: varchar("regDate", { length: 16 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type RegistryChange = typeof registryChanges.$inferSelect;
+export type InsertRegistryChange = typeof registryChanges.$inferInsert;

@@ -15,6 +15,13 @@
       "when": 1784162001913,
       "tag": "0001_fat_lilandra",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1784185369972,
+      "tag": "0002_tranquil_shen",
+      "breakpoints": true
     }
   ]
 }

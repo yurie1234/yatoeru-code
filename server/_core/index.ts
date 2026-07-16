@@ -6,6 +6,7 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { registerStorageProxy } from "./storageProxy";
 import { appRouter } from "../routers";
+import { registrySyncHandler } from "../registrySync";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 
@@ -50,6 +51,8 @@ async function startServer() {
   });
   registerStorageProxy(app);
   registerOAuthRoutes(app);
+  // 週次の登録簿同期（AGENT cronからのPOST受け口。/api/scheduled/* は自動登録されないため明示マウント）
+  app.post("/api/scheduled/registry-sync", registrySyncHandler);
   // tRPC API
   app.use(
     "/api/trpc",

@@ -5,6 +5,7 @@
   <url><loc>https://yatoeru.jp/search</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
   <url><loc>https://yatoeru.jp/proposal</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
   <url><loc>https://yatoeru.jp/stats</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://yatoeru.jp/updates</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://yatoeru.jp/about</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
   <url><loc>https://yatoeru.jp/terms</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
   <url><loc>https://yatoeru.jp/privacy</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>

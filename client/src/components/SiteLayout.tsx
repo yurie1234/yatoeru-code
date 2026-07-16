@@ -23,7 +23,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
             <Link href="/search" className="text-muted-foreground hover:text-foreground transition-colors">支援機関を探す</Link>
             <Link href="/diagnose" className="text-muted-foreground hover:text-foreground transition-colors">支援機関マッチ診断</Link>
             <Link href="/stats" className="text-muted-foreground hover:text-foreground transition-colors">統計データ</Link>
-            
+            <Link href="/updates" className="text-muted-foreground hover:text-foreground transition-colors">登録簿更新情報</Link>
           </nav>
           <div className="flex items-center gap-2">
             <Button className="hidden sm:flex" onClick={() => setLocation("/diagnose")}>
@@ -40,7 +40,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
               <Link href="/search" onClick={() => setMobileOpen(false)} className="py-2">支援機関を探す</Link>
               <Link href="/diagnose" onClick={() => setMobileOpen(false)} className="py-2">支援機関マッチ診断</Link>
               <Link href="/stats" onClick={() => setMobileOpen(false)} className="py-2">統計データ</Link>
-              
+              <Link href="/updates" onClick={() => setMobileOpen(false)} className="py-2">登録簿更新情報</Link>
             </nav>
           </div>
         )}
@@ -67,7 +67,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
                 <li><Link href="/search" className="hover:text-amber-accent transition-colors">支援機関を探す</Link></li>
                 <li><Link href="/diagnose" className="hover:text-amber-accent transition-colors">支援機関マッチ診断</Link></li>
                 <li><Link href="/stats" className="hover:text-amber-accent transition-colors">統計データ</Link></li>
-                
+                <li><Link href="/updates" className="hover:text-amber-accent transition-colors">登録簿更新情報</Link></li>
               </ul>
             </div>
             <div>

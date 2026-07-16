@@ -18,6 +18,8 @@ import Proposal from "./pages/Proposal";
 import Region from "./pages/Region";
 import SearchPage from "./pages/Search";
 import Stats from "./pages/Stats";
+import UpdateDetail from "./pages/UpdateDetail";
+import Updates from "./pages/Updates";
 import { About, Privacy, Terms } from "./pages/StaticPages";
 
 function Router() {
@@ -31,6 +33,8 @@ function Router() {
       <Route path={"/proposal"} component={Proposal} />
       {/* <Route path={"/pricing"} component={Pricing} /> ← 検証期間中非公開（上記コメント参照） */}
       <Route path={"/stats"} component={Stats} />
+      <Route path={"/updates"} component={Updates} />
+      <Route path={"/updates/:baseDate"} component={UpdateDetail} />
       <Route path={"/region/:prefecture"} component={Region} />
       <Route path={"/field/:field"} component={Field} />
       <Route path={"/about"} component={About} />
