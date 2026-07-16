@@ -26,6 +26,7 @@ type DiagnosisResult = {
   cost: string;
   score: number;
   reason: string;
+  prefecture?: string | null;
 };
 
 export default function Diagnose() {
@@ -174,6 +175,11 @@ export default function Diagnose() {
                       <div className="rounded-lg bg-muted/50 p-4">
                         <div className="text-xs text-muted-foreground mb-1">推定業種</div>
                         <div className="font-bold">{result.industry}</div>
+                        {result.prefecture && (
+                          <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                            <MapPin className="h-3 w-3" />所在地（推定）：{result.prefecture}
+                          </div>
+                        )}
                       </div>
                       <div className="rounded-lg bg-muted/50 p-4">
                         <div className="text-xs text-muted-foreground mb-1">該当しうる特定技能分野（目安）</div>
@@ -232,7 +238,7 @@ export default function Diagnose() {
               <div>
                 <h2 className="text-2xl font-bold mb-2">あなたの会社に適合する支援機関</h2>
                 <p className="text-sm text-muted-foreground mb-6">
-                  AIが登録簿約11,000件から、分野・地域・対応言語等の条件に合う機関を抽出しました。並び順は条件との適合度のみで決定され、有料掲載の有無は影響しません。最大5社に一括相談できます。
+                  AIが登録簿約11,000件から、分野・地域（同一都道府県・隣接県を優先）・対応言語等の条件に合う機関を抽出しました。並び順は条件との適合度のみで決定され、有料掲載の有無は影響しません。最大5社に一括相談できます。
                 </p>
                 <div className="space-y-4">
                   {recommendedOrgs.map((org) => (
@@ -255,6 +261,16 @@ export default function Diagnose() {
                             <MapPin className="h-3.5 w-3.5 shrink-0" />
                             <span className="truncate">{org.address ?? "住所情報なし"}</span>
                           </p>
+                          {org.affinity && org.affinity.reasons.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 mt-2">
+                              {org.affinity.reasons.map((r) => (
+                                <Badge key={r.label} variant="secondary" className="text-[11px] font-normal">
+                                  {r.label} +{r.points}
+                                  {r.estimated ? "（推定）" : ""}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
                         </div>
                         <Button variant="outline" size="sm" className="shrink-0" onClick={() => setLocation(`/org/${org.id}`)}>
                           詳細

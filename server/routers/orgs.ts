@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { and, desc, eq, like, or, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, like, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import {
   consultations,
@@ -12,7 +12,7 @@ import {
 import { getDb } from "../db";
 import { invokeLLM } from "../_core/llm";
 import { publicProcedure, router } from "../_core/trpc";
-import { TOKUTEI_FIELDS, UPCOMING_FIELDS } from "../../shared/tokutei";
+import { ADJACENT_PREFECTURES, PREFECTURES, TOKUTEI_FIELDS, UPCOMING_FIELDS } from "../../shared/tokutei";
 import { calcAffinity, estimateOrgFields, FIELD_NAME_KEYWORDS } from "../../shared/affinity";
 import type { TokuteiField } from "../../shared/tokutei";
 
@@ -88,12 +88,15 @@ export const orgsRouter = router({
       // アプリ側でスコア算出・並べ替え・ページングする。
       // 注：将来、有料掲載を同点内で優先表示する場合は、景品表示法（ステマ規制）対応のためPRラベルの明示が必須。
       if (input.sort === "affinity") {
+        // 候補Capの取得順はレビュー数→登録日の古い順。
+        // id降順だと新規登録（登録年数加点0点）ばかりがCapを占め、古参機関（+3点）が候補外に
+        // 落ちてスコア分解能が死ぬ（全件同点の原因）。
         const candidateCap = 1000;
         const candidates = await db
           .select()
           .from(supportOrgs)
           .where(whereClause)
-          .orderBy(desc(supportOrgs.reviewCount), desc(supportOrgs.id))
+          .orderBy(desc(supportOrgs.reviewCount), supportOrgs.regDate, supportOrgs.id)
           .limit(candidateCap);
 
         // 分野指定時：候補Capの外にいる「確認済み分野一致」「機関名推定一致」の機関を取りこぼさないよう、
@@ -103,7 +106,7 @@ export const orgsRouter = router({
             .select()
             .from(supportOrgs)
             .where(and(whereClause, fieldBoostCondition(input.field)))
-            .orderBy(desc(supportOrgs.reviewCount), desc(supportOrgs.id))
+            .orderBy(desc(supportOrgs.reviewCount), supportOrgs.regDate, supportOrgs.id)
             .limit(1000)
             .then((rows) =>
               rows.filter(
@@ -242,13 +245,14 @@ ${pageText ? `\n【実際に取得したページ内容】\n${pageText}\n` : "\n
 以下のJSONスキーマに厳密に従って出力してください。
 - companyName: 推測される企業名（不明な場合は"不明"）
 - industry: 推測される業種
-- field: 特定技能19分野（${TOKUTEI_FIELDS.join("、")}）のうち、最も該当する可能性が高いもの。分野名は上記の表記を一字一句そのまま使うこと。該当なしの場合はnull。※鉄道事業者→「鉄道」、トラック・タクシー・バス→「自動車運送業」、製造業全般→「工業製品製造業」。なお「${UPCOMING_FIELDS.join("」「")}」の3分野は2027年受入開始予定（省令準備中）だが、該当する場合は分野名を返し、reasonでその旨に触れること
+- field: 特定技能19分野（${TOKUTEI_FIELDS.join("、")}）のうち、最も該当する可能性が高いもの。分野名は上記の表記を一字一句そのまま使うこと。該当なしの場合はnull。※鉄道事業者→「鉄道」、トラック・タクシー・バス→「自動車運送業」、製造業全般→「工業製品製造業」。なお「${UPCOMING_FIELDS.join("」「")}」の3分野は2026年1月に追加が閣議決定され受入れは2027年度開始見込み（評価試験等整備中）だが、該当する場合は分野名を返し、reasonでその旨に触れること
 - headcount: 企業規模から推測される受入可能枠（例: "1ー5名", "10名以上"）
 - cost: 概算コスト（初期費用＋月額支援委託費の目安。範囲は必ず「〜」で表記する。例: "初期10〜30万円＋月額2〜4万円/人"。相場：登録支援機関への委託時、初期費用（事前ガイダンス・住居確保・生活オリエンテーション・申請書類作成等）は10〜30万円、月額支援委託費は1人あたり2〜4万円（業界平均約2.8万円、約7割が1.5〜3万円）が一般的。海外在住者の新規受入は渡航費・送出機関費用で初期費用が30〜60万円に増える場合がある）
 - scoreField: (a) 分野該当性（0-40の整数）: 事業内容が特定技能19分野の対象業務に直接該当=35-40、隣接・一部該当=20-34、間接的=5-19、該当なし=0-4
 - scoreLabor: (b) 人手不足度（0-30の整数）: 当該業界の人手不足の深刻度と現場職の比重（現場作業中心=高、オフィスワーク中心=低）
 - scoreInfo: (c) 情報の確からしさ（0-30の整数）: ページ内容から事業内容・規模が具体的に確認できた=20-30、一部確認=10-19、URLのみからの推測=0-9
   同じ点数帯に収束させず、根拠に応じて差をつけること。
+- prefecture: 企業の本社・主たる事業所の所在都道府県（例: "京都府"。必ず「都道府県」付きの正式名称で返す。ページ内の住所・会社概要・電話の市外局番等から判断し、判別できない場合はnull）
 - reason: 診断理由（採点内訳 a/b/c の点数に触れながら150文字程度。合計点には触れないこと）
 `;
 
@@ -271,9 +275,10 @@ ${pageText ? `\n【実際に取得したページ内容】\n${pageText}\n` : "\n
                 scoreField: { type: "integer" },
                 scoreLabor: { type: "integer" },
                 scoreInfo: { type: "integer" },
+                prefecture: { type: ["string", "null"] },
                 reason: { type: "string" },
               },
-              required: ["companyName", "industry", "field", "headcount", "cost", "scoreField", "scoreLabor", "scoreInfo", "reason"],
+              required: ["companyName", "industry", "field", "headcount", "cost", "scoreField", "scoreLabor", "scoreInfo", "prefecture", "reason"],
               additionalProperties: false,
             },
           },
@@ -297,8 +302,14 @@ ${pageText ? `\n【実際に取得したページ内容】\n${pageText}\n` : "\n
       // （出典例：meikoglobal.jp支援委託費調査、jac-skill.or.jp「2〜3万円/月/人が目安」、samurai-law.com「1.5〜3万円/月」）。
       // 初期費用（国内在留者・委託支援）は10〜30万円程度、海外新規受入は30〜60万円程度まで幅がある。
       const normalizedCost = String(parsed.cost ?? "").replace(/(\d)\s*[ー‐-―−-]\s*(?=\d|＋|\+|万)/g, "$1〜");
+      // 所在都道府県はPREFECTURESに含まれる正式名称のみ採用（LLMの表記揺れ・幻覚を防止）
+      const companyPrefecture: string | null =
+        typeof parsed.prefecture === "string" && (PREFECTURES as readonly string[]).includes(parsed.prefecture)
+          ? parsed.prefecture
+          : null;
       const resultData = {
         ...parsed,
+        prefecture: companyPrefecture,
         cost: normalizedCost,
         score: totalScore,
         scoreBreakdown: { field: scoreField, labor: scoreLabor, info: scoreInfo },
@@ -316,7 +327,7 @@ ${pageText ? `\n【実際に取得したページ内容】\n${pageText}\n` : "\n
         userId: ctx.user?.id,
       });
 
-      // 適合する支援機関を検索し、親和性スコア順に上位5件を返す
+      // 適合する支援機関を検索し、親和性スコア順（分野40・地域30・言語20・信頼性10；検索ページと同一ロジック）に上位5件を返す
       const conditions = [];
       if (resultData.field) {
         // fields未登録（NULL）の機関も候補に含める（登録簿に分野情報がないため）
@@ -325,11 +336,12 @@ ${pageText ? `\n【実際に取得したページ内容】\n${pageText}\n` : "\n
         );
       }
 
+      // 候補取得順はレビュー数→登録日の古い順（検索と同様、Capバイアス防止）
       const candidates = await db
         .select()
         .from(supportOrgs)
         .where(conditions.length > 0 ? and(...conditions) : undefined)
-        .orderBy(desc(supportOrgs.plan), desc(supportOrgs.reviewCount))
+        .orderBy(desc(supportOrgs.reviewCount), supportOrgs.regDate, supportOrgs.id)
         .limit(500);
 
       // 候補Cap外の「確認済み分野一致」「機関名推定一致」機関をマージ（推奨精度向上）。
@@ -344,7 +356,7 @@ ${pageText ? `\n【実際に取得したページ内容】\n${pageText}\n` : "\n
               fieldBoostCondition(resultData.field)
             )
           )
-          .orderBy(desc(supportOrgs.reviewCount), desc(supportOrgs.id))
+          .orderBy(desc(supportOrgs.reviewCount), supportOrgs.regDate, supportOrgs.id)
           .limit(1000)
           .then((rows) =>
             rows.filter(
@@ -362,11 +374,36 @@ ${pageText ? `\n【実際に取得したページ内容】\n${pageText}\n` : "\n
         }
       }
 
+      // 地域適合候補のマージ：支援業務は定期面談・訪問を伴うため、企業所在県・隣接県の機関を
+      // 候補Cap（500件）の外からも必ず取り込む。
+      // （これがないと、京都の企業に千葉・福岡の機関ばかり提示される――地域スコア30点が死ぬ）
+      if (companyPrefecture) {
+        const nearbyPrefs = [companyPrefecture, ...(ADJACENT_PREFECTURES[companyPrefecture] ?? [])];
+        const nearby = await db
+          .select()
+          .from(supportOrgs)
+          .where(
+            and(
+              conditions.length > 0 ? and(...conditions) : undefined,
+              inArray(supportOrgs.prefecture, nearbyPrefs)
+            )
+          )
+          .orderBy(desc(supportOrgs.reviewCount), supportOrgs.regDate, supportOrgs.id)
+          .limit(500);
+        const seen = new Set(candidates.map((c) => c.id));
+        for (const n of nearby) {
+          if (!seen.has(n.id)) {
+            candidates.push(n);
+            seen.add(n.id);
+          }
+        }
+      }
+
       const recommendedOrgs = candidates
         .map((org) => ({
           ...org,
           affinity: calcAffinity(
-            { targetField: resultData.field, targetPrefecture: null, targetLanguage: null },
+            { targetField: resultData.field, targetPrefecture: companyPrefecture, targetLanguage: null },
             {
               name: org.name,
               prefecture: org.prefecture,

@@ -1,6 +1,6 @@
 /**
  * 特定技能19分野（2026年1月23日閣議決定時点の制度区分）
- * ※リネンサプライ・物流倉庫・資源循環の3分野は省令準備中（2027年受入開始予定）
+ * ※リネンサプライ・物流倉庫・資源循環の3分野は2026年1月23日閣議決定で追加、受入れは2027年度開始見込み（評価試験等整備中）
  */
 export const TOKUTEI_FIELDS = [
   "介護",
@@ -26,7 +26,7 @@ export const TOKUTEI_FIELDS = [
 
 export type TokuteiField = (typeof TOKUTEI_FIELDS)[number];
 
-/** 2027年受入開始予定（省令準備中）の分野 */
+/** 受入れ2027年度開始見込み（評価試験等整備中）の新分野 */
 export const UPCOMING_FIELDS: readonly TokuteiField[] = [
   "リネンサプライ",
   "物流倉庫",

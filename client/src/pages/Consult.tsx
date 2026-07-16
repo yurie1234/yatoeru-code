@@ -125,9 +125,23 @@ export default function Consult() {
       <div className="bg-muted/30 border-b py-8">
         <div className="container max-w-3xl">
           <h1 className="text-2xl md:text-3xl font-bold mb-2">支援機関への一括相談（無料）</h1>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-muted-foreground text-sm mb-4">
             1回の入力で最大5社にまとめて相談。各機関から見積もり・提案を受け取り、比較検討できます。
           </p>
+          <div className="space-y-1.5 text-sm">
+            <p className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-brand shrink-0" />
+              ヤトエルから営業電話をおかけすることはありません
+            </p>
+            <p className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-brand shrink-0" />
+              連絡が届くのはあなたが選んだ支援機関のみです
+            </p>
+            <p className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-brand shrink-0" />
+              相談後に契約するかどうかは自由です（断っても費用はかかりません）
+            </p>
+          </div>
         </div>
       </div>
 

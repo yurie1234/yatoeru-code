@@ -24,7 +24,7 @@ describe("特定技能19分野マスタ", () => {
     expect(TOKUTEI_FIELDS).toContain("工業製品製造業");
   });
 
-  it("2027年受入開始予定分野はリネンサプライ・物流倉庫・資源循環の3分野", () => {
+  it("受入れ2027年度開始見込みの新分野はリネンサプライ・物流倉庫・資源循環の3分野", () => {
     expect(UPCOMING_FIELDS).toHaveLength(3);
     expect(UPCOMING_FIELDS).toContain("リネンサプライ");
   });
@@ -63,8 +63,8 @@ describe("calcAffinity（親和性スコア）", () => {
       { targetField: "外食業", targetPrefecture: "東京都", targetLanguage: "ベトナム語" },
       { ...baseOrg, fields: ["外食業"] }
     );
-    // 40 + 30 + 20 + 7 + 3 = 100
-    expect(r.score).toBe(100);
+    // 40 + 30 + 20 + 5 + 3 + 1(言語数) = 99
+    expect(r.score).toBe(99);
     expect(r.reasons.some((x) => x.label.includes("外食業"))).toBe(true);
   });
 
@@ -101,7 +101,7 @@ describe("calcAffinity（親和性スコア）", () => {
     expect(adjacent.reasons.some((x) => x.points === 15)).toBe(true);
   });
 
-  it("処分歴のある機関は信頼性7点が付かない", () => {
+  it("処分歴のある機関は「処分歴なし」の加点が付かない", () => {
     const r = calcAffinity({}, { ...baseOrg, hasPenalty: true });
     expect(r.reasons.some((x) => x.label === "処分歴なし")).toBe(false);
   });
@@ -113,6 +113,39 @@ describe("calcAffinity（親和性スコア）", () => {
     );
     expect(r.score).toBeLessThanOrEqual(100);
   });
+
+  it("登録年数は段階制（1年以上=1、3年以上=2、5年以上=3、1年未満=0）で加点される", () => {
+    const now = Date.now();
+    const yearsAgo = (n: number) =>
+      new Date(now - n * 365.25 * 24 * 3600 * 1000).toISOString().slice(0, 10);
+    const p = (d: string) =>
+      calcAffinity({}, { ...baseOrg, registeredDate: d }).reasons.find((x) =>
+        x.label.startsWith("登録")
+      )?.points ?? 0;
+    expect(p(yearsAgo(0.5))).toBe(0);
+    expect(p(yearsAgo(2))).toBe(1);
+    expect(p(yearsAgo(4))).toBe(2);
+    expect(p(yearsAgo(7))).toBe(3);
+  });
+
+  it("登録年数の違いで同一条件の機関にスコア差がつく（分解能の確保）", () => {
+    const now = Date.now();
+    const yearsAgo = (n: number) =>
+      new Date(now - n * 365.25 * 24 * 3600 * 1000).toISOString().slice(0, 10);
+    const older = calcAffinity({}, { ...baseOrg, registeredDate: yearsAgo(7) });
+    const newer = calcAffinity({}, { ...baseOrg, registeredDate: yearsAgo(2) });
+    expect(older.score).toBeGreaterThan(newer.score);
+  });
+
+  it("対応言語の登録数でスコア差がつく（1言語以上=1点、3言語以上=2点、0言語=0点）", () => {
+    const p = (langs: string[] | null) =>
+      calcAffinity({}, { ...baseOrg, languages: langs }).reasons.find((x) =>
+        x.label.startsWith("対応言語")
+      )?.points ?? 0;
+    expect(p(null)).toBe(0);
+    expect(p(["ベトナム語"])).toBe(1);
+    expect(p(["ベトナム語", "英語", "中国語"])).toBe(2);
+  });
 });
 
 describe("AFFINITY_METHODOLOGY（算定説明文）", () => {
@@ -122,5 +155,10 @@ describe("AFFINITY_METHODOLOGY（算定説明文）", () => {
     expect(AFFINITY_METHODOLOGY).toContain("20");
     expect(AFFINITY_METHODOLOGY).toContain("推定");
     expect(AFFINITY_METHODOLOGY).toContain("保証するものではなく");
+  });
+
+  it("同点時の並び順ルール（情報充実度順）を明示している", () => {
+    expect(AFFINITY_METHODOLOGY).toContain("同点");
+    expect(AFFINITY_METHODOLOGY).toContain("口コミ数");
   });
 });

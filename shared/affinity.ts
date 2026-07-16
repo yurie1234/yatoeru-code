@@ -109,7 +109,9 @@ export interface AffinityResult {
  * - 分野一致: 40（確認済み分野一致=40 / 機関名からの推定一致=40 / シグナルなし=中立20 / 他分野特化とみられる=10）
  * - 地域一致: 30（同一都道府県=30 / 隣接都道府県=15）
  * - 言語一致: 20
- * - 信頼性: 10（処分歴なし=7、登録から3年以上=+3）
+ * - 信頼性・情報充実度: 10（処分歴なし=5、登録年数に応じ0-3：1年以上=1、3年以上=2、5年以上=3、
+ *   対応言語の登録数に応じ0-2：1言語以上=1、3言語以上=2）
+ * 同点の場合の並び順はレビュー数→対応言語数の順（情報充実度順）とする。
  */
 export function calcAffinity(input: AffinityInput, org: AffinityOrgData): AffinityResult {
   const reasons: AffinityReason[] = [];
@@ -162,17 +164,27 @@ export function calcAffinity(input: AffinityInput, org: AffinityOrgData): Affini
     reasons.push({ label: `${input.targetLanguage}対応`, points: AFFINITY_WEIGHTS.language });
   }
 
-  // --- 信頼性（0-10） ---
+  // --- 信頼性・情報充実度（0-10） ---
   if (org.hasPenalty === false || org.hasPenalty === null) {
-    score += 7;
-    reasons.push({ label: "処分歴なし", points: 7 });
+    score += 5;
+    reasons.push({ label: "処分歴なし", points: 5 });
   }
   if (org.registeredDate) {
     const years = (Date.now() - new Date(org.registeredDate).getTime()) / (365.25 * 24 * 3600 * 1000);
-    if (years >= 3) {
-      score += 3;
-      reasons.push({ label: "登録3年以上", points: 3 });
+    // 登録年数を段階制（0-3点）で加点し、同点帯の分解能を確保する
+    const yearPoints = years >= 5 ? 3 : years >= 3 ? 2 : years >= 1 ? 1 : 0;
+    if (yearPoints > 0) {
+      score += yearPoints;
+      reasons.push({ label: `登録${years >= 5 ? "5" : years >= 3 ? "3" : "1"}年以上`, points: yearPoints });
     }
+  }
+  // 対応言語の登録数（登録簿の実データ）を情報充実度として加点（0-2点）。
+  // 同点帯の分解能をさらに確保する（多言語対応は支援体制の幅を示す客観指標）。
+  const langCount = org.languages?.length ?? 0;
+  const langPoints = langCount >= 3 ? 2 : langCount >= 1 ? 1 : 0;
+  if (langPoints > 0) {
+    score += langPoints;
+    reasons.push({ label: `対応言語${langCount >= 3 ? "3言語以上" : "登録あり"}`, points: langPoints });
   }
 
   return { score: Math.min(100, Math.round(score)), reasons, estimatedFields };
@@ -183,4 +195,4 @@ export function calcAffinity(input: AffinityInput, org: AffinityOrgData): Affini
  * AEO観点：引用可能な明確なメソドロジーとして一貫した文言を全ページで使う。
  */
 export const AFFINITY_METHODOLOGY =
-  "親和性スコアはヤトエル独自の指標です（満点100）。配点：分野一致40点（登録情報で確認済みの対応分野のほか、機関名等からの推定を含みます。推定の場合はその旨を表示）／地域一致30点（同一都道府県30・隣接都道府県15）／言語一致20点／信頼性10点（処分歴の有無・登録年数）。支援の質を保証するものではなく、比較検討の参考値としてご利用ください。";
+  "親和性スコアはヤトエル独自の指標です（満点100）。配点：分野一致40点（登録情報で確認済みの対応分野のほか、機関名等からの推定を含みます。推定の場合はその旨を表示）／地域一致30点（同一都道府県30・隣接都道府県15）／言語一致20点／信頼性・情報充実度10点（処分歴なし5点＋登録年数に応じ0〜3点＋対応言語の登録数に応じ0〜2点）。同点の機関は情報充実度（口コミ数→対応言語数）の順に表示します。支援の質を保証するものではなく、比較検討の参考値としてご利用ください。";
