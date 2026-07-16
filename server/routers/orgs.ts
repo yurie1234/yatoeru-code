@@ -12,6 +12,8 @@ import {
 import { getDb } from "../db";
 import { invokeLLM } from "../_core/llm";
 import { publicProcedure, router } from "../_core/trpc";
+import { TOKUTEI_FIELDS, UPCOMING_FIELDS } from "../../shared/tokutei";
+import { calcAffinity, estimateOrgFields } from "../../shared/affinity";
 
 export const orgsRouter = router({
   // 1. 登録支援機関 検索・比較機能
@@ -25,6 +27,8 @@ export const orgsRouter = router({
         hasPenalty: z.boolean().optional(),
         page: z.number().min(1).default(1),
         limit: z.number().min(1).max(100).default(20),
+        /** affinity=親和性スコア順（既定） / default=従来順 */
+        sort: z.enum(["affinity", "default"]).default("affinity"),
       })
     )
     .query(async ({ input }) => {
@@ -65,6 +69,79 @@ export const orgsRouter = router({
         .from(supportOrgs)
         .where(whereClause);
 
+      // 親和性スコア順ソートの場合は、条件に合致する候補を広めに取得して
+      // アプリ側でスコア算出・並べ替え・ページングする。
+      // 注：将来、有料掲載を同点内で優先表示する場合は、景品表示法（ステマ規制）対応のためPRラベルの明示が必須。
+      if (input.sort === "affinity") {
+        const candidateCap = 1000;
+        const candidates = await db
+          .select()
+          .from(supportOrgs)
+          .where(whereClause)
+          .orderBy(desc(supportOrgs.reviewCount), desc(supportOrgs.id))
+          .limit(candidateCap);
+
+        // 分野指定時：候補Capの外にいる「確認済み分野一致」「機関名推定一致」の機関を取りこぼさないよう、
+        // 名称キーワード一致分を追加取得してマージする。
+        if (input.field) {
+          const boosted = await db
+            .select()
+            .from(supportOrgs)
+            .where(whereClause)
+            .orderBy(desc(supportOrgs.reviewCount), desc(supportOrgs.id))
+            .limit(11500)
+            .then((rows) =>
+              rows.filter(
+                (o) =>
+                  (o.fields as string[] | null)?.includes(input.field!) ||
+                  estimateOrgFields(o.name).includes(input.field as never)
+              )
+            );
+          const seen = new Set(candidates.map((c) => c.id));
+          for (const b of boosted) {
+            if (!seen.has(b.id)) {
+              candidates.push(b);
+              seen.add(b.id);
+            }
+          }
+        }
+
+        const scored = candidates
+          .map((org) => {
+            const affinity = calcAffinity(
+              {
+                targetField: input.field ?? null,
+                targetPrefecture: input.prefecture ?? null,
+                targetLanguage: input.language ?? null,
+              },
+              {
+                name: org.name,
+                prefecture: org.prefecture,
+                fields: org.fields as string[] | null,
+                languages: org.languages as string[] | null,
+                hasPenalty: org.hasPenalty,
+                registeredDate: org.regDate ? String(org.regDate) : null,
+              }
+            );
+            return { ...org, affinity };
+          })
+          // 同点内は情報充実度（レビュー数・言語数）順
+          .sort(
+            (a, b) =>
+              b.affinity.score - a.affinity.score ||
+              (b.reviewCount ?? 0) - (a.reviewCount ?? 0) ||
+              ((b.languages as string[] | null)?.length ?? 0) - ((a.languages as string[] | null)?.length ?? 0)
+          );
+
+        const start = (input.page - 1) * input.limit;
+        return {
+          items: scored.slice(start, start + input.limit),
+          total: Number(totalResult.count),
+          page: input.page,
+          totalPages: Math.ceil(Number(totalResult.count) / input.limit),
+        };
+      }
+
       const items = await db
         .select()
         .from(supportOrgs)
@@ -75,7 +152,7 @@ export const orgsRouter = router({
         .offset((input.page - 1) * input.limit);
 
       return {
-        items,
+        items: items.map((org) => ({ ...org, affinity: undefined })),
         total: Number(totalResult.count),
         page: input.page,
         totalPages: Math.ceil(Number(totalResult.count) / input.limit),
@@ -150,11 +227,11 @@ ${pageText ? `\n【実際に取得したページ内容】\n${pageText}\n` : "\n
 以下のJSONスキーマに厳密に従って出力してください。
 - companyName: 推測される企業名（不明な場合は"不明"）
 - industry: 推測される業種
-- field: 特定技能12分野（介護、ビルクリーニング、素形材・産業機械・電気電子情報関連製造業、建設、造船・舶用工業、自動車整備、航空、宿泊、農業、漁業、飲食料品製造業、外食業）のうち、最も該当する可能性が高いもの。該当なしの場合はnull
+- field: 特定技能19分野（${TOKUTEI_FIELDS.join("、")}）のうち、最も該当する可能性が高いもの。分野名は上記の表記を一字一句そのまま使うこと。該当なしの場合はnull。※鉄道事業者→「鉄道」、トラック・タクシー・バス→「自動車運送業」、製造業全般→「工業製品製造業」。なお「${UPCOMING_FIELDS.join("」「")}」の3分野は2027年受入開始予定（省令準備中）だが、該当する場合は分野名を返し、reasonでその旨に触れること
 - headcount: 企業規模から推測される受入可能枠（例: "1ー5名", "10名以上"）
 - cost: 概算コスト（初期費用＋月額支援委託費の目安。例: "初期10万円ー＋月額2.5万円/人"）
 - score: 適合スコア（0-100の整数）。以下の採点ルーブリックで各項目を個別に採点し、合計する：
-  (a) 分野該当性（0-40点）: 事業内容が特定技能12分野の対象業務に直接該当=35-40、隣接・一部該当=20-34、間接的=5-19、該当なし=0-4
+  (a) 分野該当性（0-40点）: 事業内容が特定技能19分野の対象業務に直接該当=35-40、隣接・一部該当=20-34、間接的=5-19、該当なし=0-4
   (b) 人手不足度（0-30点）: 当該業界の人手不足の深刻度と現場職の比重（現場作業中心=高、オフィスワーク中心=低）
   (c) 情報の確からしさ（0-30点）: ページ内容から事業内容・規模が具体的に確認できた=20-30、一部確認=10-19、URLのみからの推測=0-9
   同じ点数帯に収束させず、根拠に応じて差をつけること。
@@ -201,7 +278,7 @@ ${pageText ? `\n【実際に取得したページ内容】\n${pageText}\n` : "\n
         userId: ctx.user?.id,
       });
 
-      // 適合する支援機関を検索（分野が一致、または全国対応の大手）
+      // 適合する支援機関を検索し、親和性スコア順に上位5件を返す
       const conditions = [];
       if (resultData.field) {
         // fields未登録（NULL）の機関も候補に含める（登録簿に分野情報がないため）
@@ -209,13 +286,59 @@ ${pageText ? `\n【実際に取得したページ内容】\n${pageText}\n` : "\n
           sql`(${supportOrgs.fields} IS NULL OR JSON_CONTAINS(${supportOrgs.fields}, ${JSON.stringify(resultData.field)}))`
         );
       }
-      
-      const recommendedOrgs = await db
+
+      const candidates = await db
         .select()
         .from(supportOrgs)
         .where(conditions.length > 0 ? and(...conditions) : undefined)
         .orderBy(desc(supportOrgs.plan), desc(supportOrgs.reviewCount))
-        .limit(5);
+        .limit(500);
+
+      // 候補Cap外の「確認済み分野一致」「機関名推定一致」機関をマージ（推奨精度向上）
+      if (resultData.field) {
+        const boosted = await db
+          .select()
+          .from(supportOrgs)
+          .where(conditions.length > 0 ? and(...conditions) : undefined)
+          .limit(11500)
+          .then((rows) =>
+            rows.filter(
+              (o) =>
+                (o.fields as string[] | null)?.includes(resultData.field) ||
+                estimateOrgFields(o.name).includes(resultData.field as never)
+            )
+          );
+        const seen = new Set(candidates.map((c) => c.id));
+        for (const b of boosted) {
+          if (!seen.has(b.id)) {
+            candidates.push(b);
+            seen.add(b.id);
+          }
+        }
+      }
+
+      const recommendedOrgs = candidates
+        .map((org) => ({
+          ...org,
+          affinity: calcAffinity(
+            { targetField: resultData.field, targetPrefecture: null, targetLanguage: null },
+            {
+              name: org.name,
+              prefecture: org.prefecture,
+              fields: org.fields as string[] | null,
+              languages: org.languages as string[] | null,
+              hasPenalty: org.hasPenalty,
+              registeredDate: org.regDate ? String(org.regDate) : null,
+            }
+          ),
+        }))
+        .sort(
+          (a, b) =>
+            b.affinity.score - a.affinity.score ||
+            (b.reviewCount ?? 0) - (a.reviewCount ?? 0) ||
+            ((b.languages as string[] | null)?.length ?? 0) - ((a.languages as string[] | null)?.length ?? 0)
+        )
+        .slice(0, 5);
 
       return {
         diagnosisId: insertResult.insertId,

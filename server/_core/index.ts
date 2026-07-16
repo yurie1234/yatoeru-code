@@ -34,6 +34,12 @@ async function startServer() {
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
+  // 検証期間中（仮ドメイン）のため全ページにnoindexヘッダーを付与。
+  // 本番yatoeru.jp移行時にこのミドルウェアと client/index.html の robots meta を削除すること
+  app.use((_req, res, next) => {
+    res.setHeader("X-Robots-Tag", "noindex, nofollow");
+    next();
+  });
   registerStorageProxy(app);
   registerOAuthRoutes(app);
   // tRPC API

@@ -58,7 +58,7 @@ export default function Proposal() {
   const handleGenerate = (e: React.FormEvent) => {
     e.preventDefault();
     if (isNaN(diagnosisId)) {
-      toast.error("先にAI診断を実施してください。診断結果から提案書を作成できます。");
+      toast.error("先に準備度チェックを実施してください。チェック結果から提案書を作成できます。");
       return;
     }
     generate.mutate({ diagnosisId, companyName, field, headcount });
@@ -82,7 +82,7 @@ export default function Proposal() {
           </div>
           <h1 className="text-3xl md:text-4xl font-bold mb-4">特定技能導入提案書をAIが自動作成</h1>
           <p className="text-brand-foreground/70">
-            「上司にどう説明すればいいか分からない」を解決。診断結果をもとに、7〜8割完成した稟議用の草案を生成します。
+            「上司にどう説明すればいいか分からない」を解決。準備度チェックの結果をもとに、7〜8割完成した稟議用の草案を生成します。
           </p>
         </div>
       </div>
@@ -96,9 +96,9 @@ export default function Proposal() {
                 <div className="rounded-lg bg-muted/50 border border-dashed p-4 mb-6 text-sm text-muted-foreground">
                   提案書の作成には、先に
                   <Button variant="link" className="px-1 h-auto" onClick={() => setLocation("/diagnose")}>
-                    AI受入診断
+                    準備度チェック
                   </Button>
-                  の実施が必要です。診断結果ページから遷移すると、内容が自動入力されます。
+                  の実施が必要です。チェック結果ページから遷移すると、内容が自動入力されます。
                 </div>
               )}
               <form onSubmit={handleGenerate} className="space-y-5">

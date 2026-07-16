@@ -17,7 +17,7 @@ const HOME_FAQS = [
   },
   {
     q: "ヤトエルの利用に費用はかかりますか？",
-    a: "企業様のご利用は完全無料です。AI受入診断、支援機関の検索・比較、最大5社への一括相談、提案書草案の生成まで、仲介手数料は一切発生しません。",
+    a: "企業様のご利用は完全無料です。外国人雇用の準備度チェック、支援機関の検索・比較、最大5社への一括相談、提案書草案の生成まで、仲介手数料は一切発生しません。",
   },
   {
     q: "育成就労制度とは何ですか？",
@@ -77,7 +77,7 @@ export default function Home() {
               条件から探す
             </Button>
             <Button onClick={() => document.getElementById('diagnose-section')?.scrollIntoView({ behavior: 'smooth' })}>
-              無料AI診断
+              準備度チェック（無料）
             </Button>
           </div>
         </div>
@@ -108,7 +108,7 @@ export default function Home() {
                   <Globe2 className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   <Input 
                     type="url" 
-                    placeholder="自社のURLを入力してAI無料診断" 
+                    placeholder="自社のURLを入力して準備度チェック（無料）" 
                     className="pl-10 h-14 text-base border-0 focus-visible:ring-0 bg-transparent text-foreground"
                     value={url}
                     onChange={(e) => setUrl(e.target.value)}
@@ -116,12 +116,12 @@ export default function Home() {
                   />
                 </div>
                 <Button type="submit" size="lg" className="h-14 px-8 bg-amber-accent text-brand font-bold hover:bg-amber-accent/90">
-                  受入可能性を診断
+                  準備度をチェック
                 </Button>
               </form>
             </div>
             <p className="text-sm text-brand-foreground/60 mt-4 fade-up-2">
-              ※URLから業種をAI解析し、特定技能の該当分野と概算コストを即時判定します
+              ※URLから業種をAI解析し、特定技能の該当分野の目安と概算コストを整理します（在留資格の可否判断ではありません）
             </p>
           </div>
         </section>
@@ -137,7 +137,7 @@ export default function Home() {
               </div>
               <div className="flex flex-col items-center justify-center space-y-2">
                 <Users className="h-8 w-8 text-brand mb-2" />
-                <div className="text-3xl font-bold text-foreground">12</div>
+                <div className="text-3xl font-bold text-foreground">19</div>
                 <div className="text-sm text-muted-foreground">対応特定技能分野</div>
               </div>
               <div className="flex flex-col items-center justify-center space-y-2">
@@ -148,7 +148,7 @@ export default function Home() {
               <div className="flex flex-col items-center justify-center space-y-2">
                 <ShieldCheck className="h-8 w-8 text-brand mb-2" />
                 <div className="text-3xl font-bold text-foreground">無料</div>
-                <div className="text-sm text-muted-foreground">診断・一括相談</div>
+                <div className="text-sm text-muted-foreground">チェック・一括相談</div>
               </div>
             </div>
           </div>
@@ -213,10 +213,10 @@ export default function Home() {
                   <div className="h-12 w-12 rounded-lg bg-brand/10 flex items-center justify-center mb-4">
                     <Globe2 className="h-6 w-6 text-brand" />
                   </div>
-                  <CardTitle className="text-xl">AIによる即時受入診断</CardTitle>
+                  <CardTitle className="text-xl">外国人雇用の準備度チェック</CardTitle>
                 </CardHeader>
                 <CardContent className="text-muted-foreground">
-                  自社のURLを入力するだけで、AIが業種を解析。特定技能のどの分野に該当するか、概算コストはいくらかを即座に判定します。
+                  自社のURLを入力するだけで、AIが業種を解析。特定技能のどの分野に該当しそうか、概算コストはいくらかを整理し、支援機関選びの条件を明確にします。
                 </CardContent>
               </Card>
 
@@ -228,7 +228,7 @@ export default function Home() {
                   <CardTitle className="text-xl">網羅的なデータベース</CardTitle>
                 </CardHeader>
                 <CardContent className="text-muted-foreground">
-                  出入国在留管理庁の登録簿データをベースに、全国11,000件以上の支援機関を網羅。対応言語や処分歴の有無まで確認できます。
+                  出入国在留管理庁の登録簿データをベースに、全国11,000件以上の支援機関を掲載。対応言語や処分歴の有無で検索でき、料金・受付状況は実確認済みの機関から順次公開しています。
                 </CardContent>
               </Card>
 
@@ -296,7 +296,7 @@ export default function Home() {
               <h3 className="font-bold mb-4">サービス</h3>
               <ul className="space-y-2 text-brand-foreground/70">
                 <li><Link href="/search" className="hover:text-amber-accent transition-colors">支援機関を探す</Link></li>
-                <li><Link href="/diagnose" className="hover:text-amber-accent transition-colors">AI受入診断</Link></li>
+                <li><Link href="/diagnose" className="hover:text-amber-accent transition-colors">準備度チェック</Link></li>
                 <li><Link href="/pricing" className="hover:text-amber-accent transition-colors">掲載事業者様へ</Link></li>
               </ul>
             </div>

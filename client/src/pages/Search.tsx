@@ -12,9 +12,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { trpc } from "@/lib/trpc";
+import { AFFINITY_METHODOLOGY } from "@shared/affinity";
 import { MAJOR_LANGUAGES, PREFECTURES, TOKUTEI_FIELDS } from "@shared/tokutei";
-import { AlertTriangle, Building2, CheckSquare, ChevronLeft, ChevronRight, Languages, MapPin, Search as SearchIcon } from "lucide-react";
+import { AlertTriangle, ArrowDownWideNarrow, Building2, CheckSquare, ChevronLeft, ChevronRight, Info, Languages, MapPin, Search as SearchIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useSearch } from "wouter";
 
@@ -30,6 +32,7 @@ export default function Search() {
   const [language, setLanguage] = useState(params.get("language") ?? ALL);
   const [field, setField] = useState(params.get("field") ?? ALL);
   const [page, setPage] = useState(1);
+  const [sort, setSort] = useState<"affinity" | "default">("affinity");
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
   // URLパラメータの変化を反映
@@ -49,8 +52,9 @@ export default function Search() {
       field: field !== ALL ? field : undefined,
       page,
       limit: 20,
+      sort,
     }),
-    [keyword, prefecture, language, field, page]
+    [keyword, prefecture, language, field, page, sort]
   );
 
   const { data, isLoading } = trpc.orgs.search.useQuery(queryInput);
@@ -163,9 +167,37 @@ export default function Search() {
           </div>
         ) : data && data.items.length > 0 ? (
           <>
-            <p className="text-sm text-muted-foreground mb-4">
-              {data.total.toLocaleString()}件中 {(data.page - 1) * 20 + 1}〜{Math.min(data.page * 20, data.total)}件を表示
-            </p>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
+              <p className="text-sm text-muted-foreground">
+                {data.total.toLocaleString()}件中 {(data.page - 1) * 20 + 1}〜{Math.min(data.page * 20, data.total)}件を表示
+              </p>
+              <div className="flex items-center gap-1.5">
+                <ArrowDownWideNarrow className="h-4 w-4 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground mr-1">並び順：</span>
+                <Button
+                  variant={sort === "affinity" ? "default" : "outline"}
+                  size="sm"
+                  className="h-7 px-3 text-xs"
+                  onClick={() => { setSort("affinity"); setPage(1); }}
+                >
+                  親和性順
+                </Button>
+                <Button
+                  variant={sort === "default" ? "default" : "outline"}
+                  size="sm"
+                  className="h-7 px-3 text-xs"
+                  onClick={() => { setSort("default"); setPage(1); }}
+                >
+                  標準順
+                </Button>
+              </div>
+            </div>
+            {sort === "affinity" && (
+              <p className="text-xs text-muted-foreground mb-4 leading-relaxed rounded-md bg-muted/40 border px-3 py-2">
+                <Info className="h-3.5 w-3.5 inline-block mr-1 -mt-0.5" />
+                {AFFINITY_METHODOLOGY}
+              </p>
+            )}
             <div className="space-y-4">
               {data.items.map((org) => (
                 <Card key={org.id} className={`transition-shadow hover:shadow-md ${selectedIds.includes(org.id) ? "border-amber-accent border-2" : ""}`}>
@@ -189,6 +221,34 @@ export default function Search() {
                               <AlertTriangle className="h-3 w-3" />処分歴あり
                             </Badge>
                           )}
+                          {sort === "affinity" && org.affinity && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Badge
+                                  variant="outline"
+                                  className={`gap-1 cursor-help font-bold ${
+                                    org.affinity.score >= 70
+                                      ? "border-amber-accent text-amber-700 bg-amber-accent/10"
+                                      : org.affinity.score >= 40
+                                        ? "border-brand/40 text-brand bg-brand/5"
+                                        : "text-muted-foreground"
+                                  }`}
+                                >
+                                  親和性 {org.affinity.score}
+                                  <Info className="h-3 w-3 opacity-60" />
+                                </Badge>
+                              </TooltipTrigger>
+                              <TooltipContent side="bottom" className="max-w-xs text-xs">
+                                <p className="font-bold mb-1">スコア内訳（満点100）</p>
+                                <ul className="space-y-0.5">
+                                  {org.affinity.reasons.map((r) => (
+                                    <li key={r.label}>・{r.label}（+{r.points}）</li>
+                                  ))}
+                                </ul>
+                                <p className="mt-1.5 opacity-70">配点：分野40／地域30／言語20／信頼怗10</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
                           <span className="text-xs text-muted-foreground">{org.regNo}</span>
                         </div>
                         <Link href={`/org/${org.id}`}>
@@ -200,6 +260,15 @@ export default function Search() {
                           <MapPin className="h-3.5 w-3.5 shrink-0" />
                           <span className="truncate">{org.address ?? "住所情報なし"}</span>
                         </p>
+                        {sort === "affinity" && org.affinity && org.affinity.reasons.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 mt-2">
+                            {org.affinity.reasons.slice(0, 4).map((r) => (
+                              <Badge key={r.label} variant="outline" className="text-xs font-normal text-muted-foreground border-dashed">
+                                {r.label}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
                         {org.languages && org.languages.length > 0 && (
                           <div className="flex flex-wrap gap-1.5 mt-3">
                             {org.languages.slice(0, 6).map((lang) => (

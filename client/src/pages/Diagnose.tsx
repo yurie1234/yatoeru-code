@@ -13,8 +13,8 @@ import { Link, useLocation, useSearch } from "wouter";
 const LOADING_STEPS = [
   "Webサイトの内容を取得しています…",
   "AIが業種・事業内容を解析しています…",
-  "特定技能12分野との適合を判定しています…",
-  "受入可能枠と概算コストを算出しています…",
+  "特定技能19分野との適合の目安を整理しています…",
+  "想定人数と概算コストを算出しています…",
   "適合する支援機関を検索しています…",
 ];
 
@@ -82,11 +82,11 @@ export default function Diagnose() {
         <div className="container max-w-3xl text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-brand-foreground/20 bg-brand-foreground/10 px-3 py-1 text-sm font-medium mb-4">
             <Sparkles className="h-4 w-4 text-amber-accent" />
-            AI受入可能性診断（無料）
+            外国人雇用の準備度チェック（無料）
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold mb-4">会社URLを入れるだけ。<br className="sm:hidden" />30秒で受入可能性がわかる</h1>
+          <h1 className="text-3xl md:text-4xl font-bold mb-4">会社URLを入れるだけ。<br className="sm:hidden" />30秒で外国人雇用の準備度がわかる</h1>
           <p className="text-brand-foreground/70 mb-8">
-            AIが業種を解析し、特定技能の該当分野・受入可能枠・概算コスト・適合スコアを即時判定します。
+            AIが業種を解析し、特定技能の該当分野の目安・想定人数・概算コストを整理し、支援機関選びの条件を明確にします。※在留資格の可否判断ではありません
           </p>
           <form onSubmit={handleSubmit} className="bg-background rounded-2xl p-2 shadow-2xl flex flex-col sm:flex-row gap-2 max-w-xl mx-auto">
             <div className="relative flex-1">
@@ -101,7 +101,7 @@ export default function Diagnose() {
               />
             </div>
             <Button type="submit" size="lg" disabled={diagnose.isPending} className="h-13 px-8 bg-amber-accent text-brand font-bold hover:bg-amber-accent/90">
-              {diagnose.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : "診断する"}
+              {diagnose.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : "チェックする"}
             </Button>
           </form>
         </div>
@@ -148,7 +148,7 @@ export default function Diagnose() {
           <div className="space-y-8 fade-up">
             <Card className="border-2 border-brand/20 overflow-hidden">
               <div className="bg-brand text-brand-foreground px-6 py-4 flex items-center justify-between">
-                <h2 className="font-bold text-lg">診断結果</h2>
+                <h2 className="font-bold text-lg">準備度チェック結果</h2>
                 <span className="text-sm text-brand-foreground/70">{result.companyName}</span>
               </div>
               <CardContent className="p-6">
@@ -176,11 +176,11 @@ export default function Diagnose() {
                         <div className="font-bold">{result.industry}</div>
                       </div>
                       <div className="rounded-lg bg-muted/50 p-4">
-                        <div className="text-xs text-muted-foreground mb-1">該当する特定技能分野</div>
+                        <div className="text-xs text-muted-foreground mb-1">該当しうる特定技能分野（目安）</div>
                         <div className="font-bold">{result.field ?? "該当分野なし"}</div>
                       </div>
                       <div className="rounded-lg bg-muted/50 p-4">
-                        <div className="text-xs text-muted-foreground mb-1">想定受入可能枠</div>
+                        <div className="text-xs text-muted-foreground mb-1">想定人数（目安）</div>
                         <div className="font-bold">{result.headcount}</div>
                       </div>
                       <div className="rounded-lg bg-muted/50 p-4">
@@ -191,12 +191,12 @@ export default function Diagnose() {
                   </div>
                 </div>
                 <div className="rounded-lg border bg-background p-4 text-sm leading-relaxed">
-                  <span className="font-bold text-brand">診断コメント：</span>
+                  <span className="font-bold text-brand">チェックコメント：</span>
                   {result.reason}
                 </div>
-                <p className="text-xs text-muted-foreground mt-3">
-                  ※本診断はWebサイトの公開情報に基づくAIによる推定であり、受入可否を保証するものではありません。正確な判断は支援機関・行政書士等の専門家にご確認ください。
-                </p>
+                <div className="rounded-lg border border-amber-accent/40 bg-amber-accent/5 p-4 text-xs text-muted-foreground mt-3 leading-relaxed">
+                  ※本チェックはWebサイトの公開情報に基づくAIによる推定であり、在留資格の許可・受入可否を判断・保証するものではありません。<span className="font-bold text-foreground">在留資格の可否判断は、出入国在留管理庁または行政書士等の専門家に必ずご確認ください。</span>
+                </div>
               </CardContent>
             </Card>
 
@@ -287,8 +287,8 @@ export default function Diagnose() {
           <div className="grid md:grid-cols-3 gap-6">
             {[
               { icon: Globe2, title: "1. URLを入力", desc: "自社WebサイトのURLを入力するだけ。会員登録は不要です。" },
-              { icon: Sparkles, title: "2. AIが解析", desc: "業種・事業内容から特定技能12分野との適合をAIが判定します。" },
-              { icon: Building2, title: "3. 支援機関を紹介", desc: "適合スコアと概算コストと合わせて、最適な支援機関を提示します。" },
+              { icon: Sparkles, title: "2. AIが解析", desc: "業種・事業内容から特定技能19分野との適合の目安をAIが整理します。" },
+              { icon: Building2, title: "3. 支援機関を紹介", desc: "適合スコアと概算コストと合わせて、条件に合う支援機関を提示します。" },
             ].map((item, i) => (
               <Card key={item.title} className={`fade-up-${i + 1} fade-up`}>
                 <CardHeader>

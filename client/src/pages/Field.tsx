@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc";
-import { TOKUTEI_FIELDS } from "@shared/tokutei";
+import { LEGACY_FIELD_MAP, TOKUTEI_FIELDS, UPCOMING_FIELDS } from "@shared/tokutei";
 import {
   AlertTriangle,
   ArrowRight,
@@ -20,23 +20,33 @@ import { Link, useLocation, useParams } from "wouter";
 const FIELD_DESCRIPTIONS: Record<string, string> = {
   介護: "高齢化に伴い最も受入れが進む分野。身体介護や生活支援業務に従事でき、介護福祉士取得で長期就労への道も開けます。",
   ビルクリーニング: "建物内部の清掃業務が対象。宿泊・オフィスビルの清掃需要増で受入れが拡大しています。",
-  "素形材・産業機械・電気電子情報関連製造業": "鋳造・金属プレス・溶接・機械加工・電子機器組立てなど製造業の中核工程が対象の統合分野です。",
+  リネンサプライ: "ホテル・病院向けリネン（シーツ・タオル等）の洗濯・仕上げ業務が対象。2027年受入開始予定の新分野です。",
+  工業製品製造業: "鋳造・金属プレス・溶接・機械加工・電子機器組立てなど製造業の中核工程が対象。旧「素形材・産業機械・電気電子情報関連製造業」から名称変更・対象拡大された分野です。",
   建設: "型枠施工・鉄筋施工・とび・土工など建設業務全般。2号移行で長期就労が可能な代表分野です。",
   "造船・舶用工業": "溶接・塗装・鉄工など造船関連業務。九州・瀬戸内など造船地域で受入れが盛んです。",
   自動車整備: "自動車の点検・分解整備業務。整備士不足を背景に全国の整備工場で需要が高まっています。",
   航空: "空港グランドハンドリングと航空機整備が対象。訪日需要回復で人材ニーズが急増しています。",
   宿泊: "フロント・企画広報・接客・レストランサービスなどホテル・旅館業務全般が対象です。",
+  自動車運送業: "トラック・タクシー・バスの運転業務が対象。2024年追加の新しい分野で、ドライバー不足対策として注目されています。",
+  鉄道: "軌道整備・電気設備整備・車両整備・車両製造・運輸係など鉄道関連業務が対象。2024年追加の分野です。",
+  物流倉庫: "倉庫内の仕分け・ピッキング・梱包などの業務が対象。2027年受入開始予定の新分野です。",
   農業: "耕種農業・畜産農業が対象。派遣形態での受入れが認められている数少ない分野です。",
   漁業: "漁業・養殖業が対象。農業と同様に派遣形態での受入れが可能です。",
   飲食料品製造業: "食品・飲料の製造・加工全般。受入れ人数が最も多い分野のひとつです。",
   外食業: "外食業全般（調理・接客・店舗管理）。都市部の飲食店を中心に受入れが進んでいます。",
+  林業: "育林・素材生産などの林業業務が対象。2024年追加の分野で、山村部の担い手不足対策として期待されています。",
+  木材産業: "製材・合板製造などの木材加工業務が対象。2024年追加の分野です。",
+  資源循環: "廃棄物処理・リサイクル業務が対象。2027年受入開始予定の新分野です。",
 };
 
 export default function Field() {
   const params = useParams<{ field: string }>();
   const [, setLocation] = useLocation();
-  const field = decodeURIComponent(params.field ?? "");
+  const rawField = decodeURIComponent(params.field ?? "");
+  // 旧分野名URL（例：素形材・産業機械・電気電子情報関連製造業）は現行分野名に後方互換
+  const field = LEGACY_FIELD_MAP[rawField] ?? rawField;
   const isValid = (TOKUTEI_FIELDS as readonly string[]).includes(field);
+  const isUpcoming = (UPCOMING_FIELDS as readonly string[]).includes(field);
 
   const { data: orgData, isLoading } = trpc.orgs.search.useQuery(
     { field, page: 1, limit: 10 },
@@ -76,7 +86,7 @@ export default function Field() {
           name: `${field}分野に対応する登録支援機関はどう探せばよいですか？`,
           acceptedAnswer: {
             "@type": "Answer",
-            text: `ヤトエルでは出入国在留管理庁の登録簿に基づき、${field}分野の支援実績・対応言語・行政処分歴で登録支援機関を比較できます。相談は無料です。`,
+            text: `ヤトエルでは出入国在留管理庁の登録簿に基づき、${field}分野に関連する登録支援機関を対応言語・地域・行政処分歴で検索できます。料金・受付状況は実確認済みの機関から順次公開しています。相談は無料です。`,
           },
         },
       ],
@@ -124,6 +134,11 @@ export default function Field() {
           <h1 className="text-3xl md:text-4xl font-bold mb-3 flex items-center gap-3">
             <Briefcase className="h-8 w-8 text-amber-accent" />
             特定技能「{field}」対応の支援機関
+            {isUpcoming && (
+              <Badge variant="outline" className="border-amber-accent text-amber-accent text-xs align-middle">
+                2027年受入開始予定
+              </Badge>
+            )}
           </h1>
           <p className="text-brand-foreground/70 max-w-2xl leading-relaxed">
             {FIELD_DESCRIPTIONS[field]}
@@ -133,7 +148,7 @@ export default function Field() {
               <div className="text-3xl font-black text-amber-accent">
                 {orgData.total.toLocaleString()}
               </div>
-              <div className="text-xs text-brand-foreground/60">{field}分野対応を登録済みの支援機関数</div>
+              <div className="text-xs text-brand-foreground/60">{field}分野に対応可能性のある登録支援機関数（分野情報未登録の機関を含む）</div>
             </div>
           )}
         </div>
@@ -202,7 +217,7 @@ export default function Field() {
                 variant="outline"
                 onClick={() => setLocation(`/search?field=${encodeURIComponent(field)}`)}
               >
-                {field}分野の全{orgData.total.toLocaleString()}件を検索・比較する
+                {field}分野の候補{orgData.total.toLocaleString()}件を検索・比較する
                 <ArrowRight className="h-4 w-4 ml-1" />
               </Button>
             </>
@@ -258,13 +273,13 @@ export default function Field() {
                 自社が{field}分野に該当するか不明な場合
               </h3>
               <p className="text-sm text-brand-foreground/70 mb-4 leading-relaxed">
-                御社サイトのURLを入れるだけで、AIが該当分野と受入可能性を無料診断します。
+                自社サイトのURLを入れるだけで、AIが該当分野の目安と概算コストを無料で整理します。※在留資格の可否判断ではありません
               </p>
               <Button
                 className="w-full bg-amber-accent text-brand font-bold hover:bg-amber-accent/90"
                 onClick={() => setLocation("/diagnose")}
               >
-                無料AI診断を試す
+                準備度チェックを試す
               </Button>
             </CardContent>
           </Card>

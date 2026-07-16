@@ -1,5 +1,6 @@
+# 検証期間中（仮ドメイン）のため全クローラ拒否。
+# 本番yatoeru.jp移行時に「Allow: /（Disallow: /adminのみ）」へ戻し、Sitemap行を有効化すること
 User-agent: *
-Allow: /
-Disallow: /admin
+Disallow: /
 
-Sitemap: https://gaikokujin-koyo-navi.manus.space/sitemap.xml
+# Sitemap: https://yatoeru.jp/sitemap.xml

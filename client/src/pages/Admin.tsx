@@ -98,7 +98,7 @@ export default function Admin() {
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                    <Sparkles className="h-4 w-4" />月間AI診断数
+                    <Sparkles className="h-4 w-4" />月間チェック数
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -109,7 +109,7 @@ export default function Admin() {
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                    <Target className="h-4 w-4" />診断→相談CVR
+                    <Target className="h-4 w-4" />チェック→相談CVR
                   </CardTitle>
                 </CardHeader>
                 <CardContent>

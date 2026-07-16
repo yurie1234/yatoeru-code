@@ -237,13 +237,13 @@ export default function Region() {
             <CardContent className="p-5">
               <h3 className="font-bold mb-2">どこに相談すべきか迷ったら</h3>
               <p className="text-sm text-brand-foreground/70 mb-4 leading-relaxed">
-                御社サイトのURLを入れるだけで、AIが受入可能性と適した支援機関を診断します。
+                自社サイトのURLを入れるだけで、AIが該当分野の目安を整理し、条件に合う支援機関を提示します。※在留資格の可否判断ではありません
               </p>
               <Button
                 className="w-full bg-amber-accent text-brand font-bold hover:bg-amber-accent/90"
                 onClick={() => setLocation("/diagnose")}
               >
-                無料AI診断を試す
+                準備度チェックを試す
               </Button>
             </CardContent>
           </Card>
