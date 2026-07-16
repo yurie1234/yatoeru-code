@@ -1,0 +1,90 @@
+import { Button } from "@/components/ui/button";
+import { Globe2, Menu } from "lucide-react";
+import { useState } from "react";
+import { Link, useLocation } from "wouter";
+
+/**
+ * 公開ページ共通レイアウト（ヘッダー＋フッター）
+ * 管理画面（/admin）はDashboardLayoutを使用するためこのレイアウトは使わない
+ */
+export default function SiteLayout({ children }: { children: React.ReactNode }) {
+  const [, setLocation] = useLocation();
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  return (
+    <div className="min-h-screen flex flex-col bg-background">
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-16 items-center justify-between">
+          <Link href="/" className="flex items-center gap-2">
+            <Globe2 className="h-6 w-6 text-brand" />
+            <span className="text-xl font-bold tracking-tight text-foreground">ヤトエル</span>
+          </Link>
+          <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
+            <Link href="/search" className="text-muted-foreground hover:text-foreground transition-colors">支援機関を探す</Link>
+            <Link href="/diagnose" className="text-muted-foreground hover:text-foreground transition-colors">AI受入診断</Link>
+            <Link href="/stats" className="text-muted-foreground hover:text-foreground transition-colors">統計データ</Link>
+            <Link href="/pricing" className="text-muted-foreground hover:text-foreground transition-colors">掲載事業者様へ</Link>
+          </nav>
+          <div className="flex items-center gap-2">
+            <Button className="hidden sm:flex" onClick={() => setLocation("/diagnose")}>
+              無料AI診断
+            </Button>
+            <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMobileOpen(!mobileOpen)} aria-label="メニュー">
+              <Menu className="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+        {mobileOpen && (
+          <div className="md:hidden border-t bg-background">
+            <nav className="container py-4 flex flex-col gap-3 text-sm font-medium">
+              <Link href="/search" onClick={() => setMobileOpen(false)} className="py-2">支援機関を探す</Link>
+              <Link href="/diagnose" onClick={() => setMobileOpen(false)} className="py-2">AI受入診断</Link>
+              <Link href="/stats" onClick={() => setMobileOpen(false)} className="py-2">統計データ</Link>
+              <Link href="/pricing" onClick={() => setMobileOpen(false)} className="py-2">掲載事業者様へ</Link>
+            </nav>
+          </div>
+        )}
+      </header>
+
+      <main className="flex-1">{children}</main>
+
+      <footer className="bg-brand text-brand-foreground py-12">
+        <div className="container">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+            <div className="col-span-1 md:col-span-2">
+              <div className="flex items-center gap-2 mb-4">
+                <Globe2 className="h-6 w-6 text-amber-accent" />
+                <span className="text-xl font-bold tracking-tight">ヤトエル</span>
+              </div>
+              <p className="text-brand-foreground/70 max-w-sm">
+                特定技能・育成就労の支援機関データベース。<br />
+                外国人雇用の「最適解」を見つけるためのプラットフォームです。
+              </p>
+            </div>
+            <div>
+              <h3 className="font-bold mb-4">サービス</h3>
+              <ul className="space-y-2 text-brand-foreground/70">
+                <li><Link href="/search" className="hover:text-amber-accent transition-colors">支援機関を探す</Link></li>
+                <li><Link href="/diagnose" className="hover:text-amber-accent transition-colors">AI受入診断</Link></li>
+                <li><Link href="/stats" className="hover:text-amber-accent transition-colors">統計データ</Link></li>
+                <li><Link href="/pricing" className="hover:text-amber-accent transition-colors">掲載事業者様へ</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-bold mb-4">地域から探す</h3>
+              <ul className="space-y-2 text-brand-foreground/70">
+                <li><Link href="/region/東京都" className="hover:text-amber-accent transition-colors">東京都の支援機関</Link></li>
+                <li><Link href="/region/愛知県" className="hover:text-amber-accent transition-colors">愛知県の支援機関</Link></li>
+                <li><Link href="/region/大阪府" className="hover:text-amber-accent transition-colors">大阪府の支援機関</Link></li>
+                <li><Link href="/field/介護" className="hover:text-amber-accent transition-colors">介護分野の支援機関</Link></li>
+              </ul>
+            </div>
+          </div>
+          <div className="border-t border-brand-foreground/20 pt-8 text-center text-brand-foreground/50 text-sm">
+            &copy; {new Date().getFullYear()} ヤトエル All rights reserved.
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+}

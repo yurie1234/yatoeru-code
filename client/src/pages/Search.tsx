@@ -1,0 +1,260 @@
+import SiteLayout from "@/components/SiteLayout";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { trpc } from "@/lib/trpc";
+import { MAJOR_LANGUAGES, PREFECTURES, TOKUTEI_FIELDS } from "@shared/tokutei";
+import { AlertTriangle, Building2, CheckSquare, ChevronLeft, ChevronRight, Languages, MapPin, Search as SearchIcon } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useLocation, useSearch } from "wouter";
+
+const ALL = "__all__";
+
+export default function Search() {
+  const searchString = useSearch();
+  const [, setLocation] = useLocation();
+  const params = useMemo(() => new URLSearchParams(searchString), [searchString]);
+
+  const [keyword, setKeyword] = useState(params.get("keyword") ?? "");
+  const [prefecture, setPrefecture] = useState(params.get("prefecture") ?? ALL);
+  const [language, setLanguage] = useState(params.get("language") ?? ALL);
+  const [field, setField] = useState(params.get("field") ?? ALL);
+  const [page, setPage] = useState(1);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+
+  // URLパラメータの変化を反映
+  useEffect(() => {
+    setKeyword(params.get("keyword") ?? "");
+    setPrefecture(params.get("prefecture") ?? ALL);
+    setLanguage(params.get("language") ?? ALL);
+    setField(params.get("field") ?? ALL);
+    setPage(1);
+  }, [params]);
+
+  const queryInput = useMemo(
+    () => ({
+      keyword: keyword || undefined,
+      prefecture: prefecture !== ALL ? prefecture : undefined,
+      language: language !== ALL ? language : undefined,
+      field: field !== ALL ? field : undefined,
+      page,
+      limit: 20,
+    }),
+    [keyword, prefecture, language, field, page]
+  );
+
+  const { data, isLoading } = trpc.orgs.search.useQuery(queryInput);
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : prev.length < 5 ? [...prev, id] : prev
+    );
+  };
+
+  const goConsult = () => {
+    if (selectedIds.length > 0) {
+      setLocation(`/consult?orgIds=${selectedIds.join(",")}`);
+    }
+  };
+
+  return (
+    <SiteLayout>
+      <div className="bg-muted/30 border-b py-8">
+        <div className="container">
+          <h1 className="text-2xl md:text-3xl font-bold mb-2">登録支援機関を探す</h1>
+          <p className="text-muted-foreground text-sm">
+            全国{data?.total !== undefined ? data.total.toLocaleString() : "11,000"}件の登録支援機関から、条件に合うパートナーを検索・比較できます。
+          </p>
+        </div>
+      </div>
+
+      <div className="container py-8">
+        {/* フィルター */}
+        <Card className="mb-8">
+          <CardContent className="p-4 md:p-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+              <div className="relative md:col-span-1">
+                <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="機関名・住所で検索"
+                  className="pl-9"
+                  value={keyword}
+                  onChange={(e) => { setKeyword(e.target.value); setPage(1); }}
+                />
+              </div>
+              <Select value={prefecture} onValueChange={(v) => { setPrefecture(v); setPage(1); }}>
+                <SelectTrigger>
+                  <MapPin className="h-4 w-4 mr-1 text-muted-foreground" />
+                  <SelectValue placeholder="都道府県" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL}>すべての都道府県</SelectItem>
+                  {PREFECTURES.map((p) => (
+                    <SelectItem key={p} value={p}>{p}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={language} onValueChange={(v) => { setLanguage(v); setPage(1); }}>
+                <SelectTrigger>
+                  <Languages className="h-4 w-4 mr-1 text-muted-foreground" />
+                  <SelectValue placeholder="対応言語" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL}>すべての言語</SelectItem>
+                  {MAJOR_LANGUAGES.map((l) => (
+                    <SelectItem key={l} value={l}>{l}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={field} onValueChange={(v) => { setField(v); setPage(1); }}>
+                <SelectTrigger>
+                  <Building2 className="h-4 w-4 mr-1 text-muted-foreground" />
+                  <SelectValue placeholder="特定技能分野" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL}>すべての分野</SelectItem>
+                  {TOKUTEI_FIELDS.map((f) => (
+                    <SelectItem key={f} value={f}>{f}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 一括相談バー */}
+        {selectedIds.length > 0 && (
+          <div className="sticky top-16 z-40 mb-6">
+            <Card className="border-amber-accent border-2 bg-background shadow-lg">
+              <CardContent className="p-4 flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <CheckSquare className="h-5 w-5 text-amber-accent" />
+                  {selectedIds.length}社を選択中（最大5社）
+                </div>
+                <Button onClick={goConsult} className="bg-amber-accent text-brand font-bold hover:bg-amber-accent/90">
+                  選択した機関に一括相談する
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* 結果一覧 */}
+        {isLoading ? (
+          <div className="space-y-4">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-32 w-full rounded-xl" />
+            ))}
+          </div>
+        ) : data && data.items.length > 0 ? (
+          <>
+            <p className="text-sm text-muted-foreground mb-4">
+              {data.total.toLocaleString()}件中 {(data.page - 1) * 20 + 1}〜{Math.min(data.page * 20, data.total)}件を表示
+            </p>
+            <div className="space-y-4">
+              {data.items.map((org) => (
+                <Card key={org.id} className={`transition-shadow hover:shadow-md ${selectedIds.includes(org.id) ? "border-amber-accent border-2" : ""}`}>
+                  <CardContent className="p-4 md:p-6">
+                    <div className="flex items-start gap-4">
+                      <div className="pt-1">
+                        <Checkbox
+                          checked={selectedIds.includes(org.id)}
+                          onCheckedChange={() => toggleSelect(org.id)}
+                          disabled={!selectedIds.includes(org.id) && selectedIds.length >= 5}
+                          aria-label="一括相談に追加"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                          {org.plan === "paid" && (
+                            <Badge className="bg-amber-accent text-brand hover:bg-amber-accent">PR</Badge>
+                          )}
+                          {org.hasPenalty && (
+                            <Badge variant="destructive" className="gap-1">
+                              <AlertTriangle className="h-3 w-3" />処分歴あり
+                            </Badge>
+                          )}
+                          <span className="text-xs text-muted-foreground">{org.regNo}</span>
+                        </div>
+                        <Link href={`/org/${org.id}`}>
+                          <h2 className="text-lg font-bold hover:text-brand hover:underline transition-colors truncate">
+                            {org.name}
+                          </h2>
+                        </Link>
+                        <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1">
+                          <MapPin className="h-3.5 w-3.5 shrink-0" />
+                          <span className="truncate">{org.address ?? "住所情報なし"}</span>
+                        </p>
+                        {org.languages && org.languages.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 mt-3">
+                            {org.languages.slice(0, 6).map((lang) => (
+                              <Badge key={lang} variant="secondary" className="text-xs font-normal">
+                                {lang}
+                              </Badge>
+                            ))}
+                            {org.languages.length > 6 && (
+                              <Badge variant="secondary" className="text-xs font-normal">
+                                +{org.languages.length - 6}
+                              </Badge>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      <div className="hidden sm:flex flex-col items-end gap-2 shrink-0">
+                        <Button variant="outline" size="sm" onClick={() => setLocation(`/org/${org.id}`)}>
+                          詳細を見る
+                          <ChevronRight className="h-4 w-4 ml-1" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* ページネーション */}
+            {data.totalPages > 1 && (
+              <div className="flex items-center justify-center gap-4 mt-8">
+                <Button
+                  variant="outline"
+                  disabled={page <= 1}
+                  onClick={() => { setPage(page - 1); window.scrollTo({ top: 0 }); }}
+                >
+                  <ChevronLeft className="h-4 w-4 mr-1" />前へ
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  {data.page} / {data.totalPages.toLocaleString()}ページ
+                </span>
+                <Button
+                  variant="outline"
+                  disabled={page >= data.totalPages}
+                  onClick={() => { setPage(page + 1); window.scrollTo({ top: 0 }); }}
+                >
+                  次へ<ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              </div>
+            )}
+          </>
+        ) : (
+          <Card>
+            <CardContent className="py-16 text-center text-muted-foreground">
+              <SearchIcon className="h-10 w-10 mx-auto mb-4 opacity-40" />
+              <p className="font-medium mb-1">条件に一致する支援機関が見つかりませんでした</p>
+              <p className="text-sm">検索条件を変更してお試しください。</p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </SiteLayout>
+  );
+}
