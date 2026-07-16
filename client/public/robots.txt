@@ -3,3 +3,5 @@ User-agent: *
 Allow: /
 
 Sitemap: https://yatoeru.jp/sitemap.xml
+
+# LLM向けサイト概要（llmstxt.org準拠）: https://yatoeru.jp/llms.txt

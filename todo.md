@@ -171,5 +171,16 @@
 - [x] サイトマップに機関個別ページURLを追加（運営確認済み機関はlastmodに確認日反映）
 - [x] 検証：curl（JS非実行）でJSON-LD・機関名・個別titleが生HTMLに含まれること
 - [x] 回帰テスト：既存機能（検索・診断・スコア）の動作確認・vitest全件パス
-- [ ] チェックポイント保存（自動公開）・本番での最終確認
-- [ ] AEO効果の確認結果を報告
+- [x] チェックポイント保存（自動公開）・本番での最終確認
+- [x] AEO効果の確認結果を報告
+
+## AEO追加強化（2026-07-16 続き依頼）
+- [x] 現状点検：既存JSON-LDの種類・パンくず・FAQ・記事スキーマ・llms.txtの実装状況を棚卸し
+- [x] llms.txt実装（サイト概要・主要URL・データの強み・更新頻度をAI向けに記述、/llms.txtで配信）
+- [x] BreadcrumbList構造化データを機関詳細・地域・分野ページのSSR出力に追加
+- [x] 機関詳細JSON-LDの拡充（address・areaServed・knowsLanguage・dateModified等の追加）
+- [x] コラム記事のArticle JSON-LDがSSRで出力されているか確認・不足なら追加
+- [x] FAQPage JSON-LD（Home・Region・Field・ガイド）のSSR出力確認・不足なら追加
+- [x] 検証：生HTMLでの構造化データ出力・vitest・verify-ssr ALL GREEN
+- [x] チェックポイント保存（自動公開）・本番確認
+- [ ] 実施内容の報告

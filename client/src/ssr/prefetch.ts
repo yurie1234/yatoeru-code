@@ -9,6 +9,17 @@ import {
   TOKUTEI_FIELDS,
   UPCOMING_FIELDS,
 } from "@shared/tokutei";
+import { FIELD_DESCRIPTIONS } from "@shared/fieldDescriptions";
+import {
+  articleLd,
+  breadcrumbLd,
+  COLUMN_ARTICLES,
+  datasetLd,
+  faqLd,
+  fieldFaqs,
+  GUIDE_FAQS,
+  regionFaqs,
+} from "./jsonld";
 
 export type HeadMeta = {
   title: string;
@@ -75,29 +86,34 @@ const STATIC_HEADS: Record<string, { title: string; description: string }> = {
       "特定技能・育成就労制度の実務解説コラム。登録支援機関の選び方、管理団体からの移行、人材紹介と支援の違いなどを解説します。",
   },
   "/columns/shien-kikan-erabikata": {
-    title: "登録支援機関の選び方｜失敗しない5つのチェックポイント - ヤトエル",
+    title:
+      "登録支援機関の選び方｜料金相場・確認すべき7項目・登録番号の確認方法 - ヤトエル",
     description:
-      "登録支援機関選びで失敗しないための5つのチェックポイントを解説。対応言語・地域・処分歴・料金の確認方法まで実務目線でまとめました。",
+      "登録支援機関の委託費用相場（月額平均約28,000円：入管庁調査）、委託前に確認すべき7項目、登録番号の確認3ステップを実務目線で解説します。",
   },
   "/columns/kanri-dantai-ikou-guide": {
-    title: "管理団体から育成就労への移行ガイド - ヤトエル",
+    title:
+      "監理団体から監理支援機関への移行ガイド｜2026年9月の期限までにやること - ヤトエル",
     description:
-      "技能実習の監理団体から育成就労制度への移行を実務目線で解説。スケジュール・要件・登録支援機関との関係を整理します。",
+      "技能実習の監理団体から育成就労制度の監理支援機関への移行を実務目線で解説。施行日前申請（2026年4月15日開始）・監理団体新規許可申請期限（2026年9月30日）・施行日（2027年4月1日）のスケジュールと準備ステップを整理します。",
   },
   "/columns/shokai-vs-shien": {
-    title: "人材紹介と登録支援機関の違い - ヤトエル",
+    title:
+      "人材紹介会社と登録支援機関の違い｜委託前に登録番号を確認すべき理由 - ヤトエル",
     description:
-      "外国人雇用における人材紹介会社と登録支援機関の役割の違いを解説。費用構造と契約時の注意点も整理します。",
+      "外国人雇用における人材紹介会社（有料職業紹介）と登録支援機関は別制度・別登録です。両者の役割・費用構造の違いと、委託前に登録番号を確認すべき理由・確認手順を解説します。",
   },
   "/guide/ikusei-shuro": {
-    title: "育成就労制度ガイド - ヤトエル",
+    title:
+      "育成就労制度とは｜2027年4月1日施行・監理支援機関への移行を解説 - ヤトエル",
     description:
-      "2027年開始予定の育成就労制度を解説。技能実習との違い、受け入れ要件、企業が今から準備すべきことをまとめました。",
+      "育成就労制度は2027年4月1日施行（政令確定済み）。技能実習制度との違い、監理団体から監理支援機関への移行、許可申請スケジュール（2026年4月15日施行日前申請開始）を入管庁一次情報に基づき解説します。",
   },
   "/guide/kanri-shien-kikan": {
-    title: "監理支援機関ガイド - ヤトエル",
+    title:
+      "監理支援機関とは｜許可申請の受付開始日・監理団体との違いを解説 - ヤトエル",
     description:
-      "育成就労制度における監理支援機関の役割と要件を解説。現行の監理団体・登録支援機関との違いを整理します。",
+      "監理支援機関は育成就労制度（2027年4月1日施行）で監理団体に代わる許可制の機関。許可の施行日前申請は2026年4月15日から外国人技能実習機構で受付中。監理団体との要件の違い・申請スケジュールを解説します。",
   },
   "/for-organizations": {
     title: "登録支援機関の皆さまへ｜自社情報の確認・修正（無料） - ヤトエル",
@@ -192,7 +208,14 @@ export async function prefetchForPath(
       modifiedTime: org.verifiedAt
         ? new Date(org.verifiedAt).toISOString()
         : undefined,
-      jsonLd: [jsonLd],
+      jsonLd: [
+        jsonLd,
+        breadcrumbLd([
+          { name: "ホーム", path: "/" },
+          { name: "登録支援機関を検索", path: "/search" },
+          { name: org.name, path: `/org/${org.id}` },
+        ]),
+      ],
     };
   }
 
@@ -251,6 +274,13 @@ export async function prefetchForPath(
       title: `${prefecture}の登録支援機関一覧｜特定技能・育成就労 - ヤトエル`,
       description: `${prefecture}に対応する登録支援機関の一覧。対応言語・処分歴・受付状況で比較でき、最大5社に無料で一括相談できます。`,
       canonicalPath: `/region/${encodeURIComponent(prefecture)}`,
+      jsonLd: [
+        faqLd(regionFaqs(prefecture, stats?.total)),
+        breadcrumbLd([
+          { name: "ホーム", path: "/" },
+          { name: `${prefecture}の登録支援機関`, path: `/region/${prefecture}` },
+        ]),
+      ],
     };
   }
 
@@ -272,8 +302,15 @@ export async function prefetchForPath(
     );
     return {
       title: `${field}分野対応の登録支援機関一覧｜特定技能 - ヤトエル`,
-      description: `特定技能「${field}」分野に対応する登録支援機関の一覧。最大5社に無料で一括相談できます。`,
+      description: `特定技能「${field}」分野に対応する登録支援機関の一覧。${FIELD_DESCRIPTIONS[field] ?? ""}最大5社に無料で一括相談できます。`,
       canonicalPath: `/field/${encodeURIComponent(field)}`,
+      jsonLd: [
+        faqLd(fieldFaqs(field, FIELD_DESCRIPTIONS[field])),
+        breadcrumbLd([
+          { name: "ホーム", path: "/" },
+          { name: `${field}分野の登録支援機関`, path: `/field/${field}` },
+        ]),
+      ],
     };
   }
 
@@ -302,6 +339,19 @@ export async function prefetchForPath(
       ogType: "article",
       canonicalPath: `/updates/${baseDate}`,
       publishedTime: `${data.snapshot.baseDate}T00:00:00+09:00`,
+      jsonLd: [
+        articleLd({
+          headline: `【${data.snapshot.baseDate}】登録支援機関 新規${data.added.length}件・抹消${data.removed.length}件（計${data.snapshot.totalCount.toLocaleString()}件）`,
+          path: `/updates/${baseDate}`,
+          datePublished: data.snapshot.baseDate,
+          description: `${data.snapshot.baseDate}基準の登録支援機関登録簿の更新情報。`,
+        }),
+        breadcrumbLd([
+          { name: "ホーム", path: "/" },
+          { name: "登録簿の更新情報", path: "/updates" },
+          { name: `${data.snapshot.baseDate}基準の更新`, path: `/updates/${baseDate}` },
+        ]),
+      ],
     };
   }
 
@@ -314,6 +364,13 @@ export async function prefetchForPath(
       description:
         "全国の登録支援機関の統計データ。都道府県別の登録数や処分歴の状況をグラフで確認できます。",
       canonicalPath: "/stats",
+      jsonLd: [
+        datasetLd(stats.total),
+        breadcrumbLd([
+          { name: "ホーム", path: "/" },
+          { name: "統計データ", path: "/stats" },
+        ]),
+      ],
     };
   }
 
@@ -325,7 +382,43 @@ export async function prefetchForPath(
   // 静的公開ルート（head-only）
   const staticHead = STATIC_HEADS[clean];
   if (staticHead) {
-    return { ...staticHead, canonicalPath: clean };
+    const jsonLd: Array<Record<string, unknown>> = [];
+    // コラム記事：Article＋FAQPage＋パンくず
+    const article = COLUMN_ARTICLES[clean];
+    if (article) {
+      jsonLd.push(
+        articleLd({
+          headline: article.headline,
+          path: clean,
+          datePublished: article.datePublished,
+          description: article.description,
+        }),
+        faqLd(article.faqs),
+        breadcrumbLd([
+          { name: "ホーム", path: "/" },
+          { name: "コラム", path: "/columns" },
+          { name: article.headline, path: clean },
+        ])
+      );
+    }
+    // 制度ガイド：FAQPage＋パンくず
+    const guideFaqs = GUIDE_FAQS[clean];
+    if (guideFaqs) {
+      jsonLd.push(
+        faqLd(guideFaqs),
+        breadcrumbLd([
+          { name: "ホーム", path: "/" },
+          { name: staticHead.title.replace(/ - ヤトエル$/, ""), path: clean },
+        ])
+      );
+    }
+    return {
+      ...staticHead,
+      canonicalPath: clean,
+      ogType: article ? ("article" as const) : undefined,
+      publishedTime: article ? `${article.datePublished}T00:00:00+09:00` : undefined,
+      jsonLd: jsonLd.length > 0 ? jsonLd : undefined,
+    };
   }
 
   // 未知ルート：真の404

@@ -145,6 +145,8 @@ export default function ColumnIkouGuide() {
         },
       ],
     };
+    // SSR焼き込み分のJSON-LDを除去してから注入（重複防止）
+    document.querySelectorAll("script.ssr-jsonld").forEach((el) => el.remove());
     const script = document.createElement("script");
     script.type = "application/ld+json";
     script.id = "column-ikou-jsonld";

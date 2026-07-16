@@ -94,8 +94,13 @@ function buildHeadTags(head: HeadMeta, siteName: string): string {
   if (head.jsonLd && head.jsonLd.length > 0) {
     for (let i = 0; i < head.jsonLd.length; i++) {
       const json = JSON.stringify(head.jsonLd[i]).replace(/</g, "\\u003c");
-      const idAttr = i === 0 ? ` id="org-jsonld"` : "";
-      tags.push(`<script type="application/ld+json"${idAttr}>${json}</script>`);
+      // 先頭はorg-jsonld（OrgDetailの既存remove処理と互換）、以降はssr-jsonld-N。
+      // クライアント側で同種JSON-LDをuseEffect注入するページは、
+      // 注入前に .ssr-jsonld 要素をremoveして重複を防ぐ。
+      const idAttr = i === 0 ? ` id="org-jsonld"` : ` id="ssr-jsonld-${i}"`;
+      tags.push(
+        `<script type="application/ld+json" class="ssr-jsonld"${idAttr}>${json}</script>`
+      );
     }
   }
   return tags.join("\n");

@@ -24,6 +24,8 @@ export default function Stats() {
       isBasedOn: "https://www.moj.go.jp/isa/policies/ssw/nyuukokukanri07_00205.html",
       variableMeasured: ["都道府県別登録支援機関数", "対応言語", "特定技能分野"],
     };
+    // SSR焼き込み分のJSON-LDを除去してから注入（重複防止）
+    document.querySelectorAll("script.ssr-jsonld").forEach((el) => el.remove());
     const script = document.createElement("script");
     script.type = "application/ld+json";
     script.id = "stats-jsonld";
