@@ -21,6 +21,9 @@ import {
 import { useEffect } from "react";
 import { Link, useLocation, useParams } from "wouter";
 
+// 口コミ公開フラグ：GO判定後＋運用ルール（投稿ガイドライン・本人確認・削除基準・法務体制）整備後にtrueにする
+const REVIEWS_ENABLED = false;
+
 export default function OrgDetail() {
   const params = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
@@ -42,7 +45,7 @@ export default function OrgDetail() {
       identifier: org.regNo,
       description: `${org.name}は出入国在留管理庁に登録された登録支援機関です（登録番号：${org.regNo}）。`,
     };
-    if (reviews.length > 0) {
+    if (REVIEWS_ENABLED && reviews.length > 0) {
       const avg = reviews.reduce((s, r) => s + r.rating, 0) / reviews.length;
       jsonLd.aggregateRating = {
         "@type": "AggregateRating",
@@ -203,7 +206,11 @@ export default function OrgDetail() {
               </CardContent>
             </Card>
 
-            {/* 口コミ */}
+            {/* 口コミ —— 封印中（2026-07-16 決定）。
+                口コミは第4層（信頼獲得後の防御資産）。投稿ガイドライン・本人確認・
+                削除基準・法務体制の整備後（GO判定後）にREVIEWS_ENABLEDをtrueにして公開する。
+                名誉毀損リスクと口コミゼロ欄の見栓え問題のため、検証期は非表示。 */}
+            {REVIEWS_ENABLED && (
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
@@ -244,6 +251,7 @@ export default function OrgDetail() {
                 )}
               </CardContent>
             </Card>
+            )}
           </div>
         )}
       </div>

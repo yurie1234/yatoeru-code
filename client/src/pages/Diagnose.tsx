@@ -82,11 +82,11 @@ export default function Diagnose() {
         <div className="container max-w-3xl text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-brand-foreground/20 bg-brand-foreground/10 px-3 py-1 text-sm font-medium mb-4">
             <Sparkles className="h-4 w-4 text-amber-accent" />
-            外国人雇用の準備度チェック（無料）
+            会社URLを入れるだけ。30秒で完了
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold mb-4">会社URLを入れるだけ。<br className="sm:hidden" />30秒で外国人雇用の準備度がわかる</h1>
+          <h1 className="text-3xl md:text-4xl font-bold mb-4">外国人雇用の準備度チェック＆<br className="sm:hidden" />支援機関マッチ診断（無料）</h1>
           <p className="text-brand-foreground/70 mb-8">
-            AIが業種を解析し、特定技能の該当分野の目安・想定人数・概算コストを整理し、支援機関選びの条件を明確にします。※在留資格の可否判断ではありません
+            業種を解析し、特定技能の該当分野の目安・想定人数・概算コストを整理し、条件に合う支援機関をご案内します。※在留資格の可否判断ではありません
           </p>
           <form onSubmit={handleSubmit} className="bg-background rounded-2xl p-2 shadow-2xl flex flex-col sm:flex-row gap-2 max-w-xl mx-auto">
             <div className="relative flex-1">
@@ -148,7 +148,7 @@ export default function Diagnose() {
           <div className="space-y-8 fade-up">
             <Card className="border-2 border-brand/20 overflow-hidden">
               <div className="bg-brand text-brand-foreground px-6 py-4 flex items-center justify-between">
-                <h2 className="font-bold text-lg">準備度チェック結果</h2>
+                <h2 className="font-bold text-lg">診断結果</h2>
                 <span className="text-sm text-brand-foreground/70">{result.companyName}</span>
               </div>
               <CardContent className="p-6">
@@ -195,7 +195,7 @@ export default function Diagnose() {
                   {result.reason}
                 </div>
                 <div className="rounded-lg border border-amber-accent/40 bg-amber-accent/5 p-4 text-xs text-muted-foreground mt-3 leading-relaxed">
-                  ※本チェックはWebサイトの公開情報に基づくAIによる推定であり、在留資格の許可・受入可否を判断・保証するものではありません。<span className="font-bold text-foreground">在留資格の可否判断は、出入国在留管理庁または行政書士等の専門家に必ずご確認ください。</span>
+                  <span className="font-bold text-foreground">本診断は情報整理を目的としたもので、在留資格の可否判断ではありません。個別の要件は行政書士または出入国在留管理庁にご確認ください。</span>
                 </div>
               </CardContent>
             </Card>
@@ -232,7 +232,7 @@ export default function Diagnose() {
               <div>
                 <h2 className="text-2xl font-bold mb-2">あなたの会社に適合する支援機関</h2>
                 <p className="text-sm text-muted-foreground mb-6">
-                  診断結果に基づき、適合度の高い支援機関を表示しています。最大5社に一括相談できます。
+                  AIが登録簿約11,000件から、分野・地域・対応言語等の条件に合う機関を抽出しました。並び順は条件との適合度のみで決定され、有料掲載の有無は影響しません。最大5社に一括相談できます。
                 </p>
                 <div className="space-y-4">
                   {recommendedOrgs.map((org) => (

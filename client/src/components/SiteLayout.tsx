@@ -21,13 +21,13 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
           </Link>
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
             <Link href="/search" className="text-muted-foreground hover:text-foreground transition-colors">支援機関を探す</Link>
-            <Link href="/diagnose" className="text-muted-foreground hover:text-foreground transition-colors">準備度チェック</Link>
+            <Link href="/diagnose" className="text-muted-foreground hover:text-foreground transition-colors">支援機関マッチ診断</Link>
             <Link href="/stats" className="text-muted-foreground hover:text-foreground transition-colors">統計データ</Link>
-            <Link href="/pricing" className="text-muted-foreground hover:text-foreground transition-colors">掲載事業者様へ</Link>
+            
           </nav>
           <div className="flex items-center gap-2">
             <Button className="hidden sm:flex" onClick={() => setLocation("/diagnose")}>
-              準備度チェック（無料）
+              無料診断
             </Button>
             <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMobileOpen(!mobileOpen)} aria-label="メニュー">
               <Menu className="h-5 w-5" />
@@ -38,9 +38,9 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
           <div className="md:hidden border-t bg-background">
             <nav className="container py-4 flex flex-col gap-3 text-sm font-medium">
               <Link href="/search" onClick={() => setMobileOpen(false)} className="py-2">支援機関を探す</Link>
-              <Link href="/diagnose" onClick={() => setMobileOpen(false)} className="py-2">準備度チェック</Link>
+              <Link href="/diagnose" onClick={() => setMobileOpen(false)} className="py-2">支援機関マッチ診断</Link>
               <Link href="/stats" onClick={() => setMobileOpen(false)} className="py-2">統計データ</Link>
-              <Link href="/pricing" onClick={() => setMobileOpen(false)} className="py-2">掲載事業者様へ</Link>
+              
             </nav>
           </div>
         )}
@@ -65,9 +65,9 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
               <h3 className="font-bold mb-4">サービス</h3>
               <ul className="space-y-2 text-brand-foreground/70">
                 <li><Link href="/search" className="hover:text-amber-accent transition-colors">支援機関を探す</Link></li>
-                <li><Link href="/diagnose" className="hover:text-amber-accent transition-colors">準備度チェック</Link></li>
+                <li><Link href="/diagnose" className="hover:text-amber-accent transition-colors">支援機関マッチ診断</Link></li>
                 <li><Link href="/stats" className="hover:text-amber-accent transition-colors">統計データ</Link></li>
-                <li><Link href="/pricing" className="hover:text-amber-accent transition-colors">掲載事業者様へ</Link></li>
+                
               </ul>
             </div>
             <div>

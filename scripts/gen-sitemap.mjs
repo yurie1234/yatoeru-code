@@ -8,7 +8,7 @@ const STATIC_PAGES = [
   { path: "/diagnose", priority: "0.9" },
   { path: "/search", priority: "0.9" },
   { path: "/proposal", priority: "0.7" },
-  { path: "/pricing", priority: "0.7" },
+
   { path: "/stats", priority: "0.7" },
   { path: "/about", priority: "0.7" },
   { path: "/terms", priority: "0.7" },

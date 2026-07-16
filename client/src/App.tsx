@@ -10,7 +10,10 @@ import Diagnose from "./pages/Diagnose";
 import Field from "./pages/Field";
 import Home from "./pages/Home";
 import OrgDetail from "./pages/OrgDetail";
-import Pricing from "./pages/Pricing";
+// 検証期間中は価格ページを非公開（2026-07-16 決定）。
+// 価格はヒアリング30件の回答から逆算して確定するため、確定前に公開すると価格発見の機会を失う。
+// GO判定後・価格確定後に以下のimportとルートを復活させること。
+// import Pricing from "./pages/Pricing";
 import Proposal from "./pages/Proposal";
 import Region from "./pages/Region";
 import SearchPage from "./pages/Search";
@@ -26,7 +29,7 @@ function Router() {
       <Route path={"/org/:id"} component={OrgDetail} />
       <Route path={"/consult"} component={Consult} />
       <Route path={"/proposal"} component={Proposal} />
-      <Route path={"/pricing"} component={Pricing} />
+      {/* <Route path={"/pricing"} component={Pricing} /> ← 検証期間中非公開（上記コメント参照） */}
       <Route path={"/stats"} component={Stats} />
       <Route path={"/region/:prefecture"} component={Region} />
       <Route path={"/field/:field"} component={Field} />

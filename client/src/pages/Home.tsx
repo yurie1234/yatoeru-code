@@ -70,14 +70,14 @@ export default function Home() {
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
             <Link href="/search" className="text-muted-foreground hover:text-foreground transition-colors">支援機関を探す</Link>
             <Link href="/about" className="text-muted-foreground hover:text-foreground transition-colors">ヤトエルとは</Link>
-            <Link href="/pricing" className="text-muted-foreground hover:text-foreground transition-colors">掲載事業者様へ</Link>
+            <Link href="/diagnose" className="text-muted-foreground hover:text-foreground transition-colors">支援機関マッチ診断</Link>
           </nav>
           <div className="flex items-center gap-4">
             <Button variant="outline" className="hidden sm:flex" onClick={() => setLocation("/search")}>
               条件から探す
             </Button>
             <Button onClick={() => document.getElementById('diagnose-section')?.scrollIntoView({ behavior: 'smooth' })}>
-              準備度チェック（無料）
+              無料診断
             </Button>
           </div>
         </div>
@@ -108,7 +108,7 @@ export default function Home() {
                   <Globe2 className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   <Input 
                     type="url" 
-                    placeholder="自社のURLを入力して準備度チェック（無料）" 
+                    placeholder="自社のURLを入力して無料診断をはじめる" 
                     className="pl-10 h-14 text-base border-0 focus-visible:ring-0 bg-transparent text-foreground"
                     value={url}
                     onChange={(e) => setUrl(e.target.value)}
@@ -116,12 +116,12 @@ export default function Home() {
                   />
                 </div>
                 <Button type="submit" size="lg" className="h-14 px-8 bg-amber-accent text-brand font-bold hover:bg-amber-accent/90">
-                  準備度をチェック
+                  無料で診断する
                 </Button>
               </form>
             </div>
             <p className="text-sm text-brand-foreground/60 mt-4 fade-up-2">
-              ※URLから業種をAI解析し、特定技能の該当分野の目安と概算コストを整理します（在留資格の可否判断ではありません）
+              ※URLから業種を解析し、特定技能の該当分野の目安・概算コスト・条件に合う支援機関を整理します（在留資格の可否判断ではありません）
             </p>
           </div>
         </section>
@@ -296,8 +296,8 @@ export default function Home() {
               <h3 className="font-bold mb-4">サービス</h3>
               <ul className="space-y-2 text-brand-foreground/70">
                 <li><Link href="/search" className="hover:text-amber-accent transition-colors">支援機関を探す</Link></li>
-                <li><Link href="/diagnose" className="hover:text-amber-accent transition-colors">準備度チェック</Link></li>
-                <li><Link href="/pricing" className="hover:text-amber-accent transition-colors">掲載事業者様へ</Link></li>
+                <li><Link href="/diagnose" className="hover:text-amber-accent transition-colors">支援機関マッチ診断</Link></li>
+                
               </ul>
             </div>
             <div>
