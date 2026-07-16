@@ -31,6 +31,10 @@ export default function Region() {
     { prefecture, page: 1, limit: 10 },
     { enabled: isValid }
   );
+  const { data: fieldStats } = trpc.stats.byPrefectureFields.useQuery(
+    { prefecture },
+    { enabled: isValid }
+  );
 
   useEffect(() => {
     if (!isValid) return;
@@ -214,6 +218,35 @@ export default function Region() {
 
         {/* サイドバー */}
         <div className="space-y-6">
+          {fieldStats && fieldStats.fields.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Building2 className="h-5 w-5 text-brand" />
+                  {prefecture}の分野別 対応機関数（推定）
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {fieldStats.fields.slice(0, 12).map((f) => (
+                    <Link
+                      key={f.field}
+                      href={`/search?prefecture=${encodeURIComponent(prefecture)}&field=${encodeURIComponent(f.field)}`}
+                    >
+                      <div className="flex items-center justify-between text-sm py-0.5 cursor-pointer hover:text-brand transition-colors">
+                        <span>{f.field}</span>
+                        <span className="text-muted-foreground text-xs">{f.count}機関</span>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground mt-3 leading-relaxed">
+                  ※入管庁登録簿に分野情報は含まれないため、機関名等からの推定値です。実際の対応分野は各機関にご確認ください。
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
           {stats && stats.topLanguages.length > 0 && (
             <Card>
               <CardHeader>
