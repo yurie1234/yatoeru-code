@@ -14,7 +14,7 @@ export default function ForOrganizations() {
   useEffect(() => {
     document.title = "登録支援機関の皆さまへ｜自社情報の確認・修正（無料） - ヤトエル";
     return () => {
-      document.title = "ヤトエル｜特定技能・育成就労の登録支援機関データベース";
+      document.title = "登録支援機関・監理支援機関を比較｜ヤトエル";
     };
   }, []);
 

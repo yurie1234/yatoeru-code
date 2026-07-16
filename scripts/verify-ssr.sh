@@ -281,7 +281,7 @@ echo "== SSR crawler verification against $BASE =="
 #     hard error, not a silent skip.
 #   - 5th arg (paginated rows): substring the canonical href VALUE must contain,
 #     so a canonical collapsing back to page 1 turns the row red.
-check "/"                              "「最適解」が見つかる" "ヤトエル" state
+check "/"                              "登録支援機関・監理支援機関を" "ヤトエル" state
 check "/search"                        "登録支援機関を探す" "登録支援機関を検索" state
 # detail row: 運営確認済み機関（エドミール）— 確認済みブロックの本文をneedleに
 check "/org/39735"                     "掲載情報 運営確認済み" "合同会社エドミール" state

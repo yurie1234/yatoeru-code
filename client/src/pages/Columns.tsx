@@ -60,7 +60,7 @@ export default function Columns() {
       "登録支援機関の選び方・料金相場、監理支援機関への移行、人材紹介会社との違いなど、特定技能・育成就労の実務を一次情報（出入国在留管理庁・OTIT）と突合して解説するコラム一覧。"
     );
     return () => {
-      document.title = "ヤトエル｜特定技能・育成就労の登録支援機関データベース";
+      document.title = "登録支援機関・監理支援機関を比較｜ヤトエル";
       meta?.setAttribute("content", prev);
     };
   }, []);

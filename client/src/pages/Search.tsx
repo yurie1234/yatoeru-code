@@ -211,6 +211,11 @@ export default function Search() {
                               運営確認済み
                             </Badge>
                           )}
+                          {(org.consultStatus === "open" || org.consultStatus === "open_active") && (
+                            <Badge className="bg-brand text-brand-foreground hover:bg-brand gap-1">
+                              新規相談受付中{org.consultStatus === "open_active" ? "（積極受入）" : ""}
+                            </Badge>
+                          )}
                           {sort === "affinity" && org.affinity && (
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -251,6 +256,20 @@ export default function Search() {
                           <MapPin className="h-3.5 w-3.5 shrink-0" />
                           <span className="truncate">{org.address ?? "住所情報なし"}</span>
                         </p>
+                        {org.verifiedAt && (
+                          <div className="mt-2 rounded-md bg-emerald-50 border border-emerald-200 px-2.5 py-1.5 text-xs text-emerald-900 space-y-0.5">
+                            {(org.preferredFields?.length || org.preferredRegions?.length) ? (
+                              <p>
+                                <span className="font-semibold">希望条件：</span>
+                                {[org.preferredRegions?.join("・"), org.preferredFields?.join("・")].filter(Boolean).join("／")}
+                              </p>
+                            ) : null}
+                            <p>
+                              <span className="font-semibold">事業者確認日：</span>
+                              {new Date(org.verifiedAt).toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" })}
+                            </p>
+                          </div>
+                        )}
                         {sort === "affinity" && org.affinity && org.affinity.reasons.length > 0 && (
                           <div className="flex flex-wrap gap-1.5 mt-2">
                             {org.affinity.reasons.slice(0, 4).map((r) => (

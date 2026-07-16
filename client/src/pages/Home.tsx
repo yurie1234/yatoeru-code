@@ -119,11 +119,11 @@ export default function Home() {
               特定技能・育成就労の支援機関データベース
             </div>
             <h1 className="text-4xl md:text-6xl font-black tracking-tight mb-6 leading-tight">
-              外国人雇用の<br className="md:hidden" />「最適解」が見つかる
+              登録支援機関・監理支援機関を<br className="md:hidden" />条件で比較
             </h1>
             <p className="text-lg md:text-xl text-brand-foreground/80 max-w-2xl mb-10 leading-relaxed">
-              全国{stats?.total ? stats.total.toLocaleString() : "11,000"}件超の登録支援機関から、<br className="hidden md:block" />
-              あなたの会社の業種・地域・予算に合った最適なパートナーを比較・一括相談。
+              出入国在留管理庁の公開登録簿を基に掲載し、事業者への直接確認情報を順次反映。<br className="hidden md:block" />
+              業種・地域・対応言語・新規相談受付状況で、条件が一致する理由を明示して候補を表示します。
             </p>
 
             {/* URL Diagnose Form */}
@@ -158,24 +158,29 @@ export default function Home() {
               <div className="flex flex-col items-center justify-center space-y-2">
                 <Building2 className="h-8 w-8 text-brand mb-2" />
                 <div className="text-3xl font-bold text-foreground">{(stats?.total ?? 11448).toLocaleString()}</div>
-                <div className="text-sm text-muted-foreground">掲載支援機関数</div>
-              </div>
-              <div className="flex flex-col items-center justify-center space-y-2">
-                <Users className="h-8 w-8 text-brand mb-2" />
-                <div className="text-3xl font-bold text-foreground">19</div>
-                <div className="text-sm text-muted-foreground">対応特定技能分野</div>
-              </div>
-              <div className="flex flex-col items-center justify-center space-y-2">
-                <Globe2 className="h-8 w-8 text-brand mb-2" />
-                <div className="text-3xl font-bold text-foreground">47</div>
-                <div className="text-sm text-muted-foreground">対応都道府県</div>
+                <div className="text-sm text-muted-foreground">掲載支援機関数（入管庁登録簿ベース）</div>
               </div>
               <div className="flex flex-col items-center justify-center space-y-2">
                 <ShieldCheck className="h-8 w-8 text-brand mb-2" />
+                <div className="text-3xl font-bold text-foreground">{stats?.verifiedCount ?? "-"}<span className="text-base font-medium">社</span></div>
+                <div className="text-sm text-muted-foreground">事業者本人確認済み</div>
+              </div>
+              <div className="flex flex-col items-center justify-center space-y-2">
+                <Users className="h-8 w-8 text-brand mb-2" />
+                <div className="text-3xl font-bold text-foreground">{stats?.acceptingCount ?? "-"}<span className="text-base font-medium">社</span></div>
+                <div className="text-sm text-muted-foreground">新規相談受付中（確認済み）</div>
+              </div>
+              <div className="flex flex-col items-center justify-center space-y-2">
+                <Globe2 className="h-8 w-8 text-brand mb-2" />
                 <div className="text-3xl font-bold text-foreground">無料</div>
-                <div className="text-sm text-muted-foreground">チェック・一括相談</div>
+                <div className="text-sm text-muted-foreground">検索・診断・一括相談</div>
               </div>
             </div>
+            {stats?.lastVerifiedAt && (
+              <p className="text-center text-xs text-muted-foreground mt-6">
+                事業者確認情報の最終更新：{new Date(stats.lastVerifiedAt).toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" })}
+              </p>
+            )}
           </div>
         </section>
 
@@ -223,7 +228,7 @@ export default function Home() {
           <div className="container max-w-4xl">
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold mb-4">条件から支援機関を探す</h2>
-              <p className="text-muted-foreground">対応言語、特定技能分野、地域などから最適な支援機関を検索できます。</p>
+              <p className="text-muted-foreground">対応言語、特定技能分野、地域、新規相談受付状況などの条件で支援機関を検索できます。</p>
             </div>
 
             <Card className="border-2 shadow-sm">
@@ -304,7 +309,7 @@ export default function Home() {
                   <CardTitle className="text-xl">最大5社への一括相談</CardTitle>
                 </CardHeader>
                 <CardContent className="text-muted-foreground">
-                  条件に合う支援機関を見つけたら、最大5社まで同時に無料相談が可能。相見積もりを取り、最適なパートナーを選べます。
+                  条件に合う支援機関を見つけたら、最大5社まで同時に無料相談が可能。相見積もりを取って比較検討できます。
                 </CardContent>
               </Card>
             </div>
@@ -353,7 +358,7 @@ export default function Home() {
               </div>
               <p className="text-brand-foreground/70 max-w-sm">
                 特定技能・育成就労の支援機関データベース。<br />
-                外国人雇用の「最適解」を見つけるためのプラットフォームです。
+                条件が一致する理由を明示して候補を表示する比較プラットフォームです。
               </p>
             </div>
             <div>

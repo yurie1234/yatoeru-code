@@ -125,9 +125,9 @@ function composeHtml(
 }
 
 const FALLBACK_HEAD: HeadMeta = {
-  title: "ヤトエル｜特定技能・育成就労の登録支援機関データベース",
+  title: "登録支援機関・監理支援機関を比較｜ヤトエル",
   description:
-    "ヤトエルは全国11,000件超の登録支援機関を掲載する特定技能・育成就労の支援機関データベース。対応言語・地域・処分歴で検索でき、最大5社への一括相談も無料。",
+    "特定技能・育成就労に対応する支援機関を、地域・業種・対応言語・新規相談受付状況などから比較。外国人雇用の準備度チェックと支援機関マッチ診断を無料で利用できます。",
 };
 
 export async function setupVite(app: Express, server: Server) {

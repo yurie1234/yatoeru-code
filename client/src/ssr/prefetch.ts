@@ -59,9 +59,9 @@ function seed(qc: QueryClient, key: unknown, data: unknown) {
   (qc.setQueryData as (k: unknown, d: unknown) => void)(key, data);
 }
 
-const SITE = "ヤトエル｜特定技能・育成就労の登録支援機関データベース";
+const SITE = "登録支援機関・監理支援機関を比較｜ヤトエル";
 const DESC =
-  "ヤトエルは全国11,000件超の登録支援機関を掲載する特定技能・育成就労の支援機関データベース。対応言語・地域・処分歴で検索でき、料金・受付状況は実確認済みの機関から順次公開（確認日表示）。外国人雇用の準備度チェックと最大5社への一括相談も無料。";
+  "特定技能・育成就労に対応する支援機関を、地域・業種・対応言語・新規相談受付状況などから比較。外国人雇用の準備度チェックと支援機関マッチ診断を無料で利用できます。";
 
 /** 静的公開ルートのhead定義（シード不要ページ） */
 const STATIC_HEADS: Record<string, { title: string; description: string }> = {
@@ -163,7 +163,7 @@ export async function prefetchForPath(
           "@context": "https://schema.org",
           "@type": "WebSite",
           name: "ヤトエル",
-          alternateName: "外国人雇用ナビ",
+          alternateName: ["外国人雇用ナビ", "ヤトエル 登録支援機関データベース"],
           url: "https://yatoeru.jp/",
           description: DESC,
           potentialAction: {

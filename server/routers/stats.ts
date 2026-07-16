@@ -21,6 +21,15 @@ export const statsRouter = router({
       .select({ count: sql<number>`count(*)` })
       .from(supportOrgs);
 
+    // 実確認済み・新規相談受付中の実数（トップページの事実ベース表示用）
+    const [verifiedStats] = await db
+      .select({
+        verifiedCount: sql<number>`count(case when \`verifiedAt\` is not null then 1 end)`,
+        acceptingCount: sql<number>`count(case when \`consultStatus\` in ('open','open_active') then 1 end)`,
+        lastVerifiedAt: sql<string | null>`max(\`verifiedAt\`)`,
+      })
+      .from(supportOrgs);
+
     // 都道府県別件数
     const byPrefecture = await db
       .select({
@@ -33,6 +42,11 @@ export const statsRouter = router({
 
     return {
       total: Number(total.count),
+      verifiedCount: Number(verifiedStats.verifiedCount),
+      acceptingCount: Number(verifiedStats.acceptingCount),
+      lastVerifiedAt: verifiedStats.lastVerifiedAt
+        ? new Date(verifiedStats.lastVerifiedAt).toISOString()
+        : null,
       byPrefecture: byPrefecture
         .filter((p) => p.prefecture)
         .map((p) => ({ prefecture: p.prefecture!, count: Number(p.count) })),

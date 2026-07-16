@@ -60,7 +60,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
               </div>
               <p className="text-brand-foreground/70 max-w-sm">
                 特定技能・育成就労の支援機関データベース。<br />
-                外国人雇用の「最適解」を見つけるためのプラットフォームです。
+                条件が一致する理由を明示して候補を表示する比較プラットフォームです。
               </p>
             </div>
             <div>
