@@ -38,7 +38,11 @@ async function startServer() {
   // 旧 *.manus.space ドメインへのアクセスは本番ドメインへ301リダイレクト（重複インデックス・評価分散防止）。
   // ※ sandboxプレビュー（*.manus.computer）とlocalhostは対象外。
   app.use((req, res, next) => {
-    const host = req.headers.host ?? "";
+    // 本番はプロキシ経由のため x-forwarded-host を優先して元のホスト名を判定する
+    const fwdHost = req.headers["x-forwarded-host"];
+    const rawHost =
+      (Array.isArray(fwdHost) ? fwdHost[0] : fwdHost) ?? req.headers.host ?? "";
+    const host = rawHost.split(",")[0].trim().toLowerCase();
     if (host.endsWith(".manus.space")) {
       return res.redirect(301, `https://yatoeru.jp${req.originalUrl}`);
     }
