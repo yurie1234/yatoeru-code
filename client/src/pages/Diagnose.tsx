@@ -29,6 +29,23 @@ type DiagnosisResult = {
   prefecture?: string | null;
 };
 
+/**
+ * デモ用の架空企業サンプル結果（/diagnose?demo=1 で表示）。
+ * 運用ルール：実在企業の診断結果はマーケ素材・デモ・SNSに使わない。
+ * デモ・スクショ撮影には必ずこの架空企業サンプルを使うこと。
+ */
+const DEMO_RESULT: DiagnosisResult = {
+  companyName: "桜川食堂（架空のサンプル企業）",
+  industry: "飲食店（和食レストラン運営）",
+  field: "外食業",
+  headcount: "2〜3名",
+  cost: "初年度 約60〜100万円/名（登録支援機関委託費・在留諸手続含む目安）",
+  score: 85,
+  reason:
+    "これは架空企業によるデモ用サンプルです。飲食店運営は特定技能「外食業」分野の対象となり得ます。接客・調理補助の人手確保に特定技能制度の活用余地が大きく、受入れ体制の整備（雇用条件の明確化・支援体制の確保）から始めるのが良いでしょう。※本診断は情報整理目的であり在留資格の可否判断ではありません。",
+  prefecture: "京都府",
+};
+
 export default function Diagnose() {
   const searchString = useSearch();
   const [, setLocation] = useLocation();
@@ -55,8 +72,11 @@ export default function Diagnose() {
     return () => clearInterval(timer);
   }, [diagnose.isPending]);
 
+  const isDemo = params.get("demo") === "1";
+
   // URLパラメータ付きで遷移してきた場合は自動診断
   useEffect(() => {
+    if (isDemo) return; // デモモード中は自動診断しない
     const urlParam = params.get("url");
     if (urlParam && !autoStarted.current) {
       autoStarted.current = true;
@@ -73,9 +93,9 @@ export default function Diagnose() {
     diagnose.mutate({ url: normalized });
   };
 
-  const result = diagnose.data?.result as DiagnosisResult | undefined;
-  const recommendedOrgs = diagnose.data?.recommendedOrgs;
-  const diagnosisId = diagnose.data?.diagnosisId;
+  const result = isDemo ? DEMO_RESULT : (diagnose.data?.result as DiagnosisResult | undefined);
+  const recommendedOrgs = isDemo ? undefined : diagnose.data?.recommendedOrgs;
+  const diagnosisId = isDemo ? undefined : diagnose.data?.diagnosisId;
 
   return (
     <SiteLayout>
@@ -147,6 +167,12 @@ export default function Diagnose() {
         {/* 診断結果 */}
         {result && !diagnose.isPending && (
           <div className="space-y-8 fade-up">
+            {isDemo && (
+              <div className="rounded-lg border-2 border-dashed border-brand/40 bg-brand/5 p-4 text-sm text-muted-foreground">
+                <span className="font-bold text-foreground">これは架空企業「桜川食堂」によるデモ用サンプル表示です。</span>
+                実際の診断ではご自社のWebサイトURLを入力してください。
+              </div>
+            )}
             <Card className="border-2 border-brand/20 overflow-hidden">
               <div className="bg-brand text-brand-foreground px-6 py-4 flex items-center justify-between">
                 <h2 className="font-bold text-lg">診断結果</h2>
