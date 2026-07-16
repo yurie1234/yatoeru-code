@@ -7,6 +7,7 @@
   <url><loc>https://yatoeru.jp/stats</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
   <url><loc>https://yatoeru.jp/updates</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://yatoeru.jp/guide/ikusei-shuro</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://yatoeru.jp/guide/kanri-shien-kikan</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://yatoeru.jp/about</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
   <url><loc>https://yatoeru.jp/terms</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
   <url><loc>https://yatoeru.jp/privacy</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>

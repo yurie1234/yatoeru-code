@@ -118,6 +118,6 @@
 - [x] 都道府県×分野の統計：stats.byPrefectureFields追加（確認済み分野優先＋機関名推定、1日キャッシュ）。Regionページサイドバーに分野別表＋/searchリンク＋推定旨の注記（京都府で表示確認済）。薄ページ量産回避のため県×分野の別個URLは作らず既存Regionページに統合（実確認データ蓄積後に分離・index出し分けを検討）
 - [x] 登録簿差分記事の基盤：registry_snapshots/registry_changesテーブル作成・初回スナップ（2026-07-09・11,448件）投入。/api/scheduled/registry-sync受け口（冪等・大量抹消安全弁・新規はDB追加・抹消は履歴退避後削除）。公開ページ /updates（一覧）＋/updates/:baseDate（詳細）
 - [x] 引用しやすい構造化ページの型（結論先頭・基準日・表・出典明記）を/updates詳細ページに適用（サマリー文先頭・基準日バッジ・登録番号つき表・入管庁出典リンク）
-- [ ] 2026年秋の新語仕込みページ（「監理支援機関」「育成就労 分野別」群の受け皿ページ。制度記事は入管庁一次情報との突合チェック付き）
+- [x] 2026年秋の新語仕込みページ：/guide/ikusei-shuro（育成就労制度ガイド）＋/guide/kanri-shien-kikan（監理支援機関ガイド：許可申請スケジュール表・監理団体比較表・登録支援機関との関係・FAQ5問＋FAQPage JSON-LD）。いずれも入管庁Q&A・OTIT一次情報と突合済み。相互リンク・フッター・sitemap導線追加。「育成就労 分野別」は分野政令未確定のため確定次に追記予定
 - [x] sitemapに/updates追加・ナビ/フッターに導線追加・vitest 38件パス・チェックポイント保存
 - [x] 週次AGENT cronの作成（「ヤトエル登録簿 週次同期」毎週木曜日本時間12:00、taskUid: RRwAWbK9Ix7rgzzD5MQzNG、active。入管庁ページ確認→基準日比較→Excel取得・解析→/api/scheduled/registry-syncにPOST）

@@ -9,6 +9,7 @@ import Consult from "./pages/Consult";
 import Diagnose from "./pages/Diagnose";
 import Field from "./pages/Field";
 import GuideIkuseiShuro from "./pages/GuideIkuseiShuro";
+import GuideKanriShienKikan from "./pages/GuideKanriShienKikan";
 import Home from "./pages/Home";
 import OrgDetail from "./pages/OrgDetail";
 // 検証期間中は価格ページを非公開（2026-07-16 決定）。
@@ -39,6 +40,7 @@ function Router() {
       <Route path={"/region/:prefecture"} component={Region} />
       <Route path={"/field/:field"} component={Field} />
       <Route path={"/guide/ikusei-shuro"} component={GuideIkuseiShuro} />
+      <Route path={"/guide/kanri-shien-kikan"} component={GuideKanriShienKikan} />
       <Route path={"/about"} component={About} />
       <Route path={"/terms"} component={Terms} />
       <Route path={"/privacy"} component={Privacy} />
