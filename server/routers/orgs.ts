@@ -13,7 +13,22 @@ import { getDb } from "../db";
 import { invokeLLM } from "../_core/llm";
 import { publicProcedure, router } from "../_core/trpc";
 import { TOKUTEI_FIELDS, UPCOMING_FIELDS } from "../../shared/tokutei";
-import { calcAffinity, estimateOrgFields } from "../../shared/affinity";
+import { calcAffinity, estimateOrgFields, FIELD_NAME_KEYWORDS } from "../../shared/affinity";
+import type { TokuteiField } from "../../shared/tokutei";
+
+/**
+ * 分野に対応する「確認済み分野一致 or 機関名キーワード一致」のSQL条件を生成する。
+ * 全件をアプリ側に転送してフィルタする方式はDB転送量が大きくタイムアウトの原因になるため、
+ * DB側で絞り込む（機関名LIKEは FIELD_NAME_KEYWORDS と同一のキーワード群を使用）。
+ */
+function fieldBoostCondition(field: string) {
+  const keywords = FIELD_NAME_KEYWORDS[field as TokuteiField] ?? [];
+  const likes = keywords.map((kw) => like(supportOrgs.name, `%${kw}%`));
+  return or(
+    sql`JSON_CONTAINS(${supportOrgs.fields}, ${JSON.stringify(field)})`,
+    ...likes
+  );
+}
 
 export const orgsRouter = router({
   // 1. 登録支援機関 検索・比較機能
@@ -82,14 +97,14 @@ export const orgsRouter = router({
           .limit(candidateCap);
 
         // 分野指定時：候補Capの外にいる「確認済み分野一致」「機関名推定一致」の機関を取りこぼさないよう、
-        // 名称キーワード一致分を追加取得してマージする。
+        // DB側で分野キーワード条件により絞り込んで追加取得しマージする（全件転送はタイムアウトの原因となるため行わない）。
         if (input.field) {
           const boosted = await db
             .select()
             .from(supportOrgs)
-            .where(whereClause)
+            .where(and(whereClause, fieldBoostCondition(input.field)))
             .orderBy(desc(supportOrgs.reviewCount), desc(supportOrgs.id))
-            .limit(11500)
+            .limit(1000)
             .then((rows) =>
               rows.filter(
                 (o) =>
@@ -229,13 +244,12 @@ ${pageText ? `\n【実際に取得したページ内容】\n${pageText}\n` : "\n
 - industry: 推測される業種
 - field: 特定技能19分野（${TOKUTEI_FIELDS.join("、")}）のうち、最も該当する可能性が高いもの。分野名は上記の表記を一字一句そのまま使うこと。該当なしの場合はnull。※鉄道事業者→「鉄道」、トラック・タクシー・バス→「自動車運送業」、製造業全般→「工業製品製造業」。なお「${UPCOMING_FIELDS.join("」「")}」の3分野は2027年受入開始予定（省令準備中）だが、該当する場合は分野名を返し、reasonでその旨に触れること
 - headcount: 企業規模から推測される受入可能枠（例: "1ー5名", "10名以上"）
-- cost: 概算コスト（初期費用＋月額支援委託費の目安。例: "初期10万円ー＋月額2.5万円/人"）
-- score: 適合スコア（0-100の整数）。以下の採点ルーブリックで各項目を個別に採点し、合計する：
-  (a) 分野該当性（0-40点）: 事業内容が特定技能19分野の対象業務に直接該当=35-40、隣接・一部該当=20-34、間接的=5-19、該当なし=0-4
-  (b) 人手不足度（0-30点）: 当該業界の人手不足の深刻度と現場職の比重（現場作業中心=高、オフィスワーク中心=低）
-  (c) 情報の確からしさ（0-30点）: ページ内容から事業内容・規模が具体的に確認できた=20-30、一部確認=10-19、URLのみからの推測=0-9
+- cost: 概算コスト（初期費用＋月額支援委託費の目安。範囲は必ず「〜」で表記する。例: "初期10〜30万円＋月額2〜4万円/人"。相場：登録支援機関への委託時、初期費用（事前ガイダンス・住居確保・生活オリエンテーション・申請書類作成等）は10〜30万円、月額支援委託費は1人あたり2〜4万円（業界平均約2.8万円、約7割が1.5〜3万円）が一般的。海外在住者の新規受入は渡航費・送出機関費用で初期費用が30〜60万円に増える場合がある）
+- scoreField: (a) 分野該当性（0-40の整数）: 事業内容が特定技能19分野の対象業務に直接該当=35-40、隣接・一部該当=20-34、間接的=5-19、該当なし=0-4
+- scoreLabor: (b) 人手不足度（0-30の整数）: 当該業界の人手不足の深刻度と現場職の比重（現場作業中心=高、オフィスワーク中心=低）
+- scoreInfo: (c) 情報の確からしさ（0-30の整数）: ページ内容から事業内容・規模が具体的に確認できた=20-30、一部確認=10-19、URLのみからの推測=0-9
   同じ点数帯に収束させず、根拠に応じて差をつけること。
-- reason: 診断理由（採点内訳 a/b/c に触れながら150文字程度）
+- reason: 診断理由（採点内訳 a/b/c の点数に触れながら150文字程度。合計点には触れないこと）
 `;
 
       const llmResult = await invokeLLM({
@@ -254,10 +268,12 @@ ${pageText ? `\n【実際に取得したページ内容】\n${pageText}\n` : "\n
                 field: { type: ["string", "null"] },
                 headcount: { type: "string" },
                 cost: { type: "string" },
-                score: { type: "integer" },
+                scoreField: { type: "integer" },
+                scoreLabor: { type: "integer" },
+                scoreInfo: { type: "integer" },
                 reason: { type: "string" },
               },
-              required: ["companyName", "industry", "field", "headcount", "cost", "score", "reason"],
+              required: ["companyName", "industry", "field", "headcount", "cost", "scoreField", "scoreLabor", "scoreInfo", "reason"],
               additionalProperties: false,
             },
           },
@@ -266,7 +282,29 @@ ${pageText ? `\n【実際に取得したページ内容】\n${pageText}\n` : "\n
 
       const rawContent = llmResult.choices[0].message.content;
       const contentStr = typeof rawContent === "string" ? rawContent : "{}";
-      const resultData = JSON.parse(contentStr);
+      const parsed = JSON.parse(contentStr);
+
+      // スコアは内訳（a/b/c）からサーバー側で合計を算出して確定する（LLMの合計計算ミスによる
+      // 「内訳と合計の不整合」を構造的に防止）。各項目はルーブリックの上限でクランプする。
+      const clamp = (v: unknown, max: number) =>
+        Math.max(0, Math.min(max, Math.round(Number(v) || 0)));
+      const scoreField = clamp(parsed.scoreField, 40);
+      const scoreLabor = clamp(parsed.scoreLabor, 30);
+      const scoreInfo = clamp(parsed.scoreInfo, 30);
+      const totalScore = scoreField + scoreLabor + scoreInfo;
+      // コスト表記の揺れ（長音符・ハイフンによる範囲表記）を「〜」に正規化。
+      // 相場根拠（2026-07確認）：月額支援委託費の業界平均は約28,000円、約7割が15,000〜30,000円のレンジ
+      // （出典例：meikoglobal.jp支援委託費調査、jac-skill.or.jp「2〜3万円/月/人が目安」、samurai-law.com「1.5〜3万円/月」）。
+      // 初期費用（国内在留者・委託支援）は10〜30万円程度、海外新規受入は30〜60万円程度まで幅がある。
+      const normalizedCost = String(parsed.cost ?? "").replace(/(\d)\s*[ー‐-―−-]\s*(?=\d|＋|\+|万)/g, "$1〜");
+      const resultData = {
+        ...parsed,
+        cost: normalizedCost,
+        score: totalScore,
+        scoreBreakdown: { field: scoreField, labor: scoreLabor, info: scoreInfo },
+        // 採点内訳を含むコメントはサーバー側で生成（内訳と合計の整合を保証）
+        reason: `a)分野該当性${scoreField}点、b)人手不足度${scoreLabor}点、c)情報の確からしさ${scoreInfo}点、合計${totalScore}点。${String(parsed.reason ?? "")}`,
+      };
 
       // 診断履歴を保存
       const [insertResult] = await db.insert(diagnoses).values({
@@ -294,13 +332,20 @@ ${pageText ? `\n【実際に取得したページ内容】\n${pageText}\n` : "\n
         .orderBy(desc(supportOrgs.plan), desc(supportOrgs.reviewCount))
         .limit(500);
 
-      // 候補Cap外の「確認済み分野一致」「機関名推定一致」機関をマージ（推奨精度向上）
+      // 候補Cap外の「確認済み分野一致」「機関名推定一致」機関をマージ（推奨精度向上）。
+      // DB側で分野キーワード条件により絞り込む（全件転送はタイムアウトの原因となるため行わない）。
       if (resultData.field) {
         const boosted = await db
           .select()
           .from(supportOrgs)
-          .where(conditions.length > 0 ? and(...conditions) : undefined)
-          .limit(11500)
+          .where(
+            and(
+              conditions.length > 0 ? and(...conditions) : undefined,
+              fieldBoostCondition(resultData.field)
+            )
+          )
+          .orderBy(desc(supportOrgs.reviewCount), desc(supportOrgs.id))
+          .limit(1000)
           .then((rows) =>
             rows.filter(
               (o) =>

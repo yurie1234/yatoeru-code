@@ -34,10 +34,14 @@ async function startServer() {
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
-  // 検証期間中（仮ドメイン）のため全ページにnoindexヘッダーを付与。
-  // 本番yatoeru.jp移行時にこのミドルウェアと client/index.html の robots meta を削除すること
-  app.use((_req, res, next) => {
-    res.setHeader("X-Robots-Tag", "noindex, nofollow");
+  // 2026-07-16 本番yatoeru.jp公開：noindex解除済み（robots.txt開放と同日実施）。
+  // 旧 *.manus.space ドメインへのアクセスは本番ドメインへ301リダイレクト（重複インデックス・評価分散防止）。
+  // ※ sandboxプレビュー（*.manus.computer）とlocalhostは対象外。
+  app.use((req, res, next) => {
+    const host = req.headers.host ?? "";
+    if (host.endsWith(".manus.space")) {
+      return res.redirect(301, `https://yatoeru.jp${req.originalUrl}`);
+    }
     next();
   });
   registerStorageProxy(app);

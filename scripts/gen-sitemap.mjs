@@ -1,7 +1,7 @@
 // sitemap.xml 再生成スクリプト（静的ページ + 47都道府県 + 特定技能19分野）
 import { writeFileSync } from "node:fs";
 
-const BASE = "https://gaikokujin-koyo-navi.manus.space";
+const BASE = "https://yatoeru.jp";
 
 const STATIC_PAGES = [
   { path: "/", priority: "1.0" },

@@ -10,7 +10,7 @@ import {
  * 入管庁登録簿には分野情報が存在しないため、機関名に含まれる業種語から
  * 得意分野を「推定」する。あくまで推定であることをUI上で明示する。
  */
-const FIELD_NAME_KEYWORDS: Record<TokuteiField, string[]> = {
+export const FIELD_NAME_KEYWORDS: Record<TokuteiField, string[]> = {
   介護: ["介護", "ケア", "福祉", "メディカル", "看護", "医療"],
   ビルクリーニング: ["クリーニング", "ビルメン", "清掃", "美装", "管財"],
   リネンサプライ: ["リネン", "サプライ", "クリーンサービス"],

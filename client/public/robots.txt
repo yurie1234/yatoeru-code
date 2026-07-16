@@ -1,6 +1,5 @@
-# 検証期間中（仮ドメイン）のため全クローラ拒否。
-# 本番yatoeru.jp移行時に「Allow: /（Disallow: /adminのみ）」へ戻し、Sitemap行を有効化すること
+# 2026-07-16 本番yatoeru.jp公開に伴い開放（noindex解除と同日実施）
 User-agent: *
-Disallow: /
+Allow: /
 
-# Sitemap: https://yatoeru.jp/sitemap.xml
+Sitemap: https://yatoeru.jp/sitemap.xml

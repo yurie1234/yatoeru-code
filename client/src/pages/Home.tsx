@@ -40,7 +40,10 @@ export default function Home() {
     })),
   };
 
-  const { data: stats } = trpc.stats.overview.useQuery();
+  const { data: stats } = trpc.stats.overview.useQuery(undefined, {
+    staleTime: 24 * 60 * 60 * 1000, // 統計は1日キャッシュ（登録簿更新は月次程度）
+    retry: 1,
+  });
 
   const handleDiagnose = (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,7 +135,7 @@ export default function Home() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
               <div className="flex flex-col items-center justify-center space-y-2">
                 <Building2 className="h-8 w-8 text-brand mb-2" />
-                <div className="text-3xl font-bold text-foreground">{stats?.total ? stats.total.toLocaleString() : "---"}</div>
+                <div className="text-3xl font-bold text-foreground">{(stats?.total ?? 11448).toLocaleString()}</div>
                 <div className="text-sm text-muted-foreground">掲載支援機関数</div>
               </div>
               <div className="flex flex-col items-center justify-center space-y-2">

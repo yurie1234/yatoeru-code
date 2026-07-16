@@ -32,7 +32,8 @@ export default function Search() {
   const [language, setLanguage] = useState(params.get("language") ?? ALL);
   const [field, setField] = useState(params.get("field") ?? ALL);
   const [page, setPage] = useState(1);
-  const [sort, setSort] = useState<"affinity" | "default">("affinity");
+  // 並び順は親和性順のみ（標準順の切替は廃止。APIのsortパラメータ自体は互換のため残存）
+  const sort = "affinity" as const;
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
   // URLパラメータの変化を反映
@@ -173,23 +174,7 @@ export default function Search() {
               </p>
               <div className="flex items-center gap-1.5">
                 <ArrowDownWideNarrow className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground mr-1">並び順：</span>
-                <Button
-                  variant={sort === "affinity" ? "default" : "outline"}
-                  size="sm"
-                  className="h-7 px-3 text-xs"
-                  onClick={() => { setSort("affinity"); setPage(1); }}
-                >
-                  親和性順
-                </Button>
-                <Button
-                  variant={sort === "default" ? "default" : "outline"}
-                  size="sm"
-                  className="h-7 px-3 text-xs"
-                  onClick={() => { setSort("default"); setPage(1); }}
-                >
-                  標準順
-                </Button>
+                <span className="text-xs text-muted-foreground">並び順：親和性順</span>
               </div>
             </div>
             {sort === "affinity" && (
