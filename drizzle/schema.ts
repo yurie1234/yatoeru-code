@@ -82,6 +82,20 @@ export const supportOrgs = mysqlTable("support_orgs", {
   /** 口コミ集計キャッシュ */
   reviewCount: int("reviewCount").default(0).notNull(),
   ratingAvg: decimal("ratingAvg", { precision: 3, scale: 2 }),
+  /** 新規受入企業の相談ステータス（本人確認済みの申告） open=受付中 / open_active=受付中（積極受入） / paused=一時停止 / unknown=未確認 */
+  consultStatus: mysqlEnum("consultStatus", ["unknown", "open", "open_active", "paused"]).default("unknown").notNull(),
+  /** 希望する相談条件：受けたい業種（特定技能分野スラッグ配列。"全業種"を含む場合は全分野対象） */
+  preferredFields: json("preferredFields").$type<string[]>(),
+  /** 希望する相談条件：受けたい地域（都道府県名・地方名・"全国"の配列） */
+  preferredRegions: json("preferredRegions").$type<string[]>(),
+  /** 希望する相談条件：備考（公開可の補足。例「北海道・九州は人数により応相談」） */
+  preferredNote: text("preferredNote"),
+  /** 内部メモ（完全非公開：送客窓口・担当者名・価格反応・対応履歴。公開ページ・API・構造化データに絶対に出力しない） */
+  internalMemo: text("internalMemo"),
+  /** エイリアス（通称・サービス名。検索インデックスと構造化データのalternateNameに使用） */
+  aliases: json("aliases").$type<string[]>(),
+  /** 運営による実確認日（掲載情報 運営確認済み）。親和性スコアの鮮度加点に使用。確認は無料で全機関に開かれており有料プランとは一切非連動 */
+  verifiedAt: timestamp("verifiedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

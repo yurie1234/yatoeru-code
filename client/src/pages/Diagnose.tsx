@@ -264,7 +264,7 @@ export default function Diagnose() {
               <div>
                 <h2 className="text-2xl font-bold mb-2">あなたの会社に適合する支援機関</h2>
                 <p className="text-sm text-muted-foreground mb-6">
-                  AIが登録簿約11,000件から、分野・地域（同一都道府県・隣接県を優先）・対応言語等の条件に合う機関を抽出しました。並び順は条件との適合度のみで決定され、有料掲載の有無は影響しません。最大5社に一括相談できます。
+                  AIが登録簿約11,000件から、分野・地域（同一都道府県・隣接県を優先）・対応言語等の条件に合う機関を抽出しました。並び順は条件との適合度のみで決定され、有料掲載の有無は影響しません。運営による実確認済みの情報には、情報の確からしさとして最大5点を加点しています（確認日から時間経過で減衰）。最大5社に一括相談できます。
                 </p>
                 <div className="space-y-4">
                   {recommendedOrgs.map((org) => (
@@ -276,6 +276,14 @@ export default function Diagnose() {
                             {org.hasPenalty && (
                               <Badge variant="destructive" className="gap-1">
                                 <AlertTriangle className="h-3 w-3" />処分歴あり
+                              </Badge>
+                            )}
+                            {org.verifiedAt && (
+                              <Badge className="bg-emerald-600 text-white hover:bg-emerald-600">運営確認済み</Badge>
+                            )}
+                            {org.affinity && (
+                              <Badge variant="outline" className="font-bold border-brand/40 text-brand bg-brand/5">
+                                親和性 {org.affinity.score}
                               </Badge>
                             )}
                             <span className="text-xs text-muted-foreground">{org.regNo}</span>

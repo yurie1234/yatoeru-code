@@ -41,6 +41,7 @@ export default function OrgDetail() {
       "@context": "https://schema.org",
       "@type": "ProfessionalService",
       name: org.name,
+      alternateName: org.aliases && org.aliases.length > 0 ? org.aliases : undefined,
       address: org.address ?? undefined,
       identifier: org.regNo,
       description: `${org.name}は出入国在留管理庁に登録された登録支援機関です（登録番号：${org.regNo}）。`,
@@ -118,6 +119,60 @@ export default function OrgDetail() {
                 </div>
                 <h1 className="text-2xl md:text-3xl font-bold mb-4">{data.org.name}</h1>
 
+                {/* 運営による実確認情報（登録簿由来の情報と視覚的に区別：緑系の強調ブロック） */}
+                {data.org.verifiedAt && (
+                  <div className="mb-5 rounded-lg border-2 border-emerald-500/40 bg-emerald-50 dark:bg-emerald-950/30 p-4">
+                    <div className="flex items-center gap-1.5 text-sm font-bold text-emerald-800 dark:text-emerald-300">
+                      <CheckCircle2 className="h-4 w-4" />
+                      掲載情報 運営確認済み：
+                      {new Date(data.org.verifiedAt).toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" })}
+                    </div>
+                    <p className="text-xs text-emerald-800/80 dark:text-emerald-300/80 mt-1">
+                      以下の項目は、運営が機関ご本人に直接確認した情報です（登録簿由来の情報とは区別して表示しています）。
+                    </p>
+                    <div className="mt-3 space-y-2 text-sm text-emerald-900 dark:text-emerald-200">
+                      {data.org.consultStatus !== "unknown" && (
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-xs font-medium w-40 shrink-0">新規受入企業の相談</span>
+                          <Badge className="bg-emerald-600 text-white hover:bg-emerald-600">
+                            {data.org.consultStatus === "open_active"
+                              ? "受付中（積極受入）"
+                              : data.org.consultStatus === "open"
+                                ? "受付中"
+                                : "一時停止中"}
+                          </Badge>
+                        </div>
+                      )}
+                      {data.org.preferredFields && data.org.preferredFields.length > 0 && (
+                        <div className="flex flex-wrap items-start gap-2">
+                          <span className="text-xs font-medium w-40 shrink-0 mt-0.5">希望する相談条件（業種）</span>
+                          <div className="flex flex-wrap gap-1">
+                            {data.org.preferredFields.map((f) => (
+                              <Badge key={f} variant="outline" className="font-normal border-emerald-500/50">{f}</Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {data.org.preferredRegions && data.org.preferredRegions.length > 0 && (
+                        <div className="flex flex-wrap items-start gap-2">
+                          <span className="text-xs font-medium w-40 shrink-0 mt-0.5">希望する相談条件（地域）</span>
+                          <div className="flex flex-wrap gap-1">
+                            {data.org.preferredRegions.map((r) => (
+                              <Badge key={r} variant="outline" className="font-normal border-emerald-500/50">{r}</Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {data.org.preferredNote && (
+                        <div className="flex flex-wrap items-start gap-2">
+                          <span className="text-xs font-medium w-40 shrink-0 mt-0.5">備考</span>
+                          <span className="text-xs">{data.org.preferredNote}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                   <div className="flex items-start gap-2">
                     <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
@@ -140,6 +195,9 @@ export default function OrgDetail() {
                     <div className="flex items-center gap-1.5 text-sm font-medium mb-2">
                       <Languages className="h-4 w-4 text-brand" />
                       対応可能言語
+                      {data.org.verifiedAt && (
+                        <Badge className="bg-emerald-600 text-white hover:bg-emerald-600 text-[10px] px-1.5 py-0">運営確認済み</Badge>
+                      )}
                     </div>
                     <div className="flex flex-wrap gap-1.5">
                       {data.org.languages.map((lang) => (
@@ -148,6 +206,9 @@ export default function OrgDetail() {
                         </Badge>
                       ))}
                     </div>
+                    {data.org.verifiedAt && data.org.languagesRaw && data.org.languagesRaw.includes("確認") && (
+                      <p className="text-xs text-muted-foreground mt-1.5">{data.org.languagesRaw}</p>
+                    )}
                   </div>
                 )}
 
@@ -193,6 +254,11 @@ export default function OrgDetail() {
             {/* データ出典 */}
             <Card className="bg-muted/30 border-dashed">
               <CardContent className="p-4 text-xs text-muted-foreground leading-relaxed">
+                {data.org.verifiedAt && (
+                  <p className="mb-2">
+                    「掲載情報 運営確認済み」と表示された項目は、運営が機関ご本人に直接確認した情報です。情報の確認・修正は全ての機関が無料で行え、有料掲載の有無とは一切関係ありません。
+                  </p>
+                )}
                 本ページの基本情報は、出入国在留管理庁が公表する「登録支援機関登録簿」に基づいています。最新の登録状況は
                 <a
                   href="https://www.moj.go.jp/isa/policies/ssw/nyuukokukanri07_00205.html"
@@ -202,7 +268,11 @@ export default function OrgDetail() {
                 >
                   出入国在留管理庁の公式サイト
                 </a>
-                でご確認ください。
+                でご確認ください。この機関のご担当者様は、
+                <Link href="/for-organizations" className="underline hover:text-foreground mx-1">
+                  自社情報を確認・修正する（無料）
+                </Link>
+                から掲載内容の確認・修正をいつでも無料でご依頼いただけます。
               </CardContent>
             </Card>
 

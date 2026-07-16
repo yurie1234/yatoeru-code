@@ -11,6 +11,7 @@ import Columns from "./pages/Columns";
 import ColumnShokaiVsShien from "./pages/ColumnShokaiVsShien";
 import Consult from "./pages/Consult";
 import Diagnose from "./pages/Diagnose";
+import ForOrganizations from "./pages/ForOrganizations";
 import Field from "./pages/Field";
 import GuideIkuseiShuro from "./pages/GuideIkuseiShuro";
 import GuideKanriShienKikan from "./pages/GuideKanriShienKikan";
@@ -49,6 +50,7 @@ function Router() {
       <Route path={"/field/:field"} component={Field} />
       <Route path={"/guide/ikusei-shuro"} component={GuideIkuseiShuro} />
       <Route path={"/guide/kanri-shien-kikan"} component={GuideKanriShienKikan} />
+      <Route path={"/for-organizations"} component={ForOrganizations} />
       <Route path={"/about"} component={About} />
       <Route path={"/terms"} component={Terms} />
       <Route path={"/privacy"} component={Privacy} />

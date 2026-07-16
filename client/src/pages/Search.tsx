@@ -206,6 +206,11 @@ export default function Search() {
                               <AlertTriangle className="h-3 w-3" />処分歴あり
                             </Badge>
                           )}
+                          {org.verifiedAt && (
+                            <Badge className="bg-emerald-600 text-white hover:bg-emerald-600 gap-1">
+                              運営確認済み
+                            </Badge>
+                          )}
                           {sort === "affinity" && org.affinity && (
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -230,7 +235,8 @@ export default function Search() {
                                     <li key={r.label}>・{r.label}（+{r.points}）</li>
                                   ))}
                                 </ul>
-                                <p className="mt-1.5 opacity-70">配点：分野40／地域30／言語20／信頼性10</p>
+                                <p className="mt-1.5 opacity-70">配点：分野40／地域30／言語20／信頼性10（処分歴なし5＋実確認鮮度最大5）</p>
+                                <p className="mt-1 opacity-70">運営による実確認済みの情報には、情報の確からしさとして最大5点を加点しています（確認日から時間経過で減衰）。有料掲載の有無はスコアに影響しません。</p>
                               </TooltipContent>
                             </Tooltip>
                           )}

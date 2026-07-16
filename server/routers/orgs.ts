@@ -21,6 +21,23 @@ import type { TokuteiField } from "../../shared/tokutei";
  * 全件をアプリ側に転送してフィルタする方式はDB転送量が大きくタイムアウトの原因になるため、
  * DB側で絞り込む（機関名LIKEは FIELD_NAME_KEYWORDS と同一のキーワード群を使用）。
  */
+/**
+ * 公開レスポンス用サニタイズ：内部メモ（internalMemo）は送客窓口・担当者名・価格反応等の
+ * 完全非公開情報であり、公開ページ・API・構造化データのいずれにも絶対に出力しない。
+ * すべてのpublicレスポンスは必ずこの関数を経由させること。
+ */
+function sanitizeOrg<T extends { internalMemo?: unknown }>(org: T): Omit<T, "internalMemo"> {
+  const { internalMemo: _internalMemo, ...publicOrg } = org;
+  return publicOrg;
+}
+
+/** regDateの古い順比較（同点時の最終タイブレーク：登録年月日の古い順。nullは最後尾） */
+function compareRegDateAsc(a: { regDate: unknown }, b: { regDate: unknown }): number {
+  const ta = a.regDate ? new Date(String(a.regDate)).getTime() : Number.POSITIVE_INFINITY;
+  const tb = b.regDate ? new Date(String(b.regDate)).getTime() : Number.POSITIVE_INFINITY;
+  return ta - tb;
+}
+
 function fieldBoostCondition(field: string) {
   const keywords = FIELD_NAME_KEYWORDS[field as TokuteiField] ?? [];
   const likes = keywords.map((kw) => like(supportOrgs.name, `%${kw}%`));
@@ -52,10 +69,12 @@ export const orgsRouter = router({
 
       const conditions = [];
       if (input.keyword) {
+        // エイリアス（通称・サービス名）も検索対象に含める（JSON配列を文字列としてLIKE検索）
         conditions.push(
           or(
             like(supportOrgs.name, `%${input.keyword}%`),
-            like(supportOrgs.address, `%${input.keyword}%`)
+            like(supportOrgs.address, `%${input.keyword}%`),
+            sql`CAST(${supportOrgs.aliases} AS CHAR) LIKE ${`%${input.keyword}%`}`
           )
         );
       }
@@ -139,16 +158,18 @@ export const orgsRouter = router({
                 languages: org.languages as string[] | null,
                 hasPenalty: org.hasPenalty,
                 registeredDate: org.regDate ? String(org.regDate) : null,
+                verifiedAt: org.verifiedAt,
+                preferredFields: org.preferredFields as string[] | null,
+                preferredRegions: org.preferredRegions as string[] | null,
               }
             );
-            return { ...org, affinity };
+            return { ...sanitizeOrg(org), affinity };
           })
-          // 同点内は情報充実度（レビュー数・言語数）順
+          // 同点時の最終タイブレークは登録年月日の古い順
           .sort(
             (a, b) =>
               b.affinity.score - a.affinity.score ||
-              (b.reviewCount ?? 0) - (a.reviewCount ?? 0) ||
-              ((b.languages as string[] | null)?.length ?? 0) - ((a.languages as string[] | null)?.length ?? 0)
+              compareRegDateAsc(a, b)
           );
 
         const start = (input.page - 1) * input.limit;
@@ -170,7 +191,7 @@ export const orgsRouter = router({
         .offset((input.page - 1) * input.limit);
 
       return {
-        items: items.map((org) => ({ ...org, affinity: undefined })),
+        items: items.map((org) => ({ ...sanitizeOrg(org), affinity: undefined })),
         total: Number(totalResult.count),
         page: input.page,
         totalPages: Math.ceil(Number(totalResult.count) / input.limit),
@@ -191,7 +212,8 @@ export const orgsRouter = router({
       .where(and(eq(reviews.orgId, input), eq(reviews.status, "approved")))
       .orderBy(desc(reviews.createdAt));
 
-    return { org, reviews: orgReviews };
+    // 内部メモは完全非公開：公開ページ・API・構造化データのいずれにも出力しない
+    return { org: sanitizeOrg(org), reviews: orgReviews };
   }),
 
   // 3. URL診断機能（AI業種解析）
@@ -401,7 +423,7 @@ ${pageText ? `\n【実際に取得したページ内容】\n${pageText}\n` : "\n
 
       const recommendedOrgs = candidates
         .map((org) => ({
-          ...org,
+          ...sanitizeOrg(org),
           affinity: calcAffinity(
             { targetField: resultData.field, targetPrefecture: companyPrefecture, targetLanguage: null },
             {
@@ -411,14 +433,17 @@ ${pageText ? `\n【実際に取得したページ内容】\n${pageText}\n` : "\n
               languages: org.languages as string[] | null,
               hasPenalty: org.hasPenalty,
               registeredDate: org.regDate ? String(org.regDate) : null,
+              verifiedAt: org.verifiedAt,
+              preferredFields: org.preferredFields as string[] | null,
+              preferredRegions: org.preferredRegions as string[] | null,
             }
           ),
         }))
+        // 同点時の最終タイブレークは登録年月日の古い順
         .sort(
           (a, b) =>
             b.affinity.score - a.affinity.score ||
-            (b.reviewCount ?? 0) - (a.reviewCount ?? 0) ||
-            ((b.languages as string[] | null)?.length ?? 0) - ((a.languages as string[] | null)?.length ?? 0)
+            compareRegDateAsc(a, b)
         )
         .slice(0, 5);
 
