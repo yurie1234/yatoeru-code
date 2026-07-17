@@ -4,11 +4,22 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc";
-import { AlertTriangle, ArrowRight, Building2, CheckCircle2, FileText, Globe2, Loader2, MapPin, Sparkles } from "lucide-react";
+import { MAJOR_LANGUAGES, PREFECTURES, TOKUTEI_FIELDS } from "@shared/tokutei";
+import { AlertTriangle, ArrowRight, Building2, CheckCircle2, FileText, Globe2, Languages, Loader2, MapPin, Search as SearchIcon, Sparkles } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Link, useLocation, useSearch } from "wouter";
+
+const ALL = "__all__";
 
 const LOADING_STEPS = [
   "Webサイトの内容を取得しています…",
@@ -96,6 +107,44 @@ export default function Diagnose() {
   const result = isDemo ? DEMO_RESULT : (diagnose.data?.result as DiagnosisResult | undefined);
   const recommendedOrgs = isDemo ? undefined : diagnose.data?.recommendedOrgs;
   const diagnosisId = isDemo ? undefined : diagnose.data?.diagnosisId;
+
+  // ===== 適合支援機関のフィルター =====
+  // 初期値：分野＝診断で読み取った分野、都道府県＝会社URLから読み取った本社所在地、言語＝英語
+  const [orgKeyword, setOrgKeyword] = useState("");
+  const [orgPrefecture, setOrgPrefecture] = useState<string>(ALL);
+  const [orgLanguage, setOrgLanguage] = useState<string>("英語");
+  const [orgField, setOrgField] = useState<string>(ALL);
+  const [filterTouched, setFilterTouched] = useState(false);
+
+  // 診断完了時にフィルター初期値を診断結果から設定
+  const resultKey = result ? `${result.companyName}|${result.field}|${result.prefecture}` : null;
+  useEffect(() => {
+    if (!result) return;
+    setOrgKeyword("");
+    setOrgField(result.field && (TOKUTEI_FIELDS as readonly string[]).includes(result.field) ? result.field : ALL);
+    setOrgPrefecture(result.prefecture && (PREFECTURES as readonly string[]).includes(result.prefecture) ? result.prefecture : ALL);
+    setOrgLanguage("英語");
+    setFilterTouched(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resultKey]);
+
+  // フィルター操作後は検索APIで再取得（親和性スコア順）。初期表示は診断APIの推奨5件をそのまま使用。
+  const filteredQuery = trpc.orgs.search.useQuery(
+    {
+      keyword: orgKeyword || undefined,
+      prefecture: orgPrefecture !== ALL ? orgPrefecture : undefined,
+      language: orgLanguage !== ALL ? orgLanguage : undefined,
+      field: orgField !== ALL ? orgField : undefined,
+      page: 1,
+      limit: 5,
+      sort: "affinity",
+    },
+    { enabled: Boolean(result) && !isDemo && filterTouched }
+  );
+
+  const displayOrgs = filterTouched ? filteredQuery.data?.items : recommendedOrgs;
+  const orgsLoading = filterTouched && filteredQuery.isLoading;
+  const touch = () => setFilterTouched(true);
 
   return (
     <SiteLayout>
@@ -259,15 +308,90 @@ export default function Diagnose() {
               </Card>
             )}
 
-            {/* 推奨支援機関 */}
+            {/* 推奨支援機関（フィルター付き） */}
             {recommendedOrgs && recommendedOrgs.length > 0 && (
               <div>
                 <h2 className="text-2xl font-bold mb-2">あなたの会社に適合する支援機関</h2>
-                <p className="text-sm text-muted-foreground mb-6">
+                <p className="text-sm text-muted-foreground mb-4">
                   AIが登録簿約11,000件から、分野・地域（同一都道府県・隣接県を優先）・対応言語等の条件に合う機関を抽出しました。並び順は条件との適合度のみで決定され、有料掲載の有無は影響しません。運営による実確認済みの情報には、情報の確からしさとして最大5点を加点しています（確認日から時間経過で減衰）。最大5社に一括相談できます。
                 </p>
+
+                {/* フィルター（初期値：診断で読み取った分野・本社所在地・英語） */}
+                <Card className="mb-6">
+                  <CardContent className="p-4 md:p-6">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <div className="relative col-span-2 md:col-span-1">
+                        <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          placeholder="機関名・住所で検索"
+                          className="pl-9"
+                          value={orgKeyword}
+                          onChange={(e) => { setOrgKeyword(e.target.value); touch(); }}
+                        />
+                      </div>
+                      <Select value={orgPrefecture} onValueChange={(v) => { setOrgPrefecture(v); touch(); }}>
+                        <SelectTrigger>
+                          <MapPin className="h-4 w-4 mr-1 text-muted-foreground" />
+                          <SelectValue placeholder="都道府県" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={ALL}>すべての都道府県</SelectItem>
+                          {PREFECTURES.map((p) => (
+                            <SelectItem key={p} value={p}>{p}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select value={orgLanguage} onValueChange={(v) => { setOrgLanguage(v); touch(); }}>
+                        <SelectTrigger>
+                          <Languages className="h-4 w-4 mr-1 text-muted-foreground" />
+                          <SelectValue placeholder="対応言語" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={ALL}>すべての言語</SelectItem>
+                          {MAJOR_LANGUAGES.map((l) => (
+                            <SelectItem key={l} value={l}>{l}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select value={orgField} onValueChange={(v) => { setOrgField(v); touch(); }}>
+                        <SelectTrigger>
+                          <Building2 className="h-4 w-4 mr-1 text-muted-foreground" />
+                          <SelectValue placeholder="特定技能分野" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={ALL}>すべての分野</SelectItem>
+                          {TOKUTEI_FIELDS.map((f) => (
+                            <SelectItem key={f} value={f}>{f}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {orgField !== ALL && (
+                      <p className="text-xs text-muted-foreground mt-3">
+                        ※ 入管庁の登録簿には対応分野の情報が含まれないため、分野情報が未登録の機関（対応可能性あり）も含めて表示しています。詳細は各機関へ直接ご確認ください。
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {orgsLoading && (
+                  <div className="space-y-4">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <Skeleton key={i} className="h-28 w-full rounded-xl" />
+                    ))}
+                  </div>
+                )}
+                {!orgsLoading && filterTouched && (!displayOrgs || displayOrgs.length === 0) && (
+                  <Card>
+                    <CardContent className="py-12 text-center text-muted-foreground">
+                      <SearchIcon className="h-8 w-8 mx-auto mb-3 opacity-40" />
+                      <p className="font-medium mb-1">条件に一致する支援機関が見つかりませんでした</p>
+                      <p className="text-sm">フィルター条件を変更してお試しください。</p>
+                    </CardContent>
+                  </Card>
+                )}
                 <div className="space-y-4">
-                  {recommendedOrgs.map((org) => (
+                  {!orgsLoading && (displayOrgs ?? []).map((org) => (
                     <Card key={org.id} className="hover:shadow-md transition-shadow">
                       <CardContent className="p-4 md:p-6 flex items-start justify-between gap-4">
                         <div className="min-w-0">
@@ -332,20 +456,22 @@ export default function Diagnose() {
                     </Card>
                   ))}
                 </div>
-                <div className="mt-6 text-center">
-                  <Button
-                    size="lg"
-                    className="bg-amber-accent text-brand font-bold hover:bg-amber-accent/90"
-                    onClick={() =>
-                      setLocation(
-                        `/consult?orgIds=${recommendedOrgs.slice(0, 5).map((o) => o.id).join(",")}&diagnosisId=${diagnosisId ?? ""}&companyName=${encodeURIComponent(result.companyName)}&field=${encodeURIComponent(result.field ?? "")}&headcount=${encodeURIComponent(result.headcount)}`
-                      )
-                    }
-                  >
-                    表示中の支援機関に一括相談する（無料）
-                    <ArrowRight className="h-5 w-5 ml-2" />
-                  </Button>
-                </div>
+                {displayOrgs && displayOrgs.length > 0 && !orgsLoading && (
+                  <div className="mt-6 text-center">
+                    <Button
+                      size="lg"
+                      className="bg-amber-accent text-brand font-bold hover:bg-amber-accent/90"
+                      onClick={() =>
+                        setLocation(
+                          `/consult?orgIds=${displayOrgs.slice(0, 5).map((o) => o.id).join(",")}&diagnosisId=${diagnosisId ?? ""}&companyName=${encodeURIComponent(result.companyName)}&field=${encodeURIComponent(result.field ?? "")}&headcount=${encodeURIComponent(result.headcount)}`
+                        )
+                      }
+                    >
+                      表示中の支援機関に一括相談する（無料）
+                      <ArrowRight className="h-5 w-5 ml-2" />
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
           </div>
