@@ -206,4 +206,20 @@
       transform: translateY(0);
     }
   }
+
+  /* 未入力の必須フィルターを控えめに呼吸させて誘導する */
+  @media (prefers-reduced-motion: no-preference) {
+    .animate-pulse-subtle {
+      animation: pulseSubtle 2s ease-in-out infinite;
+    }
+  }
+
+  @keyframes pulseSubtle {
+    0%, 100% {
+      box-shadow: 0 0 0 0 oklch(0.75 0.15 70 / 35%);
+    }
+    50% {
+      box-shadow: 0 0 0 5px oklch(0.75 0.15 70 / 0%);
+    }
+  }
 }

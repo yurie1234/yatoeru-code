@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
+import { FILTER_ACCENT_CLASS } from "@/pages/Proposal";
 import { HEADCOUNT_OPTIONS, PREFECTURES, TOKUTEI_FIELDS } from "@shared/tokutei";
 import { Building2, CheckCircle2, Loader2, MailCheck, MapPin, Send, X } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -235,7 +236,7 @@ export default function Consult() {
                 <div className="space-y-2">
                   <Label>所在地（任意）</Label>
                   <Select value={prefecture} onValueChange={setPrefecture}>
-                    <SelectTrigger>
+                    <SelectTrigger className={FILTER_ACCENT_CLASS}>
                       <SelectValue placeholder="都道府県を選択" />
                     </SelectTrigger>
                     <SelectContent>
@@ -249,7 +250,7 @@ export default function Consult() {
                 <div className="space-y-2">
                   <Label>受入予定の分野（任意）</Label>
                   <Select value={field} onValueChange={setField}>
-                    <SelectTrigger>
+                    <SelectTrigger className={FILTER_ACCENT_CLASS}>
                       <SelectValue placeholder="特定技能分野を選択" />
                     </SelectTrigger>
                     <SelectContent>
@@ -263,7 +264,7 @@ export default function Consult() {
                 <div className="space-y-2 sm:col-span-2">
                   <Label>受入予定人数（任意）</Label>
                   <Select value={headcount} onValueChange={setHeadcount}>
-                    <SelectTrigger>
+                    <SelectTrigger className={FILTER_ACCENT_CLASS}>
                       <SelectValue placeholder="人数を選択" />
                     </SelectTrigger>
                     <SelectContent>

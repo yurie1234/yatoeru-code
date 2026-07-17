@@ -12,11 +12,15 @@ import {
 } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
 import { HEADCOUNT_OPTIONS, TOKUTEI_FIELDS } from "@shared/tokutei";
-import { ArrowRight, Check, Copy, FileText, Loader2, Sparkles } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { ArrowRight, Check, Copy, FileText, Loader2, Sparkles, Users } from "lucide-react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Streamdown } from "streamdown";
 import { useLocation, useSearch } from "wouter";
+
+/** フィルター・入力の強調スタイル（サイト共通：ネイビー×ゴールドの世界観を保った目立たせ方） */
+export const FILTER_ACCENT_CLASS =
+  "border-brand/40 bg-brand/5 hover:bg-brand/10 font-medium text-foreground shadow-sm";
 
 export default function Proposal() {
   const searchString = useSearch();
@@ -28,37 +32,37 @@ export default function Proposal() {
 
   const [companyName, setCompanyName] = useState(params.get("companyName") ?? "");
   const [field, setField] = useState(params.get("field") || TOKUTEI_FIELDS[0]);
-  const [headcount, setHeadcount] = useState(params.get("headcount") || HEADCOUNT_OPTIONS[0]);
+  // 受入予定人数は必ずユーザー自身に選択してもらう（選択と同時に生成開始するため初期値は未選択）
+  const [headcount, setHeadcount] = useState("");
   const [copied, setCopied] = useState(false);
-  const autoStarted = useRef(false);
 
   const generate = trpc.orgs.generateProposal.useMutation({
     onError: () => toast.error("提案書の生成に失敗しました。再度お試しください。"),
   });
 
-  // パラメータが揃っていれば自動生成
-  useEffect(() => {
-    if (
-      !autoStarted.current &&
-      !isNaN(diagnosisId) &&
-      params.get("companyName") &&
-      params.get("field")
-    ) {
-      autoStarted.current = true;
-      generate.mutate({
-        diagnosisId,
-        companyName: params.get("companyName")!,
-        field: params.get("field")!,
-        headcount: params.get("headcount") || "未定",
-      });
+  /** 人数を選択した時点で自動的に生成を開始する */
+  const handleHeadcountSelect = (value: string) => {
+    setHeadcount(value);
+    if (generate.isPending) return;
+    if (isNaN(diagnosisId)) {
+      toast.error("先に準備度チェックを実施してください。チェック結果から提案書を作成できます。");
+      return;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params]);
+    if (!companyName.trim()) {
+      toast.error("会社名を入力してから人数を選択してください。");
+      return;
+    }
+    generate.mutate({ diagnosisId, companyName, field, headcount: value });
+  };
 
   const handleGenerate = (e: React.FormEvent) => {
     e.preventDefault();
     if (isNaN(diagnosisId)) {
       toast.error("先に準備度チェックを実施してください。チェック結果から提案書を作成できます。");
+      return;
+    }
+    if (!headcount) {
+      toast.error("受入予定人数を選択してください。選択すると作成が始まります。");
       return;
     }
     generate.mutate({ diagnosisId, companyName, field, headcount });
@@ -110,13 +114,14 @@ export default function Proposal() {
                     onChange={(e) => setCompanyName(e.target.value)}
                     required
                     placeholder="株式会社〇〇"
+                    disabled={generate.isPending}
                   />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   <div className="space-y-2">
                     <Label>受入予定の特定技能分野</Label>
-                    <Select value={field} onValueChange={setField}>
-                      <SelectTrigger>
+                    <Select value={field} onValueChange={setField} disabled={generate.isPending}>
+                      <SelectTrigger className={FILTER_ACCENT_CLASS}>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -127,10 +132,19 @@ export default function Proposal() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>受入予定人数</Label>
-                    <Select value={headcount} onValueChange={setHeadcount}>
-                      <SelectTrigger>
-                        <SelectValue />
+                    <Label className="text-amber-700 font-semibold flex items-center gap-1">
+                      <Users className="h-4 w-4" />
+                      受入予定人数（選択すると作成開始）
+                    </Label>
+                    <Select value={headcount} onValueChange={handleHeadcountSelect} disabled={generate.isPending}>
+                      <SelectTrigger
+                        className={
+                          headcount
+                            ? "border-2 border-amber-accent bg-amber-accent/15 font-semibold shadow-sm"
+                            : "border-2 border-amber-accent bg-amber-accent/25 font-semibold shadow-md ring-2 ring-amber-accent/30 animate-pulse-subtle"
+                        }
+                      >
+                        <SelectValue placeholder="人数を選択してください" />
                       </SelectTrigger>
                       <SelectContent>
                         {HEADCOUNT_OPTIONS.map((h) => (
@@ -144,12 +158,17 @@ export default function Proposal() {
                   type="submit"
                   size="lg"
                   className="w-full bg-amber-accent text-brand font-bold hover:bg-amber-accent/90"
-                  disabled={generate.isPending || isNaN(diagnosisId)}
+                  disabled={generate.isPending || isNaN(diagnosisId) || !headcount}
                 >
                   {generate.isPending ? (
                     <>
                       <Loader2 className="h-5 w-5 animate-spin mr-2" />
                       AIが提案書を作成中…（30秒ほどかかります）
+                    </>
+                  ) : !headcount ? (
+                    <>
+                      <Sparkles className="h-5 w-5 mr-2" />
+                      受入予定人数を選択すると自動で作成が始まります
                     </>
                   ) : (
                     <>

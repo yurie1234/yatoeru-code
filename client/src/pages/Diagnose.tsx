@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc";
+import { FILTER_ACCENT_CLASS } from "@/pages/Proposal";
 import { MAJOR_LANGUAGES, PREFECTURES, TOKUTEI_FIELDS } from "@shared/tokutei";
 import { AlertTriangle, ArrowRight, Building2, CheckCircle2, FileText, Globe2, Languages, Loader2, MapPin, Search as SearchIcon, Sparkles } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -110,7 +111,7 @@ export default function Diagnose() {
 
   // ===== 適合支援機関のフィルター =====
   // 初期値：分野＝診断で読み取った分野、都道府県＝会社URLから読み取った本社所在地、言語＝英語
-  const [orgKeyword, setOrgKeyword] = useState("");
+  // キーワード検索欄はユーザー要望により削除済み（都道府県・言語・分野のみ）
   const [orgPrefecture, setOrgPrefecture] = useState<string>(ALL);
   const [orgLanguage, setOrgLanguage] = useState<string>("英語");
   const [orgField, setOrgField] = useState<string>(ALL);
@@ -120,7 +121,6 @@ export default function Diagnose() {
   const resultKey = result ? `${result.companyName}|${result.field}|${result.prefecture}` : null;
   useEffect(() => {
     if (!result) return;
-    setOrgKeyword("");
     setOrgField(result.field && (TOKUTEI_FIELDS as readonly string[]).includes(result.field) ? result.field : ALL);
     setOrgPrefecture(result.prefecture && (PREFECTURES as readonly string[]).includes(result.prefecture) ? result.prefecture : ALL);
     setOrgLanguage("英語");
@@ -131,7 +131,7 @@ export default function Diagnose() {
   // フィルター操作後は検索APIで再取得（親和性スコア順）。初期表示は診断APIの推奨5件をそのまま使用。
   const filteredQuery = trpc.orgs.search.useQuery(
     {
-      keyword: orgKeyword || undefined,
+
       prefecture: orgPrefecture !== ALL ? orgPrefecture : undefined,
       language: orgLanguage !== ALL ? orgLanguage : undefined,
       field: orgField !== ALL ? orgField : undefined,
@@ -319,19 +319,10 @@ export default function Diagnose() {
                 {/* フィルター（初期値：診断で読み取った分野・本社所在地・英語） */}
                 <Card className="mb-6">
                   <CardContent className="p-4 md:p-6">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                      <div className="relative col-span-2 md:col-span-1">
-                        <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          placeholder="機関名・住所で検索"
-                          className="pl-9"
-                          value={orgKeyword}
-                          onChange={(e) => { setOrgKeyword(e.target.value); touch(); }}
-                        />
-                      </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <Select value={orgPrefecture} onValueChange={(v) => { setOrgPrefecture(v); touch(); }}>
-                        <SelectTrigger>
-                          <MapPin className="h-4 w-4 mr-1 text-muted-foreground" />
+                        <SelectTrigger className={FILTER_ACCENT_CLASS}>
+                          <MapPin className="h-4 w-4 mr-1 text-brand" />
                           <SelectValue placeholder="都道府県" />
                         </SelectTrigger>
                         <SelectContent>
@@ -342,8 +333,8 @@ export default function Diagnose() {
                         </SelectContent>
                       </Select>
                       <Select value={orgLanguage} onValueChange={(v) => { setOrgLanguage(v); touch(); }}>
-                        <SelectTrigger>
-                          <Languages className="h-4 w-4 mr-1 text-muted-foreground" />
+                        <SelectTrigger className={FILTER_ACCENT_CLASS}>
+                          <Languages className="h-4 w-4 mr-1 text-brand" />
                           <SelectValue placeholder="対応言語" />
                         </SelectTrigger>
                         <SelectContent>
@@ -354,8 +345,8 @@ export default function Diagnose() {
                         </SelectContent>
                       </Select>
                       <Select value={orgField} onValueChange={(v) => { setOrgField(v); touch(); }}>
-                        <SelectTrigger>
-                          <Building2 className="h-4 w-4 mr-1 text-muted-foreground" />
+                        <SelectTrigger className={FILTER_ACCENT_CLASS}>
+                          <Building2 className="h-4 w-4 mr-1 text-brand" />
                           <SelectValue placeholder="特定技能分野" />
                         </SelectTrigger>
                         <SelectContent>
@@ -379,6 +370,23 @@ export default function Diagnose() {
                     {Array.from({ length: 3 }).map((_, i) => (
                       <Skeleton key={i} className="h-28 w-full rounded-xl" />
                     ))}
+                  </div>
+                )}
+                {/* 一括相談ボタン（リスト上部） */}
+                {displayOrgs && displayOrgs.length > 0 && !orgsLoading && (
+                  <div className="mb-4 text-center">
+                    <Button
+                      size="lg"
+                      className="bg-amber-accent text-brand font-bold hover:bg-amber-accent/90"
+                      onClick={() =>
+                        setLocation(
+                          `/consult?orgIds=${displayOrgs.slice(0, 5).map((o) => o.id).join(",")}&diagnosisId=${diagnosisId ?? ""}&companyName=${encodeURIComponent(result.companyName)}&field=${encodeURIComponent(result.field ?? "")}&headcount=${encodeURIComponent(result.headcount)}`
+                        )
+                      }
+                    >
+                      表示中の支援機関に一括相談する（無料）
+                      <ArrowRight className="h-5 w-5 ml-2" />
+                    </Button>
                   </div>
                 )}
                 {!orgsLoading && filterTouched && (!displayOrgs || displayOrgs.length === 0) && (

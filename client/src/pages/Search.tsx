@@ -14,6 +14,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { trpc } from "@/lib/trpc";
+import { FILTER_ACCENT_CLASS } from "@/pages/Proposal";
 import { AFFINITY_METHODOLOGY } from "@shared/affinity";
 import { MAJOR_LANGUAGES, PREFECTURES, TOKUTEI_FIELDS } from "@shared/tokutei";
 import { AlertTriangle, ArrowDownWideNarrow, Building2, CheckSquare, ChevronLeft, ChevronRight, Info, Languages, MapPin, Search as SearchIcon } from "lucide-react";
@@ -103,8 +104,8 @@ export default function Search() {
                 />
               </div>
               <Select value={prefecture} onValueChange={(v) => { setPrefecture(v); setPage(1); }}>
-                <SelectTrigger>
-                  <MapPin className="h-4 w-4 mr-1 text-muted-foreground" />
+                <SelectTrigger className={FILTER_ACCENT_CLASS}>
+                  <MapPin className="h-4 w-4 mr-1 text-brand" />
                   <SelectValue placeholder="都道府県" />
                 </SelectTrigger>
                 <SelectContent>
@@ -115,8 +116,8 @@ export default function Search() {
                 </SelectContent>
               </Select>
               <Select value={language} onValueChange={(v) => { setLanguage(v); setPage(1); }}>
-                <SelectTrigger>
-                  <Languages className="h-4 w-4 mr-1 text-muted-foreground" />
+                <SelectTrigger className={FILTER_ACCENT_CLASS}>
+                  <Languages className="h-4 w-4 mr-1 text-brand" />
                   <SelectValue placeholder="対応言語" />
                 </SelectTrigger>
                 <SelectContent>
@@ -127,8 +128,8 @@ export default function Search() {
                 </SelectContent>
               </Select>
               <Select value={field} onValueChange={(v) => { setField(v); setPage(1); }}>
-                <SelectTrigger>
-                  <Building2 className="h-4 w-4 mr-1 text-muted-foreground" />
+                <SelectTrigger className={FILTER_ACCENT_CLASS}>
+                  <Building2 className="h-4 w-4 mr-1 text-brand" />
                   <SelectValue placeholder="特定技能分野" />
                 </SelectTrigger>
                 <SelectContent>

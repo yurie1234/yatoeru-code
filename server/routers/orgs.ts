@@ -79,7 +79,15 @@ export const orgsRouter = router({
         );
       }
       if (input.prefecture) {
-        conditions.push(eq(supportOrgs.prefecture, input.prefecture));
+        // 所在県一致に加え、希望する相談条件（受けたい地域：都道府県粒度で登録・"全国"を含む）に
+        // 指定県が含まれる機関も候補に含める（事業者に直接確認済みの対応地域）。
+        conditions.push(
+          or(
+            eq(supportOrgs.prefecture, input.prefecture),
+            sql`JSON_CONTAINS(${supportOrgs.preferredRegions}, ${JSON.stringify(input.prefecture)})`,
+            sql`JSON_CONTAINS(${supportOrgs.preferredRegions}, ${JSON.stringify("全国")})`
+          )
+        );
       }
       if (input.language) {
         // JSON array search in MySQL
@@ -407,7 +415,12 @@ ${pageText ? `\n【実際に取得したページ内容】\n${pageText}\n` : "\n
           .where(
             and(
               conditions.length > 0 ? and(...conditions) : undefined,
-              inArray(supportOrgs.prefecture, nearbyPrefs)
+              or(
+                inArray(supportOrgs.prefecture, nearbyPrefs),
+                // 希望する相談条件（受けたい地域：都道府県粒度・"全国"）に企業所在県が含まれる機関も取り込む
+                sql`JSON_CONTAINS(${supportOrgs.preferredRegions}, ${JSON.stringify(companyPrefecture)})`,
+                sql`JSON_CONTAINS(${supportOrgs.preferredRegions}, ${JSON.stringify("全国")})`
+              )
             )
           )
           .orderBy(desc(supportOrgs.reviewCount), supportOrgs.regDate, supportOrgs.id)
