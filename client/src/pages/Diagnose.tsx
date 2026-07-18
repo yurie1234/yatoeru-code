@@ -110,6 +110,10 @@ export default function Diagnose() {
         field: prev.field ?? (r.field && (TOKUTEI_FIELDS as readonly string[]).includes(r.field) ? r.field : null),
         prefecture: prev.prefecture ?? (r.prefecture && (PREFECTURES as readonly string[]).includes(r.prefecture) ? r.prefecture : null),
       }));
+      // URL/会社名解析で読み取った会社名を連絡先欄（質問6/6）に自動プリフィル（ユーザーが既に入力済みなら上書きしない）
+      if (r.companyName && r.companyName !== "不明") {
+        setContactCompany((prev) => prev || r.companyName);
+      }
       setPhase((p) => {
         if (p !== "analyzing") trackEvent("diagnose_complete");
         return p === "analyzing" ? "questions" : "done";

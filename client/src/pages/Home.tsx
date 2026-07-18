@@ -118,13 +118,15 @@ export default function Home() {
               <span className="flex h-2 w-2 rounded-full bg-amber-accent mr-2"></span>
               特定技能・育成就労の支援機関データベース
             </div>
-            <h1 className="text-4xl md:text-6xl font-black tracking-tight mb-6 leading-tight">
-              外国人採用の費用・助成金・支援機関を<br className="md:hidden" />30秒で無料診断
+            <h1 className="text-[1.75rem] leading-snug md:text-[2.6rem] lg:text-[3rem] font-black tracking-tight mb-6 md:leading-tight">
+              <span className="block">外国人採用の「費用・助成金・支援機関」</span>
+              <span className="block mt-2 md:mt-3"><span className="text-amber-accent">30秒</span>でまとめて無料診断</span>
             </h1>
-            <p className="text-lg md:text-xl text-brand-foreground/80 max-w-2xl mb-10 leading-relaxed">
-              会社名かURLを入れるだけ。該当しうる特定技能分野・概算費用・使える可能性のある助成金候補を整理し、<br className="hidden md:block" />
-              出入国在留管理庁の登録簿約11,000件から条件に合う支援機関をご案内します。
-            </p>
+            <div className="text-base md:text-lg text-brand-foreground/85 max-w-2xl mb-10 leading-relaxed space-y-1.5">
+              <p className="font-semibold text-brand-foreground">会社名かURLを入れるだけ。</p>
+              <p>該当しうる特定技能分野・概算費用・助成金候補を整理し、</p>
+              <p>入管庁の登録簿約11,000件から条件に合う支援機関をご案内します。</p>
+            </div>
 
             {/* URL Diagnose Form */}
             <div id="diagnose-section" className="w-full max-w-xl bg-background rounded-2xl p-2 shadow-2xl fade-up-1">
