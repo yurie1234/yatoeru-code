@@ -13,21 +13,42 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   BadgeJapaneseYen,
   Building2,
+  Download,
   LayoutDashboard,
   MailOpen,
   Sparkles,
   Target,
   TrendingUp,
 } from "lucide-react";
+import { useMemo, useState } from "react";
 
 function formatYen(n: number) {
   if (n >= 100000000) return `${(n / 100000000).toFixed(1)}億円`;
   if (n >= 10000) return `${Math.round(n / 10000).toLocaleString()}万円`;
   return `${n.toLocaleString()}円`;
 }
+
+const EVENT_LABELS: Record<string, string> = {
+  org_detail_view: "詳細閲覧",
+  consult_submit: "個別相談送信",
+  bulk_consult_submit: "一括相談送信",
+  phone_tap: "電話タップ",
+  website_click: "外部サイトクリック",
+  diagnose_start: "診断開始",
+  diagnose_complete: "診断完了",
+  proposal_generate: "提案書生成",
+};
 
 const STATUS_LABELS: Record<string, string> = {
   new: "新規",
@@ -50,6 +71,65 @@ export default function Admin() {
   const { data: planList } = trpc.admin.planApplicationList.useQuery(undefined, {
     enabled: isAdmin,
   });
+
+  // 月次レポート：対象年月（JST）
+  const now = new Date();
+  const [reportYm, setReportYm] = useState(
+    `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`,
+  );
+  const [reportYear, reportMonth] = reportYm.split("-").map(Number);
+  const { data: report, isLoading: reportLoading } = trpc.events.monthlyReport.useQuery(
+    { year: reportYear, month: reportMonth },
+    { enabled: isAdmin },
+  );
+
+  // 直近12ヶ月の候補
+  const ymOptions = useMemo(() => {
+    const opts: string[] = [];
+    const d = new Date();
+    for (let i = 0; i < 12; i++) {
+      opts.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
+      d.setMonth(d.getMonth() - 1);
+    }
+    return opts;
+  }, []);
+
+  // 機関別にピボット（行＝機関、列＝イベント種別）
+  const orgPivot = useMemo(() => {
+    if (!report) return [];
+    const map = new Map<number, { orgName: string; regNo: string; counts: Record<string, number>; total: number }>();
+    for (const r of report.orgRows) {
+      if (r.orgId == null) continue;
+      const cur = map.get(r.orgId) ?? { orgName: r.orgName ?? `#${r.orgId}`, regNo: r.regNo ?? "", counts: {}, total: 0 };
+      cur.counts[r.eventType] = (cur.counts[r.eventType] ?? 0) + Number(r.count);
+      cur.total += Number(r.count);
+      map.set(r.orgId, cur);
+    }
+    return Array.from(map.entries())
+      .map(([orgId, v]) => ({ orgId, ...v }))
+      .sort((a, b) => b.total - a.total);
+  }, [report]);
+
+  const downloadCsv = () => {
+    const evCols = ["org_detail_view", "consult_submit", "bulk_consult_submit", "phone_tap", "website_click"];
+    const header = ["機関ID", "機関名", "登録番号", ...evCols.map((c) => EVENT_LABELS[c] ?? c), "合計"];
+    const lines = [header.join(",")];
+    for (const row of orgPivot) {
+      lines.push([
+        row.orgId,
+        `"${row.orgName.replace(/"/g, '""')}"`,
+        row.regNo,
+        ...evCols.map((c) => row.counts[c] ?? 0),
+        row.total,
+      ].join(","));
+    }
+    const blob = new Blob(["\ufeff" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `yatoeru_org_report_${reportYm}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
 
   if (!loading && user && !isAdmin) {
     return (
@@ -175,6 +255,7 @@ export default function Admin() {
               <TabsList>
                 <TabsTrigger value="consultations">相談リード</TabsTrigger>
                 <TabsTrigger value="plans">有料プラン申込</TabsTrigger>
+                <TabsTrigger value="report">月次レポート</TabsTrigger>
               </TabsList>
               <TabsContent value="consultations">
                 <Card>
@@ -261,6 +342,78 @@ export default function Admin() {
                         )}
                       </TableBody>
                     </Table>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              <TabsContent value="report">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between gap-3 flex-wrap">
+                    <CardTitle className="text-base">機関別問い合わせレポート（ファーストパーティ計測）</CardTitle>
+                    <div className="flex items-center gap-2">
+                      <Select value={reportYm} onValueChange={setReportYm}>
+                        <SelectTrigger className="w-36">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {ymOptions.map((ym) => (
+                            <SelectItem key={ym} value={ym}>{ym.replace("-", "年")}月</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button size="sm" variant="outline" onClick={downloadCsv} disabled={orgPivot.length === 0}>
+                        <Download className="h-4 w-4 mr-1" /> CSV
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    {reportLoading ? (
+                      <div className="p-6"><Skeleton className="h-24 w-full" /></div>
+                    ) : (
+                      <>
+                        {report && report.siteRows.length > 0 && (
+                          <div className="px-6 pb-2 flex flex-wrap gap-2">
+                            {report.siteRows.map((s) => (
+                              <Badge key={s.eventType} variant="secondary" className="font-normal">
+                                {EVENT_LABELS[s.eventType] ?? s.eventType}：{Number(s.count).toLocaleString()}件
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>機関名</TableHead>
+                              <TableHead className="text-right">詳細閲覧</TableHead>
+                              <TableHead className="text-right">相談送信</TableHead>
+                              <TableHead className="text-right">一括相談</TableHead>
+                              <TableHead className="text-right">合計</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {orgPivot.length > 0 ? (
+                              orgPivot.map((row) => (
+                                <TableRow key={row.orgId}>
+                                  <TableCell className="font-medium">
+                                    {row.orgName}
+                                    <span className="block text-[10px] text-muted-foreground">{row.regNo}</span>
+                                  </TableCell>
+                                  <TableCell className="text-right">{row.counts["org_detail_view"] ?? 0}</TableCell>
+                                  <TableCell className="text-right">{row.counts["consult_submit"] ?? 0}</TableCell>
+                                  <TableCell className="text-right">{row.counts["bulk_consult_submit"] ?? 0}</TableCell>
+                                  <TableCell className="text-right font-medium">{row.total}</TableCell>
+                                </TableRow>
+                              ))
+                            ) : (
+                              <TableRow>
+                                <TableCell colSpan={5} className="text-center text-muted-foreground py-10">
+                                  この月の計測データはまだありません
+                                </TableCell>
+                              </TableRow>
+                            )}
+                          </TableBody>
+                        </Table>
+                      </>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>

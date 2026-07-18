@@ -281,7 +281,7 @@ echo "== SSR crawler verification against $BASE =="
 #     hard error, not a silent skip.
 #   - 5th arg (paginated rows): substring the canonical href VALUE must contain,
 #     so a canonical collapsing back to page 1 turns the row red.
-check "/"                              "登録支援機関・監理支援機関を" "ヤトエル" state
+check "/"                              "外国人採用の費用・助成金・支援機関を" "ヤトエル" state
 check "/search"                        "登録支援機関を探す" "登録支援機関を検索" state
 # detail row: 運営確認済み機関（エドミール）— 確認済みブロックの本文をneedleに
 check "/org/39735"                     "掲載情報 運営確認済み" "合同会社エドミール" state
@@ -289,12 +289,25 @@ check "/org/39735"                     "掲載情報 運営確認済み" "合同
 check "/region/東京都"                  "出入国在留管理庁の登録簿に基づく" "東京都の登録支援機関" state
 check "/field/介護"                    "高齢化に伴い最も受入れが進む分野" "介護分野対応の登録支援機関" state
 check "/for-organizations"             "自社情報を確認・修正する（無料）" "ヤトエル"
+# ── 大改修（診断ファースト化）で追加した新規ページ群（1クラス1行）──
+check "/joseikin"                      "外国人雇用で検討できる助成金" "助成金"
+check "/joseikin/jinzai-kakuho"        "人材確保等支援助成金" "人材確保等支援助成金"
+check "/guide/tokutei-ginou-ikou"      "育成就労" "特定技能"
+check "/columns/saiyou-cost-hikaku"    "採用コスト" "外国人採用のコストは高い？"
+check "/neutrality-policy"             "中立性" "中立性"
 # gated route: asserts the 200 + default-head + noindex contract.
 # /adminはSSRではスケルトン（divのみ・テキストなし）を描画するため、body needleはマークアップの一部で代用
 check "/admin"                         "<div" "ヤトエル" nocanon,noindex
 # redirect layer — one row per class:
-check_301 "/index.html"                "/"
-check_301 "/search/"                   "/search"
+# NOTE: devサーバー（NODE_ENV=development→setupVite）はリダイレクト層（serveStatic内）を
+# 通らないため200が返る。devでは SKIP_301=1 でスキップ（本番 yatoeru.jp では
+# /index.html→/ と /search/→/search の301をcurlで検証済み 2026-07-18）。
+if [ "${SKIP_301:-0}" != "1" ]; then
+  check_301 "/index.html"                "/"
+  check_301 "/search/"                   "/search"
+else
+  echo "  [SKIP] check_301 rows (SKIP_301=1 — dev server has no redirect layer)"
+fi
 # soft-404方式：本番ゲートウェイがアプリの404応答を横取りして生テンプレートを200で
 # 返すため、not-foundは200+noindexで配信する（nocanon,noindexフラグで検証）。
 # 存在しないorg ID：SSRではデータなしのため「戻る」ナビのみ描画される

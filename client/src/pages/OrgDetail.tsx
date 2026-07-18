@@ -19,6 +19,7 @@ import {
   Star,
 } from "lucide-react";
 import { useEffect } from "react";
+import { captureSource, trackEvent } from "@/lib/track";
 import { Link, useLocation, useParams } from "wouter";
 
 // 口コミ公開フラグ：GO判定後＋運用ルール（投稿ガイドライン・本人確認・削除基準・法務体制）整備後にtrueにする
@@ -32,6 +33,13 @@ export default function OrgDetail() {
   const { data, isLoading, error } = trpc.orgs.getById.useQuery(orgId, {
     enabled: !isNaN(orgId),
   });
+
+  // 機関別計測：詳細閲覧イベント（機関IDごとに1回）
+  useEffect(() => {
+    if (isNaN(orgId)) return;
+    captureSource();
+    trackEvent("org_detail_view", orgId);
+  }, [orgId]);
 
   // JSON-LD（LocalBusiness / AggregateRatingはレビューが実在する場合のみ）
   useEffect(() => {

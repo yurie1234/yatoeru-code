@@ -38,7 +38,7 @@ import SearchPage from "./pages/Search";
 import Stats from "./pages/Stats";
 import UpdateDetail from "./pages/UpdateDetail";
 import Updates from "./pages/Updates";
-import { About, Privacy, Terms } from "./pages/StaticPages";
+import { About, NeutralityPolicy, Privacy, Terms } from "./pages/StaticPages";
 
 function Router() {
   return (
@@ -76,6 +76,7 @@ function Router() {
       <Route path={"/about"} component={About} />
       <Route path={"/terms"} component={Terms} />
       <Route path={"/privacy"} component={Privacy} />
+      <Route path={"/neutrality-policy"} component={NeutralityPolicy} />
       <Route path={"/admin"} component={Admin} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}

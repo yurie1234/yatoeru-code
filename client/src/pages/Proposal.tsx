@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
+import { trackEvent } from "@/lib/track";
 import { HEADCOUNT_OPTIONS, TOKUTEI_FIELDS } from "@shared/tokutei";
 import { ArrowRight, Check, Copy, FileText, Loader2, Sparkles, Users } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -52,6 +53,7 @@ export default function Proposal() {
       toast.error("会社名を入力してから人数を選択してください。");
       return;
     }
+    trackEvent("proposal_generate");
     generate.mutate({ diagnosisId, companyName, field, headcount: value });
   };
 
@@ -65,6 +67,7 @@ export default function Proposal() {
       toast.error("受入予定人数を選択してください。選択すると作成が始まります。");
       return;
     }
+    trackEvent("proposal_generate");
     generate.mutate({ diagnosisId, companyName, field, headcount });
   };
 

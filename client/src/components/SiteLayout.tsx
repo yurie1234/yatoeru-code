@@ -94,6 +94,9 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
                   </a>
                 </li>
                 <li><Link href="/for-organizations" className="hover:text-amber-accent transition-colors">支援機関の方へ</Link></li>
+                <li><Link href="/neutrality-policy" className="hover:text-amber-accent transition-colors">中立性ポリシー</Link></li>
+                <li><Link href="/terms" className="hover:text-amber-accent transition-colors">利用規約</Link></li>
+                <li><Link href="/privacy" className="hover:text-amber-accent transition-colors">プライバシーポリシー</Link></li>
               </ul>
             </div>
           </div>

@@ -13,16 +13,30 @@ const LLMS_TXT = `# ヤトエル（Yatoeru）
 ## 主要ページ
 
 - [登録支援機関を検索](${SITE_URL}/search): 全国の登録支援機関を対応言語・地域・業種・処分歴で検索。親和性スコア順に表示
-- [外国人雇用の準備度診断](${SITE_URL}/diagnose): 業種と地域を選ぶだけの無料診断。条件に合う登録支援機関も案内
+- [外国人採用の費用・助成金・支援機関の無料診断](${SITE_URL}/diagnose): 会社名またはURLを入力するとAIが業種・地域を読み取り、6問の質問で概算費用・助成金候補・適合機関を提示
 - [一括相談](${SITE_URL}/consult): 条件に合う登録支援機関へ最大5社まで無料で一括相談
 - [統計データ](${SITE_URL}/stats): 都道府県別の登録支援機関数・処分歴の統計
 - [登録簿の更新情報](${SITE_URL}/updates): 出入国在留管理庁登録簿の週次更新（新規登録・抹消）
 
+## 助成金ガイド（一次情報リンク・最終確認日付き）
+
+- [外国人雇用で使える助成金ガイド](${SITE_URL}/joseikin): 受け取れる可能性のある助成金の全体像と申請の流れ
+- [人材確保等支援助成金（外国人労働者就労環境整備助成コース）](${SITE_URL}/joseikin/jinzai-kakuho)
+- [業務改善助成金](${SITE_URL}/joseikin/gyomu-kaizen)
+- [キャリアアップ助成金](${SITE_URL}/joseikin/career-up)
+- [トライアル雇用助成金](${SITE_URL}/joseikin/trial-koyou)
+- [人材開発支援助成金](${SITE_URL}/joseikin/jinzai-kaihatsu)
+
 ## 制度解説
 
 - [育成就労制度とは](${SITE_URL}/guide/ikusei-shuro): 2027年4月1日施行。技能実習制度との違い・移行スケジュール
+- [技能実習／育成就労から特定技能への移行ガイド](${SITE_URL}/guide/tokutei-ginou-ikou)
+- [育成就労制度の費用ガイド](${SITE_URL}/guide/ikusei-shuro-cost)
+- [育成就労施行までの準備スケジュール](${SITE_URL}/guide/ikusei-shuro-schedule)
+- [育成就労と技能実習の違い](${SITE_URL}/guide/ginou-jisshu-chigai)
 - [監理支援機関とは](${SITE_URL}/guide/kanri-shien-kikan): 育成就労制度で監理団体に代わる許可制の機関。施行日前申請は2026年4月15日から受付中
 - [登録支援機関の選び方](${SITE_URL}/columns/shien-kikan-erabikata): 料金相場（月額平均約28,000円：入管庁調査）・確認すべき7項目
+- [外国人採用のコスト比較：特定技能・育成就労 vs 人材紹介・求人広告・派遣](${SITE_URL}/columns/saiyou-cost-hikaku)
 - [監理団体から監理支援機関への移行ガイド](${SITE_URL}/columns/kanri-dantai-ikou-guide): 2026年9月30日の監理団体新規許可申請期限までにやること
 - [人材紹介会社と登録支援機関の違い](${SITE_URL}/columns/shokai-vs-shien): 別制度・別登録である理由と登録番号の確認方法
 
@@ -37,6 +51,12 @@ const LLMS_TXT = `# ヤトエル（Yatoeru）
 - サイトマップ: ${SITE_URL}/sitemap.xml
 - 運営確認済み情報: 運営が事業者に直接確認した相談受付状況・希望する相談条件・対応言語を確認日つきで表示
 - 親和性スコア: 分野40点・地域30点・言語20点・信頼性10点（処分歴なし5点＋実確認鮮度最大5点）。有料掲載の有無はスコアに影響しません
+
+## 運営方針
+
+- [中立性ポリシー](${SITE_URL}/neutrality-policy): 掲載料による順位優遇は一切行わないこと、並び順ロジックの公開基準
+- サービス範囲: ヤトエルは情報提供・比較プラットフォームであり、職業紹介事業（有料職業紹介）は行いません。在留資格の可否判断も行いません
+- [ヤトエルについて](${SITE_URL}/about) / [プライバシーポリシー](${SITE_URL}/privacy) / [利用規約](${SITE_URL}/terms)
 `;
 
 export function registerLlmsTxtRoute(app: Express) {

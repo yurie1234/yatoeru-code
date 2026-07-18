@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc";
+import { captureSource, trackEvent } from "@/lib/track";
 import { FILTER_ACCENT_CLASS } from "@/pages/Proposal";
 import { JOSEIKIN_DISCLAIMER, matchJoseikin } from "@shared/joseikin";
 import { HEADCOUNT_OPTIONS, MAJOR_LANGUAGES, PREFECTURES, TOKUTEI_FIELDS } from "@shared/tokutei";
@@ -109,7 +110,10 @@ export default function Diagnose() {
         field: prev.field ?? (r.field && (TOKUTEI_FIELDS as readonly string[]).includes(r.field) ? r.field : null),
         prefecture: prev.prefecture ?? (r.prefecture && (PREFECTURES as readonly string[]).includes(r.prefecture) ? r.prefecture : null),
       }));
-      setPhase((p) => (p === "analyzing" ? "questions" : "done"));
+      setPhase((p) => {
+        if (p !== "analyzing") trackEvent("diagnose_complete");
+        return p === "analyzing" ? "questions" : "done";
+      });
     },
   });
 
@@ -134,6 +138,8 @@ export default function Diagnose() {
       autoStarted.current = true;
       const input = (urlParam || qParam || "").trim();
       setUrl(input);
+      captureSource();
+      trackEvent("diagnose_start");
       setPhase("analyzing");
       if (urlParam || looksLikeUrl(input)) {
         let normalized = input;
@@ -150,6 +156,8 @@ export default function Diagnose() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!url.trim()) return;
+    captureSource();
+    trackEvent("diagnose_start");
     setPhase("analyzing");
     if (looksLikeUrl(url)) {
       let normalized = url.trim();

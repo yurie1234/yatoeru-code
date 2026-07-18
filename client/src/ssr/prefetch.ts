@@ -198,6 +198,11 @@ const STATIC_HEADS: Record<string, { title: string; description: string }> = {
     title: "プライバシーポリシー - ヤトエル",
     description: "ヤトエルのプライバシーポリシーです。",
   },
+  "/neutrality-policy": {
+    title: "中立性ポリシー（並び順と掲載の基準） - ヤトエル",
+    description:
+      "ヤトエルの並び順ロジックと有料掲載（PR）の扱いを公開しています。掲載料による順位優遇は一切行わず、親和性スコア（分野40点・地域30点・言語20点・信頼性10点）の配点を明示しています。",
+  },
 };
 
 export async function prefetchForPath(

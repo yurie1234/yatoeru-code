@@ -44,6 +44,7 @@ const STATIC_PATHS = [
   "/about",
   "/terms",
   "/privacy",
+  "/neutrality-policy",
 ];
 
 // 生成コスト（1万URL超）を毎リクエスト払わないよう10分キャッシュ

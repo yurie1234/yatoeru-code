@@ -248,3 +248,25 @@ export const registryChanges = mysqlTable("registry_changes", {
 
 export type RegistryChange = typeof registryChanges.$inferSelect;
 export type InsertRegistryChange = typeof registryChanges.$inferInsert;
+
+/**
+ * 機関別イベント計測（問い合わせ・閲覧・診断などのファーストパーティ計測）
+ * orgId が null の行はサイト全体イベント（診断開始・完了など）
+ */
+export const orgEvents = mysqlTable("org_events", {
+  id: int("id").autoincrement().primaryKey(),
+  /** 対象機関ID（サイト全体イベントは null） */
+  orgId: int("orgId"),
+  /** イベント種別: org_detail_view / consult_submit / bulk_consult_submit / phone_tap / website_click / diagnose_start / diagnose_complete / proposal_generate */
+  eventType: varchar("eventType", { length: 48 }).notNull(),
+  /** 流入元識別（URLパラメータ ?src= 等） */
+  source: varchar("source", { length: 128 }),
+  /** イベント発生ページパス */
+  path: varchar("path", { length: 512 }),
+  /** リファラ（ドメインのみ保存） */
+  referrer: varchar("referrer", { length: 255 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type OrgEvent = typeof orgEvents.$inferSelect;
+export type InsertOrgEvent = typeof orgEvents.$inferInsert;

@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
+import { trackEvent } from "@/lib/track";
 import { FILTER_ACCENT_CLASS } from "@/pages/Proposal";
 import { HEADCOUNT_OPTIONS, PREFECTURES, TOKUTEI_FIELDS } from "@shared/tokutei";
 import { Building2, CheckCircle2, Loader2, MailCheck, MapPin, Send, X } from "lucide-react";
@@ -67,6 +68,9 @@ export default function Consult() {
 
   const submitMutation = trpc.orgs.submitConsultation.useMutation({
     onSuccess: () => {
+      // 機関別計測：選択された各機関に問い合わせ送信イベントを記録
+      const evType = orgIds.length > 1 ? "bulk_consult_submit" : "consult_submit";
+      orgIds.forEach((id) => trackEvent(evType, id));
       setSubmitted(true);
       window.scrollTo({ top: 0, behavior: "smooth" });
     },
