@@ -70,6 +70,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
                 <li><Link href="/diagnose" className="hover:text-amber-accent transition-colors">支援機関マッチ診断</Link></li>
                 <li><Link href="/stats" className="hover:text-amber-accent transition-colors">統計データ</Link></li>
                 <li><Link href="/updates" className="hover:text-amber-accent transition-colors">登録簿更新情報</Link></li>
+                <li><Link href="/joseikin" className="hover:text-amber-accent transition-colors">助成金ガイド</Link></li>
                 <li><Link href="/guide/ikusei-shuro" className="hover:text-amber-accent transition-colors">育成就労制度ガイド</Link></li>
                 <li><Link href="/guide/kanri-shien-kikan" className="hover:text-amber-accent transition-colors">監理支援機関とは</Link></li>
                 <li><Link href="/columns" className="hover:text-amber-accent transition-colors">コラム（実務解説）</Link></li>

@@ -230,6 +230,57 @@ export default function GuideIkuseiShuro() {
           </div>
         </section>
 
+        {/* 子記事ハブ */}
+        <section>
+          <h2 className="text-xl font-bold mb-4">育成就労・制度移行の詳細ガイド</h2>
+          <p className="text-sm text-muted-foreground leading-relaxed mb-4">
+            テーマ別の詳細ガイドを用意しています。自社の状況に近い記事からお読みください。
+          </p>
+          <div className="grid sm:grid-cols-2 gap-3">
+            {[
+              {
+                href: "/guide/ginou-jisshu-chigai",
+                title: "技能実習と育成就労の違い",
+                desc: "転籍・日本語要件・監理支援機関など変更点を比較表で解説",
+              },
+              {
+                href: "/guide/ikusei-shuro-schedule",
+                title: "2027年4月施行までの準備スケジュール",
+                desc: "経過措置の扱いと受け入れ企業の準備チェックリスト",
+              },
+              {
+                href: "/guide/tokutei-ginou-ikou",
+                title: "技能実習・育成就労から特定技能への移行ガイド",
+                desc: "移行要件・手続きの流れ・切り替え時の注意点",
+              },
+              {
+                href: "/guide/ikusei-shuro-cost",
+                title: "受け入れ費用ガイド",
+                desc: "初期費用・月額監理費の相場と助成金による負担軽減",
+              },
+              {
+                href: "/guide/kanri-shien-kikan",
+                title: "監理支援機関とは",
+                desc: "許可要件・監理団体との違い・施行日前申請のスケジュール",
+              },
+              {
+                href: "/joseikin",
+                title: "外国人雇用で使える助成金ガイド",
+                desc: "人材確保等支援助成金・業務改善助成金など5制度を解説",
+              },
+            ].map((g) => (
+              <Link key={g.href} href={g.href}>
+                <Card className="h-full cursor-pointer transition-colors hover:border-brand/50">
+                  <CardContent className="p-4">
+                    <div className="font-semibold text-sm mb-1 text-brand">{g.title}</div>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{g.desc}</p>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </section>
+
         {/* FAQ */}
         <section>
           <h2 className="text-xl font-bold mb-4">よくある質問</h2>

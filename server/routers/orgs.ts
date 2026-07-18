@@ -224,19 +224,39 @@ export const orgsRouter = router({
     return { org: sanitizeOrg(org), reviews: orgReviews };
   }),
 
-  // 3. URL診断機能（AI業種解析）
+  // 3. URL・会社名診断機能（AI業種解析）
+  // 後方互換：従来の { url } 単独入力も引き続き動作する。
+  // 新フロー：会社名のみの入力や、ウィザード回答（answers）による上書きに対応。
   diagnoseUrl: publicProcedure
-    .input(z.object({ url: z.string().url() }))
+    .input(
+      z
+        .object({
+          url: z.string().url().optional(),
+          companyName: z.string().min(1).max(120).optional(),
+          answers: z
+            .object({
+              field: z.string().nullable().optional(),
+              prefecture: z.string().nullable().optional(),
+              headcount: z.string().nullable().optional(),
+              timing: z.string().nullable().optional(),
+              jisshuExperience: z.boolean().nullable().optional(),
+            })
+            .optional(),
+        })
+        .refine((v) => v.url || v.companyName, {
+          message: "urlまたはcompanyNameのいずれかが必要です",
+        })
+    )
     .mutation(async ({ input, ctx }) => {
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
 
       // 1. URL先の実ページ本文を取得（失敗しても診断は続行し、本文なしでの推測であることをAIに明示）
       let pageText = "";
-      try {
+      if (input.url) try {
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), 8000);
-        const res = await fetch(input.url, {
+        const res = await fetch(input.url as string, {
           signal: controller.signal,
           headers: {
             "User-Agent":
@@ -267,11 +287,17 @@ export const orgsRouter = router({
         // 取得失敗時はpageTextなしで続行
       }
 
+      const subjectLine = input.url
+        ? `URL: ${input.url}`
+        : `企業名: ${input.companyName}`;
+      const noPageNote = input.url
+        ? "\n※ ページ内容を取得できなかったため、URLの文字列（ドメイン名・パス）のみから推測してください。推測の不確実性はスコアとreasonに反映してください。\n"
+        : "\n※ 企業名のみからの推測です。社名に含まれる業種キーワード（例：○○建設、○○介護、○○食堂）や一般的に知られている企業情報から判断し、推測の不確実性はスコア（特にscoreInfo）とreasonに反映してください。\n";
       const prompt = `
 あなたは特定技能制度の受入れ適合性を評価する専門家です。以下の企業について、特定技能制度を活用して外国人材を受け入れる場合の診断を行ってください。
 
-URL: ${input.url}
-${pageText ? `\n【実際に取得したページ内容】\n${pageText}\n` : "\n※ ページ内容を取得できなかったため、URLの文字列（ドメイン名・パス）のみから推測してください。推測の不確実性はスコアとreasonに反映してください。\n"}
+${subjectLine}
+${pageText ? `\n【実際に取得したページ内容】\n${pageText}\n` : noPageNote}
 以下のJSONスキーマに厳密に従って出力してください。
 - companyName: 推測される企業名（不明な場合は"不明"）
 - industry: 推測される業種
@@ -333,23 +359,40 @@ ${pageText ? `\n【実際に取得したページ内容】\n${pageText}\n` : "\n
       // 初期費用（国内在留者・委託支援）は10〜30万円程度、海外新規受入は30〜60万円程度まで幅がある。
       const normalizedCost = String(parsed.cost ?? "").replace(/(\d)\s*[ー‐-―−-]\s*(?=\d|＋|\+|万)/g, "$1〜");
       // 所在都道府県はPREFECTURESに含まれる正式名称のみ採用（LLMの表記揺れ・幻覚を防止）
-      const companyPrefecture: string | null =
-        typeof parsed.prefecture === "string" && (PREFECTURES as readonly string[]).includes(parsed.prefecture)
-          ? parsed.prefecture
+      // ウィザード回答（answers）がある場合は回答をAI推測より優先する
+      const answeredPref =
+        typeof input.answers?.prefecture === "string" &&
+        (PREFECTURES as readonly string[]).includes(input.answers.prefecture)
+          ? input.answers.prefecture
           : null;
+      const companyPrefecture: string | null =
+        answeredPref ??
+        (typeof parsed.prefecture === "string" && (PREFECTURES as readonly string[]).includes(parsed.prefecture)
+          ? parsed.prefecture
+          : null);
+      // 分野も同様に回答優先（"該当なし"はnull扱い）
+      const answeredField =
+        typeof input.answers?.field === "string" &&
+        (TOKUTEI_FIELDS as readonly string[]).includes(input.answers.field)
+          ? input.answers.field
+          : null;
+      if (answeredField) parsed.field = answeredField;
+      if (input.answers?.headcount) parsed.headcount = input.answers.headcount;
       const resultData = {
         ...parsed,
         prefecture: companyPrefecture,
         cost: normalizedCost,
         score: totalScore,
         scoreBreakdown: { field: scoreField, labor: scoreLabor, info: scoreInfo },
+        // ウィザード回答を診断結果に同梱（助成金マッチング・相談プリフィルで使用）
+        answers: input.answers ?? null,
         // 採点内訳を含むコメントはサーバー側で生成（内訳と合計の整合を保証）
         reason: `a)分野該当性${scoreField}点、b)人手不足度${scoreLabor}点、c)情報の確からしさ${scoreInfo}点、合計${totalScore}点。${String(parsed.reason ?? "")}`,
       };
 
-      // 診断履歴を保存
+      // 診断履歴を保存（会社名のみの場合は company: プレフィックスで記録）
       const [insertResult] = await db.insert(diagnoses).values({
-        inputUrl: input.url,
+        inputUrl: input.url ?? `company:${input.companyName}`,
         companyName: resultData.companyName,
         industry: resultData.industry,
         result: resultData,

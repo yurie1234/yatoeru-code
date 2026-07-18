@@ -23,6 +23,8 @@ export function ArticleBreadcrumb({
   articleTitle,
   articlePath,
   shortTitle,
+  hubPath = "/columns",
+  hubLabel = "コラム",
 }: {
   /** 記事の正式タイトル（JSON-LD用） */
   articleTitle: string;
@@ -30,8 +32,12 @@ export function ArticleBreadcrumb({
   articlePath: string;
   /** パンくず表示用の短いタイトル（省略時はarticleTitle） */
   shortTitle?: string;
+  /** 中間階層のパス（デフォルト: /columns） */
+  hubPath?: string;
+  /** 中間階層の表示名（デフォルト: コラム） */
+  hubLabel?: string;
 }) {
-  // BreadcrumbList JSON-LD（ホーム > コラム > 記事）
+  // BreadcrumbList JSON-LD（ホーム > ハブ > 記事）
   useEffect(() => {
     const ld = {
       "@context": "https://schema.org",
@@ -46,8 +52,8 @@ export function ArticleBreadcrumb({
         {
           "@type": "ListItem",
           position: 2,
-          name: "コラム",
-          item: "https://yatoeru.jp/columns",
+          name: hubLabel,
+          item: `https://yatoeru.jp${hubPath}`,
         },
         {
           "@type": "ListItem",
@@ -65,7 +71,7 @@ export function ArticleBreadcrumb({
     return () => {
       document.getElementById("breadcrumb-jsonld")?.remove();
     };
-  }, [articleTitle, articlePath]);
+  }, [articleTitle, articlePath, hubPath, hubLabel]);
 
   return (
     <nav
@@ -76,8 +82,8 @@ export function ArticleBreadcrumb({
         <span className="hover:text-brand-foreground cursor-pointer">ホーム</span>
       </Link>
       <span aria-hidden="true">/</span>
-      <Link href="/columns">
-        <span className="hover:text-brand-foreground cursor-pointer">コラム</span>
+      <Link href={hubPath}>
+        <span className="hover:text-brand-foreground cursor-pointer">{hubLabel}</span>
       </Link>
       <span aria-hidden="true">/</span>
       <span className="text-brand-foreground/80" aria-current="page">

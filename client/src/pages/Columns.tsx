@@ -48,6 +48,35 @@ const GUIDES = [
     title: "監理支援機関ガイド",
     description: "許可申請スケジュール・監理団体との比較・登録支援機関との関係を解説。",
   },
+  {
+    href: "/guide/ginou-jisshu-chigai",
+    title: "技能実習と育成就労の違い",
+    description: "転籍・日本語要件・監理支援機関など変更点を比較表で解説。",
+  },
+  {
+    href: "/guide/ikusei-shuro-schedule",
+    title: "育成就労 2027年4月施行までの準備スケジュール",
+    description: "経過措置の扱いと受け入れ企業の準備チェックリスト。",
+  },
+  {
+    href: "/guide/tokutei-ginou-ikou",
+    title: "技能実習・育成就労から特定技能への移行ガイド",
+    description: "試験免除ルート・手続きの流れ・切り替え時の注意点を解説。",
+  },
+  {
+    href: "/guide/ikusei-shuro-cost",
+    title: "受け入れ費用ガイド",
+    description: "初期費用・月額監理費の相場と助成金による負担軽減を解説。",
+  },
+] as const;
+
+const JOSEIKIN_LINKS = [
+  { href: "/joseikin", title: "外国人雇用で使える助成金ガイド【2026年版】", description: "主要5制度の助成額・要件・併用可否を一覧で解説。" },
+  { href: "/joseikin/jinzai-kakuho", title: "人材確保等支援助成金（上限57〜72万円）", description: "外国人就労環境整備の経費を1/2〜2/3助成。" },
+  { href: "/joseikin/gyomu-kaizen", title: "業務改善助成金（上限30〜600万円）", description: "最低賃金引き上げ＋設備投資で設備費用を助成。" },
+  { href: "/joseikin/career-up", title: "キャリアアップ助成金（1人最大80万円）", description: "外国人スタッフの正社員化で助成。" },
+  { href: "/joseikin/trial-koyou", title: "トライアル雇用助成金（月額4万円×3か月）", description: "ハローワーク経由の試行雇用で助成。" },
+  { href: "/joseikin/jinzai-kaihatsu", title: "人材開発支援助成金（経費の45〜75%）", description: "日本語教育・研修費の助成。" },
 ] as const;
 
 export default function Columns() {
@@ -132,6 +161,24 @@ export default function Columns() {
           <h2 className="text-xl font-bold mb-4">制度ガイド</h2>
           <div className="grid md:grid-cols-2 gap-4">
             {GUIDES.map((g) => (
+              <Link key={g.href} href={g.href}>
+                <Card className="cursor-pointer transition-shadow hover:shadow-md h-full">
+                  <CardContent className="p-5">
+                    <h3 className="font-bold text-base mb-1.5">{g.title}</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {g.description}
+                    </p>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <section>
+          <h2 className="text-xl font-bold mb-4">助成金ガイド</h2>
+          <div className="grid md:grid-cols-2 gap-4">
+            {JOSEIKIN_LINKS.map((g) => (
               <Link key={g.href} href={g.href}>
                 <Card className="cursor-pointer transition-shadow hover:shadow-md h-full">
                   <CardContent className="p-5">

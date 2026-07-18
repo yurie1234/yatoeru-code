@@ -49,7 +49,7 @@ export default function Home() {
   const handleDiagnose = (e: React.FormEvent) => {
     e.preventDefault();
     if (url) {
-      setLocation(`/diagnose?url=${encodeURIComponent(url)}`);
+      setLocation(`/diagnose?q=${encodeURIComponent(url.trim())}`);
     }
   };
 
@@ -119,11 +119,11 @@ export default function Home() {
               特定技能・育成就労の支援機関データベース
             </div>
             <h1 className="text-4xl md:text-6xl font-black tracking-tight mb-6 leading-tight">
-              登録支援機関・監理支援機関を<br className="md:hidden" />条件で比較
+              外国人採用の費用・助成金・支援機関を<br className="md:hidden" />30秒で無料診断
             </h1>
             <p className="text-lg md:text-xl text-brand-foreground/80 max-w-2xl mb-10 leading-relaxed">
-              出入国在留管理庁の公開登録簿を基に掲載し、事業者への直接確認情報を順次反映。<br className="hidden md:block" />
-              業種・地域・対応言語・新規相談受付状況で、条件が一致する理由を明示して候補を表示します。
+              会社名かURLを入れるだけ。該当しうる特定技能分野・概算費用・使える可能性のある助成金候補を整理し、<br className="hidden md:block" />
+              出入国在留管理庁の登録簿約11,000件から条件に合う支援機関をご案内します。
             </p>
 
             {/* URL Diagnose Form */}
@@ -131,9 +131,9 @@ export default function Home() {
               <form onSubmit={handleDiagnose} className="flex flex-col sm:flex-row gap-2">
                 <div className="relative flex-1">
                   <Globe2 className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                  <Input 
-                    type="url" 
-                    placeholder="自社のURLを入力して無料診断をはじめる" 
+                  <Input
+                    type="text"
+                    placeholder="会社名またはURLを入力して無料診断をはじめる"
                     className="pl-10 h-14 text-base border-0 focus-visible:ring-0 bg-transparent text-foreground"
                     value={url}
                     onChange={(e) => setUrl(e.target.value)}
@@ -146,7 +146,7 @@ export default function Home() {
               </form>
             </div>
             <p className="text-sm text-brand-foreground/60 mt-4 fade-up-2">
-              ※URLから業種を解析し、特定技能の該当分野の目安・概算コスト・条件に合う支援機関を整理します（在留資格の可否判断ではありません）
+              ※業種を解析し、1問ずつの簡単な質問に答えるだけで費用・助成金候補・支援機関を整理します（在留資格の可否判断ではありません）
             </p>
           </div>
         </section>

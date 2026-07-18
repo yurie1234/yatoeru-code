@@ -13,8 +13,18 @@ import Consult from "./pages/Consult";
 import Diagnose from "./pages/Diagnose";
 import ForOrganizations from "./pages/ForOrganizations";
 import Field from "./pages/Field";
+import GuideGinouJisshuChigai from "./pages/GuideGinouJisshuChigai";
 import GuideIkuseiShuro from "./pages/GuideIkuseiShuro";
+import GuideIkuseiShuroCost from "./pages/GuideIkuseiShuroCost";
+import GuideIkuseiShuroSchedule from "./pages/GuideIkuseiShuroSchedule";
 import GuideKanriShienKikan from "./pages/GuideKanriShienKikan";
+import GuideTokuteiGinouIkou from "./pages/GuideTokuteiGinouIkou";
+import Joseikin from "./pages/Joseikin";
+import JoseikinCareerUp from "./pages/JoseikinCareerUp";
+import JoseikinGyomuKaizen from "./pages/JoseikinGyomuKaizen";
+import JoseikinJinzaiKaihatsu from "./pages/JoseikinJinzaiKaihatsu";
+import JoseikinJinzaiKakuho from "./pages/JoseikinJinzaiKakuho";
+import JoseikinTrialKoyou from "./pages/JoseikinTrialKoyou";
 import Home from "./pages/Home";
 import OrgDetail from "./pages/OrgDetail";
 // 検証期間中は価格ページを非公開（2026-07-16 決定）。
@@ -49,7 +59,17 @@ function Router() {
       <Route path={"/region/:prefecture"} component={Region} />
       <Route path={"/field/:field"} component={Field} />
       <Route path={"/guide/ikusei-shuro"} component={GuideIkuseiShuro} />
+      <Route path={"/guide/ikusei-shuro-cost"} component={GuideIkuseiShuroCost} />
+      <Route path={"/guide/ikusei-shuro-schedule"} component={GuideIkuseiShuroSchedule} />
+      <Route path={"/guide/ginou-jisshu-chigai"} component={GuideGinouJisshuChigai} />
+      <Route path={"/guide/tokutei-ginou-ikou"} component={GuideTokuteiGinouIkou} />
       <Route path={"/guide/kanri-shien-kikan"} component={GuideKanriShienKikan} />
+      <Route path={"/joseikin"} component={Joseikin} />
+      <Route path={"/joseikin/jinzai-kakuho"} component={JoseikinJinzaiKakuho} />
+      <Route path={"/joseikin/gyomu-kaizen"} component={JoseikinGyomuKaizen} />
+      <Route path={"/joseikin/career-up"} component={JoseikinCareerUp} />
+      <Route path={"/joseikin/trial-koyou"} component={JoseikinTrialKoyou} />
+      <Route path={"/joseikin/jinzai-kaihatsu"} component={JoseikinJinzaiKaihatsu} />
       <Route path={"/for-organizations"} component={ForOrganizations} />
       <Route path={"/about"} component={About} />
       <Route path={"/terms"} component={Terms} />

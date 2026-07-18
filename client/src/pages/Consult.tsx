@@ -38,10 +38,20 @@ export default function Consult() {
     [params]
   );
 
+  // 診断ウィザードで入力された連絡先（任意）をプリフィル
+  const storedContact = useMemo(() => {
+    try {
+      const raw = sessionStorage.getItem("yatoeru_contact");
+      return raw ? (JSON.parse(raw) as { company?: string; email?: string }) : null;
+    } catch {
+      return null;
+    }
+  }, []);
+
   const [orgIds, setOrgIds] = useState<number[]>(initialOrgIds);
-  const [companyName, setCompanyName] = useState(params.get("companyName") ?? "");
+  const [companyName, setCompanyName] = useState(params.get("companyName") || storedContact?.company || "");
   const [contactName, setContactName] = useState("");
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(storedContact?.email || "");
   const [phone, setPhone] = useState("");
   const [prefecture, setPrefecture] = useState(NONE);
   const [field, setField] = useState(params.get("field") || NONE);
