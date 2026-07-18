@@ -119,8 +119,9 @@ export default function Home() {
               特定技能・育成就労の支援機関データベース
             </div>
             <h1 className="text-[1.75rem] leading-snug md:text-[2.6rem] lg:text-[3rem] font-black tracking-tight mb-6 md:leading-tight">
-              <span className="block">外国人採用の「費用・助成金・支援機関」</span>
-              <span className="block mt-2 md:mt-3"><span className="text-amber-accent">30秒</span>でまとめて無料診断</span>
+              <span className="block">外国人採用の</span>
+              <span className="block mt-1 md:mt-2 text-[1.5rem] md:text-[2.6rem] lg:text-[3rem] tracking-tighter md:tracking-tight whitespace-nowrap">「費用」「助成金」「支援機関」を</span>
+              <span className="block mt-1 md:mt-2"><span className="text-amber-accent">30秒</span>でまとめて無料診断</span>
             </h1>
             <div className="text-base md:text-lg text-brand-foreground/85 max-w-2xl mb-10 leading-relaxed space-y-1.5">
               <p className="font-semibold text-brand-foreground">会社名かURLを入れるだけ。</p>
