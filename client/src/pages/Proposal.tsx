@@ -227,7 +227,7 @@ export default function Proposal() {
                 <div>
                   <h3 className="font-bold mb-1">提案が通ったら、次は支援機関選びです</h3>
                   <p className="text-sm text-muted-foreground">
-                    御社の条件に合う支援機関に、最大5社まで無料で一括相談できます。
+                    条件に合う受付可能な支援機関に、無料で一括相談できます（候補数により最大5社）。
                   </p>
                 </div>
                 <Button

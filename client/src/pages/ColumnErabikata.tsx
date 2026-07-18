@@ -153,7 +153,7 @@ export default function ColumnErabikata() {
     document.head.appendChild(script);
     return () => {
       document.getElementById("column-erabikata-jsonld")?.remove();
-      document.title = "登録支援機関・監理支援機関を比較｜ヤトエル";
+      document.title = "登録支援機関を条件で比較｜ヤトエル";
       meta?.setAttribute("content", prev);
     };
   }, []);
@@ -360,7 +360,7 @@ export default function ColumnErabikata() {
             <div className="mb-4 md:mb-0">
               <h3 className="font-bold text-lg mb-1">条件に合う相見積先を今すぐ探せます</h3>
               <p className="text-sm text-brand-foreground/70 leading-relaxed">
-                全国11,448件の登録支援機関から、地域・対応言語・分野で絞り込み。最大5機関への一括相談も無料です（営業電話なし・連絡は選んだ機関のみ）。
+                全国11,448件の登録支援機関から、地域・対応言語・分野で絞り込み。受付可能な機関への一括相談も無料です（候補数により最大5社）（営業電話なし・連絡は選んだ機関のみ）。
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3 shrink-0">

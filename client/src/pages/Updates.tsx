@@ -24,7 +24,7 @@ export default function Updates() {
       "出入国在留管理庁の登録支援機関登録簿の更新を継続記録。新規登録・抹消された機関を基準日つきで公開しています。登録簿には抹消機関が掲載されないため、抹消記録はヤトエル独自のデータです。"
     );
     return () => {
-      document.title = "登録支援機関・監理支援機関を比較｜ヤトエル";
+      document.title = "登録支援機関を条件で比較｜ヤトエル";
       meta?.setAttribute("content", prev);
     };
   }, []);

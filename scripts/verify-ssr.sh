@@ -281,8 +281,10 @@ echo "== SSR crawler verification against $BASE =="
 #     hard error, not a silent skip.
 #   - 5th arg (paginated rows): substring the canonical href VALUE must contain,
 #     so a canonical collapsing back to page 1 turns the row red.
-check "/"                              "外国人採用の費用・助成金・支援機関を" "ヤトエル" state
+check "/"                              "外国人採用の" "ヤトエル" state
 check "/search"                        "登録支援機関を探す" "登録支援機関を検索" state
+# SEO要件：検索ページのSSR HTMLに機関カード（機関名）が含まれること（シードキー不一致の退行検知）
+check "/search"                        "株式会社" "登録支援機関を検索" state
 # detail row: 運営確認済み機関（エドミール）— 確認済みブロックの本文をneedleに
 check "/org/39735"                     "掲載情報 運営確認済み" "合同会社エドミール" state
 # unicode-slug rows — decodeURI seed-keyのE2E検証

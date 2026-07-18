@@ -45,7 +45,7 @@ export default function Region() {
     const prev = meta?.getAttribute("content") ?? "";
     meta?.setAttribute(
       "content",
-      `${prefecture}で特定技能外国人の受入れを支援する登録支援機関の一覧。対応言語・分野・行政処分歴で比較し、最大5社に無料で一括相談できます。`
+      `${prefecture}で特定技能外国人の受入れを支援する登録支援機関の一覧。対応言語・分野・行政処分歴で比較し、受付可能な機関に無料で一括相談できます（候補数により最大5社）。`
     );
     // FAQ JSON-LD
     const faq = {
@@ -65,7 +65,7 @@ export default function Region() {
           name: "登録支援機関への相談は無料ですか？",
           acceptedAnswer: {
             "@type": "Answer",
-            text: "ヤトエル経由での相談は無料です。最大5社にまとめて相談し、見積もりや提案を比較できます。",
+            text: "ヤトエル経由での相談は無料です。条件に合う受付可能な機関にまとめて相談し（候補数により最大5社）、見積もりや提案を比較できます。",
           },
         },
       ],
@@ -104,7 +104,7 @@ export default function Region() {
     document.head.appendChild(script);
     return () => {
       document.getElementById("region-jsonld")?.remove();
-      document.title = "登録支援機関・監理支援機関を比較｜ヤトエル";
+      document.title = "登録支援機関を条件で比較｜ヤトエル";
       meta?.setAttribute("content", prev);
     };
   }, [prefecture, isValid, stats?.total, orgItems]);

@@ -59,9 +59,9 @@ function seed(qc: QueryClient, key: unknown, data: unknown) {
   (qc.setQueryData as (k: unknown, d: unknown) => void)(key, data);
 }
 
-const SITE = "登録支援機関・監理支援機関を比較｜ヤトエル";
+const SITE = "登録支援機関を条件で比較｜ヤトエル";
 const DESC =
-  "特定技能・育成就労に対応する支援機関を、地域・業種・対応言語・新規相談受付状況などから比較。外国人雇用の準備度チェックと支援機関マッチ診断を無料で利用できます。";
+  "特定技能の登録支援機関を、地域・業種・対応言語・新規相談受付状況などから比較。育成就労・監理支援機関の制度移行情報にも対応。外国人雇用の準備度チェックと支援機関マッチ診断を無料で利用できます。";
 
 /** 静的公開ルートのhead定義（シード不要ページ） */
 const STATIC_HEADS: Record<string, { title: string; description: string }> = {
@@ -71,9 +71,9 @@ const STATIC_HEADS: Record<string, { title: string; description: string }> = {
       "業種と地域を選ぶだけで、特定技能・育成就労での外国人雇用の準備度を無料診断。条件に合う登録支援機関も同時にご案内します。",
   },
   "/consult": {
-    title: "登録支援機関への一括相談（無料・最大5社） - ヤトエル",
+    title: "登録支援機関への一括相談（無料） - ヤトエル",
     description:
-      "条件に合う登録支援機関へ最大5社まで無料で一括相談。特定技能・育成就労の受け入れ準備をまとめて相談できます。",
+      "条件に合う受付可能な登録支援機関へ無料で一括相談（候補数により最大5社）。特定技能の受け入れ準備をまとめて相談できます。",
   },
   "/proposal": {
     title: "AI提案書作成 - ヤトエル",
@@ -297,6 +297,9 @@ export async function prefetchForPath(
     const prefecture = sp.get("prefecture") ?? undefined;
     const language = sp.get("language") ?? undefined;
     const field = sp.get("field") ?? undefined;
+    const hasFilter = Boolean(keyword || prefecture || language || field);
+    // Search.tsxのqueryInputと完全一致させる（条件なしはsort:"default"）ことで、
+    // ハイドレーション時にキャッシュがヒットし、SSRのHTMLに機関カードが含まれる
     const input = {
       keyword: keyword || undefined,
       prefecture: prefecture || undefined,
@@ -304,11 +307,10 @@ export async function prefetchForPath(
       field: field || undefined,
       page: 1,
       limit: 20,
-      sort: "affinity" as const,
+      sort: (hasFilter ? "affinity" : "default") as "affinity" | "default",
     };
     const result = await p.orgsSearch(input);
     seed(qc, getQueryKey(trpc.orgs.search, input, "query"), result);
-    const hasFilter = Boolean(keyword || prefecture || language || field);
     return {
       title: "登録支援機関を検索 - ヤトエル",
       description:
@@ -343,7 +345,7 @@ export async function prefetchForPath(
     );
     return {
       title: `${prefecture}の登録支援機関一覧｜特定技能・育成就労 - ヤトエル`,
-      description: `${prefecture}に対応する登録支援機関の一覧。対応言語・処分歴・受付状況で比較でき、最大5社に無料で一括相談できます。`,
+      description: `${prefecture}に対応する登録支援機関の一覧。対応言語・処分歴・受付状況で比較でき、受付可能な機関に無料で一括相談できます（候補数により最大5社）。`,
       canonicalPath: `/region/${encodeURIComponent(prefecture)}`,
       jsonLd: [
         faqLd(regionFaqs(prefecture, stats?.total)),
@@ -373,7 +375,7 @@ export async function prefetchForPath(
     );
     return {
       title: `${field}分野対応の登録支援機関一覧｜特定技能 - ヤトエル`,
-      description: `特定技能「${field}」分野に対応する登録支援機関の一覧。${FIELD_DESCRIPTIONS[field] ?? ""}最大5社に無料で一括相談できます。`,
+      description: `特定技能「${field}」分野に対応する登録支援機関の一覧。${FIELD_DESCRIPTIONS[field] ?? ""}受付可能な機関に無料で一括相談できます（候補数により最大5社）。`,
       canonicalPath: `/field/${encodeURIComponent(field)}`,
       jsonLd: [
         faqLd(fieldFaqs(field, FIELD_DESCRIPTIONS[field])),

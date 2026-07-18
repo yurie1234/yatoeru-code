@@ -142,7 +142,7 @@ export default function ColumnShokaiVsShien() {
     document.head.appendChild(script);
     return () => {
       document.getElementById("column-shokai-jsonld")?.remove();
-      document.title = "登録支援機関・監理支援機関を比較｜ヤトエル";
+      document.title = "登録支援機関を条件で比較｜ヤトエル";
       meta?.setAttribute("content", prev);
     };
   }, []);

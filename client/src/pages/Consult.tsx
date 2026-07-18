@@ -141,7 +141,7 @@ export default function Consult() {
         <div className="container max-w-3xl">
           <h1 className="text-2xl md:text-3xl font-bold mb-2">支援機関への一括相談（無料）</h1>
           <p className="text-muted-foreground text-sm mb-4">
-            1回の入力で最大5社にまとめて相談。各機関から見積もり・提案を受け取り、比較検討できます。
+            1回の入力で、条件に合う受付可能な機関にまとめて相談（候補数により最大5社）。各機関から見積もり・提案を受け取り、比較検討できます。
           </p>
           <div className="space-y-1.5 text-sm">
             <p className="flex items-center gap-2">

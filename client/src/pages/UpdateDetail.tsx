@@ -43,7 +43,7 @@ export default function UpdateDetail() {
       `出入国在留管理庁の登録支援機関登録簿（${snapshot.baseDate}時点）の更新記録。新規登録${added.length}件・抹消${removed.length}件、総数${snapshot.totalCount.toLocaleString()}件。機関名・所在地・登録番号つきの一覧。`
     );
     return () => {
-      document.title = "登録支援機関・監理支援機関を比較｜ヤトエル";
+      document.title = "登録支援機関を条件で比較｜ヤトエル";
       meta?.setAttribute("content", prev);
     };
   }, [data]);

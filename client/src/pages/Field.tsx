@@ -48,7 +48,7 @@ export default function Field() {
     const prev = meta?.getAttribute("content") ?? "";
     meta?.setAttribute(
       "content",
-      `特定技能「${field}」分野に対応する登録支援機関の一覧。${FIELD_DESCRIPTIONS[field] ?? ""}最大5社に無料で一括相談できます。`
+      `特定技能「${field}」分野に対応する登録支援機関の一覧。${FIELD_DESCRIPTIONS[field] ?? ""}受付可能な機関に無料で一括相談できます（候補数により最大5社）。`
     );
     const faq = {
       "@context": "https://schema.org",
@@ -106,7 +106,7 @@ export default function Field() {
     document.head.appendChild(script);
     return () => {
       document.getElementById("field-jsonld")?.remove();
-      document.title = "登録支援機関・監理支援機関を比較｜ヤトエル";
+      document.title = "登録支援機関を条件で比較｜ヤトエル";
       meta?.setAttribute("content", prev);
     };
   }, [field, isValid, fieldOrgItems, orgData?.total]);

@@ -17,7 +17,7 @@ const HOME_FAQS = [
   },
   {
     q: "ヤトエルの利用に費用はかかりますか？",
-    a: "企業様のご利用は完全無料です。外国人雇用の準備度チェック、支援機関の検索・比較、最大5社への一括相談、提案書草案の生成まで、仲介手数料は一切発生しません。",
+    a: "企業様のご利用は完全無料です。外国人雇用の準備度チェック、支援機関の検索・比較、受付可能な機関への一括相談（候補数により最大5社）、提案書草案の生成まで、仲介手数料は一切発生しません。",
   },
   {
     q: "育成就労制度とは何ですか？",
@@ -116,7 +116,7 @@ export default function Home() {
           <div className="container relative z-10 flex flex-col items-center text-center fade-up">
             <div className="inline-flex items-center rounded-full border border-brand-foreground/20 bg-brand-foreground/10 px-3 py-1 text-sm font-medium mb-8">
               <span className="flex h-2 w-2 rounded-full bg-amber-accent mr-2"></span>
-              特定技能・育成就労の支援機関データベース
+              登録支援機関を条件で比較できるデータベース
             </div>
             <h1 className="text-[1.75rem] leading-snug md:text-[2.6rem] lg:text-[3rem] font-black tracking-tight mb-6 md:leading-tight">
               <span className="block">外国人採用の</span>
@@ -151,6 +151,9 @@ export default function Home() {
             <p className="text-sm text-brand-foreground/60 mt-4 fade-up-2">
               ※業種を解析し、1問ずつの簡単な質問に答えるだけで費用・助成金候補・支援機関を整理します（在留資格の可否判断ではありません）
             </p>
+            <p className="text-xs text-brand-foreground/50 mt-2 fade-up-2">
+              育成就労・監理支援機関の制度移行情報にも対応しています（監理支援機関は2027年4月の制度施行に向け許可申請受付中の段階です）
+            </p>
           </div>
         </section>
 
@@ -161,7 +164,7 @@ export default function Home() {
               <div className="flex flex-col items-center justify-center space-y-2">
                 <Building2 className="h-8 w-8 text-brand mb-2" />
                 <div className="text-3xl font-bold text-foreground">{(stats?.total ?? 11448).toLocaleString()}</div>
-                <div className="text-sm text-muted-foreground">掲載支援機関数（入管庁登録簿ベース）</div>
+                <div className="text-sm text-muted-foreground">登録支援機関の掲載数（入管庁登録簿ベース）</div>
               </div>
               <div className="flex flex-col items-center justify-center space-y-2">
                 <ShieldCheck className="h-8 w-8 text-brand mb-2" />
@@ -276,7 +279,7 @@ export default function Home() {
           <div className="container">
             <div className="text-center mb-16">
               <h2 className="text-3xl font-bold mb-4">ヤトエルが選ばれる理由</h2>
-              <p className="text-muted-foreground">外国人雇用を検討する企業様を、AIとデータで強力にサポートします。</p>
+              <p className="text-muted-foreground">公的登録簿と事業者への直接確認で、支援機関選びをサポートします。</p>
             </div>
 
             <div className="grid md:grid-cols-3 gap-8">
@@ -288,7 +291,7 @@ export default function Home() {
                   <CardTitle className="text-xl">外国人雇用の準備度チェック</CardTitle>
                 </CardHeader>
                 <CardContent className="text-muted-foreground">
-                  自社のURLを入力するだけで、AIが業種を解析。特定技能のどの分野に該当しそうか、概算コストはいくらかを整理し、支援機関選びの条件を明確にします。
+                  会社名かURLを入力するだけで業種を読み取り、特定技能のどの分野に該当しそうか、概算コストはいくらかを整理し、支援機関選びの条件を明確にします。
                 </CardContent>
               </Card>
 
@@ -309,10 +312,10 @@ export default function Home() {
                   <div className="h-12 w-12 rounded-lg bg-brand/10 flex items-center justify-center mb-4">
                     <CheckCircle2 className="h-6 w-6 text-brand" />
                   </div>
-                  <CardTitle className="text-xl">最大5社への一括相談</CardTitle>
+                  <CardTitle className="text-xl">受付を確認した機関に一括相談</CardTitle>
                 </CardHeader>
                 <CardContent className="text-muted-foreground">
-                  条件に合う支援機関を見つけたら、最大5社まで同時に無料相談が可能。相見積もりを取って比較検討できます。
+                  新規案件を受け付けていることを運営が直接確認した機関へ、まとめて無料相談できます（候補数により最大5社）。相見積もりを取って比較検討できます。
                 </CardContent>
               </Card>
             </div>
