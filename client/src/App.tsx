@@ -7,6 +7,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import Admin from "./pages/Admin";
 import ColumnErabikata from "./pages/ColumnErabikata";
 import ColumnIkouGuide from "./pages/ColumnIkouGuide";
+import ColumnSaiyouCost from "./pages/ColumnSaiyouCost";
 import Columns from "./pages/Columns";
 import ColumnShokaiVsShien from "./pages/ColumnShokaiVsShien";
 import Consult from "./pages/Consult";
@@ -54,6 +55,7 @@ function Router() {
       <Route path={"/columns/shien-kikan-erabikata"} component={ColumnErabikata} />
       <Route path={"/columns/kanri-dantai-ikou-guide"} component={ColumnIkouGuide} />
       <Route path={"/columns/shokai-vs-shien"} component={ColumnShokaiVsShien} />
+      <Route path={"/columns/saiyou-cost-hikaku"} component={ColumnSaiyouCost} />
       <Route path={"/updates"} component={Updates} />
       <Route path={"/updates/:baseDate"} component={UpdateDetail} />
       <Route path={"/region/:prefecture"} component={Region} />

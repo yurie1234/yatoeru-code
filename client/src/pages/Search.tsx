@@ -185,10 +185,15 @@ export default function Search() {
                 </span>
               </div>
             </div>
-            {sort === "affinity" && hasCondition && (
+            {sort === "affinity" && hasCondition ? (
               <p className="text-xs text-muted-foreground mb-4 leading-relaxed rounded-md bg-muted/40 border px-3 py-2">
                 <Info className="h-3.5 w-3.5 inline-block mr-1 -mt-0.5" />
                 {AFFINITY_METHODOLOGY}
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground mb-4 leading-relaxed rounded-md bg-muted/40 border px-3 py-2">
+                <Info className="h-3.5 w-3.5 inline-block mr-1 -mt-0.5" />
+                並び順は登録年月日の古い順です。掲載料による表示順の優遇は行っていません（PR表示は別途明示）。
               </p>
             )}
             <div className="space-y-4">

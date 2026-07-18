@@ -26,6 +26,7 @@ const STATIC_PATHS = [
   "/columns/shien-kikan-erabikata",
   "/columns/kanri-dantai-ikou-guide",
   "/columns/shokai-vs-shien",
+  "/columns/saiyou-cost-hikaku",
   "/updates",
   "/guide/ikusei-shuro",
   "/guide/ikusei-shuro-cost",

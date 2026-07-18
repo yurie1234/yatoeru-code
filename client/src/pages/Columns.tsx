@@ -12,6 +12,14 @@ import { Link } from "wouter";
 
 const COLUMNS = [
   {
+    slug: "saiyou-cost-hikaku",
+    title: "外国人採用のコストは高い？特定技能・育成就労と人材紹介・求人広告・派遣を徹底比較",
+    description:
+      "特定技能・育成就労の採用コスト（初期費用・支援委託費・監理費）を1人あたり年間総額で人材紹介・求人広告・派遣と比較。助成金活用で実質負担を下げる方法も解説。",
+    baseDate: "2026年7月17日",
+    tags: ["採用コスト", "特定技能", "比較"],
+  },
+  {
     slug: "shien-kikan-erabikata",
     title: "登録支援機関の選び方：料金相場・確認すべき7項目・登録番号の確認方法",
     description:

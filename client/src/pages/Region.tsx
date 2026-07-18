@@ -36,6 +36,8 @@ export default function Region() {
     { enabled: isValid }
   );
 
+  const orgItems = orgData?.items ?? [];
+
   useEffect(() => {
     if (!isValid) return;
     document.title = `${prefecture}の登録支援機関一覧｜特定技能・育成就労 - ヤトエル`;
@@ -68,19 +70,44 @@ export default function Region() {
         },
       ],
     };
+    const graph: Record<string, unknown>[] = [faq];
+    // ItemList（一覧の構造化データ・並び順は条件適合度のみで決定）
+    if (orgItems.length > 0) {
+      graph.push({
+        "@type": "ItemList",
+        name: `${prefecture}の登録支援機関一覧`,
+        description: `${prefecture}に所在する登録支援機関の一覧（出入国在留管理庁の登録簿に基づく）。並び順は登録年月日・条件適合度に基づき、掲載料による優遇はありません。`,
+        numberOfItems: stats?.total ?? orgItems.length,
+        itemListOrder: "https://schema.org/ItemListOrderAscending",
+        itemListElement: orgItems.map((o, i) => ({
+          "@type": "ListItem",
+          position: i + 1,
+          name: o.name,
+          url: `https://yatoeru.jp/org/${o.id}`,
+        })),
+      });
+    }
+    graph.push({
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "ホーム", item: "https://yatoeru.jp/" },
+        { "@type": "ListItem", position: 2, name: "支援機関検索", item: "https://yatoeru.jp/search" },
+        { "@type": "ListItem", position: 3, name: prefecture, item: `https://yatoeru.jp/region/${encodeURIComponent(prefecture)}` },
+      ],
+    });
     // SSR焼き込み分のJSON-LDを除去してから注入（重複防止）
     document.querySelectorAll("script.ssr-jsonld").forEach((el) => el.remove());
     const script = document.createElement("script");
     script.type = "application/ld+json";
     script.id = "region-jsonld";
-    script.textContent = JSON.stringify(faq);
+    script.textContent = JSON.stringify({ "@context": "https://schema.org", "@graph": graph });
     document.head.appendChild(script);
     return () => {
       document.getElementById("region-jsonld")?.remove();
       document.title = "登録支援機関・監理支援機関を比較｜ヤトエル";
       meta?.setAttribute("content", prev);
     };
-  }, [prefecture, isValid, stats?.total]);
+  }, [prefecture, isValid, stats?.total, orgItems]);
 
   if (!isValid) {
     return (
@@ -153,6 +180,11 @@ export default function Region() {
               すべて見る
             </Button>
           </div>
+
+          <p className="text-xs text-muted-foreground leading-relaxed bg-muted/50 rounded-lg px-3 py-2">
+            <ShieldCheck className="h-3.5 w-3.5 inline mr-1 text-brand" />
+            並び順は登録年月日や条件との適合度のみに基づいており、掲載料による表示順の優遇は行っていません（PR表示は別途明示）。
+          </p>
 
           {isLoading ? (
             <div className="space-y-3">
