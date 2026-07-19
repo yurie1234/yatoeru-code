@@ -276,10 +276,10 @@
 - [x] SSR検証スクリプト・vitest回帰・スクリーンショット確認・チェックポイント保存
 
 ## コラム書き直し＋週2自動投稿（2026-07-18 ユーザー依頼）
-- [ ] ライティング規範をdocs/writing-style-guide.mdに保存
-- [ ] 記事テーブル（articles）追加・既存4本のコラムをDB化して動的ルート/columns/:slugで配信（既存URL維持）
-- [ ] 既存コラム4本（採用コスト比較・選び方・移行ガイド・紹介vs支援）を規範に則って書き直し
-- [ ] SSR・JSON-LD・RSS・sitemapを動的記事対応に更新
-- [ ] /api/scheduled/publishColumn エンドポイント実装（cron認証・重複slug検証・サニタイズ）
-- [ ] 週2回のコラム自動投稿ジョブを作成（規範＋既存記事との重複回避＋ホットテーマ選定を指示）
-- [ ] 検証：SSR検証・vitest・実POSTテスト・チェックポイント保存
+- [x] ライティング規範をdocs/writing-style-guide.mdに保存
+- [x] 記事テーブル（articles）追加・新規記事は動的ルート/columns/:slugで配信（既存4本は静的TSXのままURL維持）
+- [x] 既存コラム4本（採用コスト比較・選び方・移行ガイド・紹介vs支援）を規範に則って書き直し（本番反映確認済み）
+- [x] SSR・JSON-LD・RSS・sitemap・llms.txtを動的記事対応に更新
+- [x] /api/scheduled/article-publish エンドポイント実装（cron認証・zod検証・重複slug検証・未認証403確認済み）
+- [ ] 週2回のコラム自動投稿ジョブを作成 → このチャットには登録簿週次同期のスケジュールが既に存在し「1タスク1スケジュール」制限で作成不可。プロンプトは/home/ubuntu/column_cron_prompt.txtに準備済み。新しいチャットでの作成をユーザーに依頼
+- [x] 検証：SSR動作確認（テスト記事で一覧/詳細/RSS/sitemap/llms.txt反映確認後削除）・vitest 61件パス・tsc 0エラー・チェックポイント保存・本番公開
