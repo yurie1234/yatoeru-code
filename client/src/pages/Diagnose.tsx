@@ -21,6 +21,7 @@ import { AlertTriangle, ArrowLeft, ArrowRight, Building2, CheckCircle2, Coins, E
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Link, useLocation, useSearch } from "wouter";
+import { formatDateJa } from "@/lib/utils";
 
 const ALL = "__all__";
 
@@ -798,7 +799,7 @@ export default function Diagnose() {
                               ) : null}
                               <p>
                                 <span className="font-semibold">事業者確認日：</span>
-                                {new Date(org.verifiedAt).toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" })}
+                                {formatDateJa(org.verifiedAt)}
                               </p>
                             </div>
                           )}

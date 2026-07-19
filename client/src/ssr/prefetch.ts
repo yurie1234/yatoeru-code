@@ -258,7 +258,7 @@ export async function prefetchForPath(
     seed(qc, getQueryKey(trpc.orgs.getById, id, "query"), data);
     const { org } = data;
     const verified = org.verifiedAt
-      ? `掲載情報は${new Date(org.verifiedAt).toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" })}に運営が事業者へ直接確認済み。`
+      ? `掲載情報は${new Date(org.verifiedAt).toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric", timeZone: "Asia/Tokyo" })}に運営が事業者へ直接確認済み。`
       : "";
     const jsonLd: Record<string, unknown> = {
       "@context": "https://schema.org",

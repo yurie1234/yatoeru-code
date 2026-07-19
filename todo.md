@@ -286,3 +286,6 @@
 
 ## 確認済み機関数の修正（2026-07-19 ユーザー報告）
 - [x] 「事業者確認済み・新規相談受付中」は4社。表示はもともとDB動的参照で、DBに4社目（ALBATZ株式会社 org/36490：外ドラin運営・物流/自動車運送業特化・7/16返信受領・7/21商談確定）が未反映だったのでverified/openに更新。本番トップで4社表示・詳細ページの確認済みバッジも反映確認
+
+## Hydrationエラー修正（2026-07-19 ユーザー報告）
+- [x] Hydrationエラー修正：原因はHomeの最終更新日のtoLocaleDateStringがサーバー(UTC)とクライアント(JST)で別日付になるタイムゾーン差。formatDateJa（Asia/Tokyo固定）をutilsに追加しHome/Search/OrgDetail/Diagnose/Admin/prefetchの全日付表示を置換。ALBATZのverifiedAtもJST 7/16になるよう修正。SSR出力・スクリーンショット・vitest 61件・tsc確認済み

@@ -21,6 +21,7 @@ import {
 import { useEffect } from "react";
 import { captureSource, trackEvent } from "@/lib/track";
 import { Link, useLocation, useParams } from "wouter";
+import { formatDateJa } from "@/lib/utils";
 
 // 口コミ公開フラグ：GO判定後＋運用ルール（投稿ガイドライン・本人確認・削除基準・法務体制）整備後にtrueにする
 const REVIEWS_ENABLED = false;
@@ -135,7 +136,7 @@ export default function OrgDetail() {
                     <div className="flex items-center gap-1.5 text-sm font-bold text-emerald-800 dark:text-emerald-300">
                       <CheckCircle2 className="h-4 w-4" />
                       掲載情報 運営確認済み：
-                      {new Date(data.org.verifiedAt).toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" })}
+                      {formatDateJa(data.org.verifiedAt)}
                     </div>
                     <p className="text-xs text-emerald-800/80 dark:text-emerald-300/80 mt-1">
                       以下の項目は、運営が事業者に直接確認した情報です（登録簿由来の情報とは区別して表示しています）。
@@ -321,7 +322,7 @@ export default function OrgDetail() {
                             ))}
                           </div>
                           <span className="text-xs text-muted-foreground">
-                            {review.reviewerCompanyType ?? "利用企業"}・{new Date(review.createdAt).toLocaleDateString("ja-JP")}
+                            {review.reviewerCompanyType ?? "利用企業"}・{formatDateJa(review.createdAt, { month: "2-digit" })}
                           </span>
                         </div>
                         <p className="text-sm leading-relaxed">{review.body}</p>

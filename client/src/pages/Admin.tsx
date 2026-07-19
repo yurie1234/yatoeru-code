@@ -32,6 +32,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { formatDateJa } from "@/lib/utils";
 
 function formatYen(n: number) {
   if (n >= 100000000) return `${(n / 100000000).toFixed(1)}億円`;
@@ -275,7 +276,7 @@ export default function Admin() {
                           consultationList.map((c) => (
                             <TableRow key={c.id}>
                               <TableCell className="text-xs">
-                                {new Date(c.createdAt).toLocaleDateString("ja-JP")}
+                                {formatDateJa(c.createdAt, { month: "2-digit" })}
                               </TableCell>
                               <TableCell className="font-medium">{c.companyName}</TableCell>
                               <TableCell>{c.field ?? "-"}</TableCell>
@@ -317,7 +318,7 @@ export default function Admin() {
                           planList.map((p) => (
                             <TableRow key={p.id}>
                               <TableCell className="text-xs">
-                                {new Date(p.createdAt).toLocaleDateString("ja-JP")}
+                                {formatDateJa(p.createdAt, { month: "2-digit" })}
                               </TableCell>
                               <TableCell className="font-medium">{p.orgName}</TableCell>
                               <TableCell>

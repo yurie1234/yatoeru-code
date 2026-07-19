@@ -5,6 +5,7 @@ import { trpc } from "@/lib/trpc";
 import { Building2, CheckCircle2, ChevronRight, Globe2, Menu, Search, ShieldCheck, Users, X } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
+import { formatDateJa } from "@/lib/utils";
 
 const HOME_FAQS = [
   {
@@ -184,7 +185,7 @@ export default function Home() {
             </div>
             {stats?.lastVerifiedAt && (
               <p className="text-center text-xs text-muted-foreground mt-6">
-                事業者確認情報の最終更新：{new Date(stats.lastVerifiedAt).toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" })}
+                事業者確認情報の最終更新：{formatDateJa(stats.lastVerifiedAt)}
               </p>
             )}
           </div>

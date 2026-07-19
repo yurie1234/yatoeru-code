@@ -20,6 +20,7 @@ import { MAJOR_LANGUAGES, PREFECTURES, TOKUTEI_FIELDS } from "@shared/tokutei";
 import { AlertTriangle, ArrowDownWideNarrow, Building2, CheckSquare, ChevronLeft, ChevronRight, Info, Languages, MapPin, Search as SearchIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useSearch } from "wouter";
+import { formatDateJa } from "@/lib/utils";
 
 const ALL = "__all__";
 
@@ -279,7 +280,7 @@ export default function Search() {
                             ) : null}
                             <p>
                               <span className="font-semibold">事業者確認日：</span>
-                              {new Date(org.verifiedAt).toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" })}
+                              {formatDateJa(org.verifiedAt)}
                             </p>
                           </div>
                         )}
