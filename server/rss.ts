@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { desc, sql } from "drizzle-orm";
-import { registryChanges, registrySnapshots } from "../drizzle/schema";
+import { articles, registryChanges, registrySnapshots } from "../drizzle/schema";
 import { getDb } from "./db";
 
 const SITE_URL = "https://yatoeru.jp";
@@ -107,6 +107,30 @@ export async function rssHandler(_req: Request, res: Response) {
           description,
           pubDate: s.createdAt ?? new Date(`${s.baseDate}T03:00:00Z`),
           guid: `${SITE_URL}/updates/${s.baseDate}`,
+        });
+      }
+    }
+
+    // DB保存の動的コラム記事（週2回の自動投稿分）
+    if (db) {
+      const dbArticles = await db
+        .select({
+          slug: articles.slug,
+          title: articles.title,
+          description: articles.description,
+          baseDate: articles.baseDate,
+          createdAt: articles.createdAt,
+        })
+        .from(articles)
+        .orderBy(desc(articles.createdAt))
+        .limit(30);
+      for (const a of dbArticles) {
+        items.push({
+          title: a.title,
+          link: `${SITE_URL}/columns/${a.slug}`,
+          description: a.description,
+          pubDate: a.createdAt ?? new Date(`${a.baseDate}T03:00:00Z`),
+          guid: `${SITE_URL}/columns/${a.slug}`,
         });
       }
     }

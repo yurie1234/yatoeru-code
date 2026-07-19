@@ -53,6 +53,8 @@ export type SsrPrefetch = {
   ) => Promise<RO["orgs"]["search"]>;
   updatesList: () => Promise<RO["updates"]["list"]>;
   updatesDetail: (baseDate: string) => Promise<RO["updates"]["detail"] | null>;
+  articlesList: () => Promise<RO["articles"]["list"]>;
+  articlesBySlug: (slug: string) => Promise<RO["articles"]["bySlug"] | null>;
 };
 
 function seed(qc: QueryClient, key: unknown, data: unknown) {
@@ -399,6 +401,35 @@ export async function prefetchForPath(
     };
   }
 
+  // 動的コラム記事（DB保存。静的コラム4本はSTATIC_HEADS側で処理済み）
+  const articleMatch = clean.match(/^\/columns\/([a-z0-9-]+)$/);
+  if (articleMatch && !STATIC_HEADS[clean] && !COLUMN_ARTICLES[clean]) {
+    const slug = articleMatch[1];
+    const article = await p.articlesBySlug(slug);
+    if (!article) return { title: SITE, description: DESC, notFound: true };
+    seed(qc, getQueryKey(trpc.articles.bySlug, { slug }, "query"), article);
+    return {
+      title: `${article.title} - ヤトエル`,
+      description: article.description,
+      ogType: "article",
+      canonicalPath: `/columns/${slug}`,
+      publishedTime: `${article.baseDate}T00:00:00+09:00`,
+      jsonLd: [
+        articleLd({
+          headline: article.title,
+          path: `/columns/${slug}`,
+          datePublished: article.baseDate,
+          description: article.description,
+        }),
+        breadcrumbLd([
+          { name: "ホーム", path: "/" },
+          { name: "コラム", path: "/columns" },
+          { name: article.title, path: `/columns/${slug}` },
+        ]),
+      ],
+    };
+  }
+
   // 更新情報詳細
   const updateMatch = clean.match(/^\/updates\/(\d{4}-\d{2}-\d{2})$/);
   if (updateMatch) {
@@ -455,6 +486,11 @@ export async function prefetchForPath(
   // 静的公開ルート（head-only）
   const staticHead = STATIC_HEADS[clean];
   if (staticHead) {
+    // コラム一覧：DB記事もSSRでHTMLに含める
+    if (clean === "/columns") {
+      const list = await p.articlesList();
+      seed(qc, getQueryKey(trpc.articles.list, undefined, "query"), list);
+    }
     const jsonLd: Array<Record<string, unknown>> = [];
     // コラム記事：Article＋FAQPage＋パンくず
     const article = COLUMN_ARTICLES[clean];

@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ArrowRight, BookOpen, Rss } from "lucide-react";
 import { useEffect } from "react";
 import { Link } from "wouter";
+import { trpc } from "@/lib/trpc";
 
 /**
  * コラム一覧ページ /columns
@@ -87,7 +88,44 @@ const JOSEIKIN_LINKS = [
   { href: "/joseikin/jinzai-kaihatsu", title: "人材開発支援助成金（経費の45〜75%）", description: "日本語教育・研修費の助成。" },
 ] as const;
 
+/** "2026年7月17日" → "2026-07-17"（ソート用） */
+function toIsoDate(jp: string): string {
+  const m = jp.match(/(\d{4})年(\d{1,2})月(\d{1,2})日/);
+  if (!m) return jp;
+  return `${m[1]}-${m[2].padStart(2, "0")}-${m[3].padStart(2, "0")}`;
+}
+
+/** "2026-07-17" → "2026年7月17日"（表示用） */
+function toJpDate(iso: string): string {
+  const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return iso;
+  return `${m[1]}年${Number(m[2])}月${Number(m[3])}日`;
+}
+
+type ColumnCard = {
+  slug: string;
+  title: string;
+  description: string;
+  baseDate: string;
+  tags: readonly string[];
+  sortKey: string;
+};
+
 export default function Columns() {
+  const { data: dbArticles } = trpc.articles.list.useQuery();
+
+  const allColumns: ColumnCard[] = [
+    ...COLUMNS.map((c) => ({ ...c, sortKey: toIsoDate(c.baseDate) })),
+    ...(dbArticles ?? []).map((a) => ({
+      slug: a.slug,
+      title: a.title,
+      description: a.description,
+      baseDate: toJpDate(a.baseDate),
+      tags: (a.tags ?? []) as readonly string[],
+      sortKey: a.baseDate,
+    })),
+  ].sort((x, y) => y.sortKey.localeCompare(x.sortKey));
+
   useEffect(() => {
     document.title = "コラム一覧｜特定技能・育成就労の実務解説 - ヤトエル";
     const meta = document.querySelector('meta[name="description"]');
@@ -134,7 +172,7 @@ export default function Columns() {
         <section>
           <h2 className="text-xl font-bold mb-4">実務コラム</h2>
           <div className="space-y-4">
-            {COLUMNS.map((c) => (
+            {allColumns.map((c) => (
               <Link key={c.slug} href={`/columns/${c.slug}`}>
                 <Card className="cursor-pointer transition-shadow hover:shadow-md">
                   <CardContent className="p-5">

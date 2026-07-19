@@ -35,5 +35,7 @@ export async function buildSsrPrefetch(
     updatesList: () => caller.updates.list(),
     updatesDetail: baseDate =>
       nullOnNotFound(caller.updates.detail({ baseDate })),
+    articlesList: () => caller.articles.list(),
+    articlesBySlug: slug => nullOnNotFound(caller.articles.bySlug({ slug })),
   };
 }

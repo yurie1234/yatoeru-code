@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import type { Request, Response } from "express";
 import { getDb } from "./db";
-import { supportOrgs } from "../drizzle/schema";
+import { articles, supportOrgs } from "../drizzle/schema";
 import { PREFECTURES, TOKUTEI_FIELDS, UPCOMING_FIELDS } from "../shared/tokutei";
 
 const SITE_URL = "https://yatoeru.jp";
@@ -86,6 +86,17 @@ export async function sitemapHandler(_req: Request, res: Response) {
     for (const f of [...TOKUTEI_FIELDS, ...UPCOMING_FIELDS]) {
       urls.push(
         `<url><loc>${esc(`${SITE_URL}/field/${encodeURIComponent(f)}`)}</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>`
+      );
+    }
+    // DB保存の動的コラム記事（週2回の自動投稿分）
+    const dbArticles = !db
+      ? []
+      : await db
+          .select({ slug: articles.slug, baseDate: articles.baseDate })
+          .from(articles);
+    for (const a of dbArticles) {
+      urls.push(
+        `<url><loc>${esc(`${SITE_URL}/columns/${a.slug}`)}</loc><lastmod>${a.baseDate}</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>`
       );
     }
     for (const o of orgs) {

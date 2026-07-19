@@ -1,4 +1,6 @@
 import type { Express, Request, Response } from "express";
+import { articles } from "../drizzle/schema";
+import { getDb } from "./db";
 
 /**
  * /llms.txt — AIクローラー・LLM向けのサイト概要（llmstxt.org準拠）
@@ -59,14 +61,47 @@ const LLMS_TXT = `# ヤトエル（Yatoeru）
 - [ヤトエルについて](${SITE_URL}/about) / [プライバシーポリシー](${SITE_URL}/privacy) / [利用規約](${SITE_URL}/terms)
 `;
 
+// DB記事を含めたllms.txtの10分キャッシュ
+let llmsCache: { text: string; at: number } | null = null;
+const LLMS_CACHE_MS = 10 * 60 * 1000;
+
+/** DB保存の動的コラム記事を「制度解説」セクション末尾に追記する */
+async function buildLlmsTxt(): Promise<string> {
+  if (llmsCache && Date.now() - llmsCache.at < LLMS_CACHE_MS) {
+    return llmsCache.text;
+  }
+  let text = LLMS_TXT;
+  try {
+    const db = await getDb();
+    if (db) {
+      const rows = await db
+        .select({ slug: articles.slug, title: articles.title })
+        .from(articles);
+      if (rows.length > 0) {
+        const lines = rows
+          .map((a) => `- [${a.title}](${SITE_URL}/columns/${a.slug})`)
+          .join("\n");
+        text = text.replace(
+          "\n## 登録支援機関の方へ",
+          `${lines}\n\n## 登録支援機関の方へ`
+        );
+      }
+    }
+  } catch (e) {
+    console.error("[llms.txt] failed to append db articles:", e);
+  }
+  llmsCache = { text, at: Date.now() };
+  return text;
+}
+
 export function registerLlmsTxtRoute(app: Express) {
-  app.get("/llms.txt", (_req: Request, res: Response) => {
+  app.get("/llms.txt", async (_req: Request, res: Response) => {
     res
       .status(200)
       .set({
         "Content-Type": "text/plain; charset=utf-8",
         "Cache-Control": "public, max-age=3600",
       })
-      .send(LLMS_TXT);
+      .send(await buildLlmsTxt());
   });
 }

@@ -174,10 +174,11 @@ export default function ColumnIkouGuide() {
             監理団体から監理支援機関への移行ガイド：2026年9月の期限までにやること
           </h1>
           <p className="text-brand-foreground/80 max-w-3xl leading-relaxed">
+            「いまの許可があるのだから、新制度でもそのままやれるはずだ」——監理団体の現場ではこう考えたくなるはずです。ところが
             <strong>
-              監理団体の許可は育成就労制度（2027年4月1日施行）の監理支援機関に引き継がれず、新たに許可を受ける必要があります。施行日前申請は2026年4月15日から外国人技能実習機構（OTIT）で受付中、技能実習法に基づく監理団体の新規許可申請は2026年9月30日で受付終了です。
+              監理団体の許可は育成就労制度（2027年4月1日施行）の監理支援機関に引き継がれません。新たに許可を受ける必要があり、施行日前申請は2026年4月15日から外国人技能実習機構（OTIT）で受付中、技能実習法に基づく監理団体の新規許可申請は2026年9月30日で受付終了
             </strong>
-            施行日から切れ目なく事業を続けるための移行スケジュールと準備6ステップを整理します。
+            です。では、施行日から切れ目なく事業を続けるには、いつまでに何を終えておく必要があるのか。
           </p>
           <div className="flex flex-wrap items-center gap-3 mt-5">
             <Badge className="bg-amber-accent text-brand hover:bg-amber-accent gap-1">
@@ -227,11 +228,11 @@ export default function ColumnIkouGuide() {
             </CardContent>
           </Card>
           <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-            重要なのは、
+            表の中で2027年4月より先に来る日付が一つあります。
             <strong className="text-foreground">
-              2026年9月30日が「技能実習法に基づく監理団体の新規許可申請」の最終受付日
+              2026年9月30日、「技能実習法に基づく監理団体の新規許可申請」の最終受付日
             </strong>
-            である点です。以後の新規参入は監理支援機関の許可申請に一本化されます。既存の監理団体が育成就労制度へ移行するための施行日前申請はすでに受付中のため、この夏〜秋が申請準備の実質的な山場になります。
+            です。以後の新規参入は監理支援機関の許可申請に一本化されます。「施行は2027年4月だからまだ先」と見えていた方にとって、実質の締め切りは半年以上手前にあることになります。既存の監理団体の施行日前申請はすでに受付が始まっているので、この夏〜秋が申請準備の実質的な山場になります。
           </p>
         </section>
 
@@ -263,7 +264,7 @@ export default function ColumnIkouGuide() {
           </h2>
           <div className="space-y-4 text-sm leading-relaxed text-muted-foreground">
             <p>
-              監理団体と監理支援機関の要件の違い（外部監査人の義務化・役職員の関与制限・業務範囲）は
+              6ステップを見て「要は名前が変わるだけではないのか」と感じた方ほど、要件の差分を先に確かめてください。監理団体と監理支援機関の要件の違い（外部監査人の義務化・役職員の関与制限・業務範囲）は
               <Link href="/guide/kanri-shien-kikan">
                 <span className="text-brand hover:underline cursor-pointer">監理支援機関ガイド</span>
               </Link>

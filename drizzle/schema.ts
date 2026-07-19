@@ -270,3 +270,30 @@ export const orgEvents = mysqlTable("org_events", {
 
 export type OrgEvent = typeof orgEvents.$inferSelect;
 export type InsertOrgEvent = typeof orgEvents.$inferInsert;
+
+/**
+ * コラム記事（週2回のAGENT cronが規範準拠で執筆・POSTする動的記事。
+ * 既存の静的4本はコード内コンポーネントのまま。以降の新規記事はこのテーブルに保存）
+ */
+export const articles = mysqlTable("articles", {
+  id: int("id").autoincrement().primaryKey(),
+  /** URLスラッグ（/columns/:slug）。英小文字・数字・ハイフンのみ */
+  slug: varchar("slug", { length: 128 }).notNull().unique(),
+  title: varchar("title", { length: 255 }).notNull(),
+  /** meta description・一覧カード用（120字前後） */
+  description: varchar("description", { length: 512 }).notNull(),
+  /** 本文（Markdown。SSR/CSRともreact-markdown系で描画しrawHTMLは無効） */
+  bodyMd: text("bodyMd").notNull(),
+  /** タグ（表示用、最大5個） */
+  tags: json("tags").$type<string[]>(),
+  /** 内容確認基準日 YYYY-MM-DD */
+  baseDate: varchar("baseDate", { length: 16 }).notNull(),
+  /** 出典（名称とURL） */
+  sources: json("sources").$type<Array<{ name: string; url: string }>>(),
+  status: mysqlEnum("status", ["published", "draft"]).default("published").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Article = typeof articles.$inferSelect;
+export type InsertArticle = typeof articles.$inferInsert;
