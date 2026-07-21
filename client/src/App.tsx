@@ -1,7 +1,8 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
-import { Route, Switch } from "wouter";
+import { Route, Switch, useLocation } from "wouter";
+import { useEffect } from "react";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Admin from "./pages/Admin";
@@ -41,7 +42,23 @@ import UpdateDetail from "./pages/UpdateDetail";
 import Updates from "./pages/Updates";
 import { About, NeutralityPolicy, Privacy, Terms } from "./pages/StaticPages";
 
+/** GA4: SPAページ遷移ごとにpage_viewを送信（index.html側はsend_page_view: false） */
+function useGaPageView() {
+  const [location] = useLocation();
+  useEffect(() => {
+    const gtag = (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag;
+    if (typeof gtag === "function") {
+      gtag("event", "page_view", {
+        page_path: location,
+        page_location: window.location.href,
+        page_title: document.title,
+      });
+    }
+  }, [location]);
+}
+
 function Router() {
+  useGaPageView();
   return (
     <Switch>
       <Route path={"/"} component={Home} />
