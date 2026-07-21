@@ -38,11 +38,27 @@ function getSource(): string | null {
   }
 }
 
+/** GA4（gtag）へのイベント送信（タグ未ロード時は何もしない） */
+function sendGa4Event(eventType: TrackEventType, orgId?: number | null): void {
+  try {
+    const gtag = (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag;
+    if (typeof gtag !== "function") return;
+    gtag("event", eventType, {
+      org_id: orgId ?? undefined,
+      source: getSource() ?? undefined,
+      page_path: window.location.pathname,
+    });
+  } catch {
+    /* noop */
+  }
+}
+
 /**
  * ファーストパーティイベント記録（fire-and-forget）。
- * 失敗してもUIに影響しない。
+ * 自前DBとGA4の両方に送る。失敗してもUIに影響しない。
  */
 export function trackEvent(eventType: TrackEventType, orgId?: number | null): void {
+  sendGa4Event(eventType, orgId);
   try {
     void trackClient.events.track
       .mutate({

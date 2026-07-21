@@ -281,7 +281,7 @@
 - [x] 既存コラム4本（採用コスト比較・選び方・移行ガイド・紹介vs支援）を規範に則って書き直し（本番反映確認済み）
 - [x] SSR・JSON-LD・RSS・sitemap・llms.txtを動的記事対応に更新
 - [x] /api/scheduled/article-publish エンドポイント実装（cron認証・zod検証・重複slug検証・未認証403確認済み）
-- [ ] 週2回のコラム自動投稿ジョブを作成 → このチャットには登録簿週次同期のスケジュールが既に存在し「1タスク1スケジュール」制限で作成不可。プロンプトは/home/ubuntu/column_cron_prompt.txtに準備済み。新しいチャットでの作成をユーザーに依頼
+- [x] 週2回のコラム自動投稿ジョブを作成 → ユーザーが登録簿週次同期スケジュールをオフにしたため、同スケジュールをupdateでコラム投稿用に切替えて解決（2026-07-21）
 - [x] 検証：SSR動作確認（テスト記事で一覧/詳細/RSS/sitemap/llms.txt反映確認後削除）・vitest 61件パス・tsc 0エラー・チェックポイント保存・本番公開
 
 ## 確認済み機関数の修正（2026-07-19 ユーザー報告）
@@ -292,3 +292,11 @@
 
 ## GA4トラッキング実装（2026-07-19 ユーザー依頼）
 - [x] GA4タグ（G-0C6RH5E604）をサイト全ページに実装（SSR HTMLに含める・SPA遷移時のpage_view送信対応）し、本番反映を確認（GA側の「データを受信」表示は反映まで最大数時間かかる）
+
+## コラム自動投稿スケジュール（2026-07-21 ユーザー指示：登録簿週次同期スケジュールはオフ済み）
+- [x] 週2回のコラム自動投稿スケジュールを作成（既存の登録簿同期スケジュール（ユーザーがオフ済み）をupdateでコラム投稿に切替。月・木 10:00 JST、column_cron_prompt.txtのプロンプト、active確認済み。本番/api/scheduled/article-publishは認証ガード403で稼働中）
+
+## GA4 CVポイント設定（2026-07-21 ユーザー依頼）
+- [x] サイトのCVポイントを整理し、必要なイベント送信（gtag event）をサイト側に実装（track.tsのtrackEventにGA4送信を統合。consult_submit/bulk_consult_submit/diagnose_start/diagnose_complete/proposal_generate/org_detail_view/phone_tap/website_clickの全イベントがGA4にも送信される。tsc/vitest 61件パス）
+- [ ] GA4にログインし、CVイベントをキーイベントとして設定
+- [ ] 設定を検証してユーザーに報告
