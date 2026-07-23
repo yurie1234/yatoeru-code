@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, ne, and } from "drizzle-orm";
 import { z } from "zod";
 import { articles } from "../../drizzle/schema";
 import { getDb } from "../db";
@@ -27,6 +27,51 @@ export const articlesRouter = router({
       .where(eq(articles.status, "published"))
       .orderBy(desc(articles.baseDate), desc(articles.id));
   }),
+
+  /**
+   * 関連記事：指定タグと1つ以上一致する公開記事を最大limit件返す（自分自身は除外）。
+   * tagsはJSONカラムのためアプリ側でフィルタする（記事数は少量なので十分軽量）。
+   * 一致記事が足りない場合は新着記事で埋める。
+   */
+  related: publicProcedure
+    .input(
+      z.object({
+        excludeSlug: z.string().max(128).optional(),
+        tags: z.array(z.string().max(64)).max(10),
+        limit: z.number().int().min(1).max(6).default(3),
+      })
+    )
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const rows = await db
+        .select({
+          slug: articles.slug,
+          title: articles.title,
+          description: articles.description,
+          tags: articles.tags,
+          baseDate: articles.baseDate,
+        })
+        .from(articles)
+        .where(
+          input.excludeSlug
+            ? and(
+                eq(articles.status, "published"),
+                ne(articles.slug, input.excludeSlug)
+              )
+            : eq(articles.status, "published")
+        )
+        .orderBy(desc(articles.baseDate), desc(articles.id));
+
+      const tagSet = new Set(input.tags);
+      const matched = rows.filter((r) =>
+        ((r.tags ?? []) as string[]).some((t) => tagSet.has(t))
+      );
+      const rest = rows.filter(
+        (r) => !((r.tags ?? []) as string[]).some((t) => tagSet.has(t))
+      );
+      return [...matched, ...rest].slice(0, input.limit);
+    }),
 
   /** スラッグで記事詳細を取得 */
   bySlug: publicProcedure

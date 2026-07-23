@@ -14,6 +14,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc";
+import {
+  estimateReadingMinutes,
+  FloatingToc,
+  ReadingProgressBar,
+  ReadingTime,
+  RelatedArticles,
+} from "@/components/ArticleExtras";
 import NotFound from "./NotFound";
 
 /**
@@ -36,10 +43,30 @@ function extractH2(bodyMd: string): string[] {
     .map((line) => line.replace(/^## /, "").trim());
 }
 
-/** 見出しテキスト→アンカーID（Streamdownのheading id生成と揃える簡易版） */
+/** 見出しテキスト→アンカーID（目次・フローティング目次と本文h2で共通使用） */
 export function headingId(text: string): string {
   return `h-${encodeURIComponent(text.replace(/\s+/g, "-").toLowerCase())}`;
 }
+
+/** React要素ツリーからプレーンテキストを取り出す（h2のid生成用） */
+function nodeText(node: React.ReactNode): string {
+  if (node == null || typeof node === "boolean") return "";
+  if (typeof node === "string" || typeof node === "number") return String(node);
+  if (Array.isArray(node)) return node.map(nodeText).join("");
+  if (typeof node === "object" && "props" in node) {
+    return nodeText((node as { props: { children?: React.ReactNode } }).props.children);
+  }
+  return "";
+}
+
+/** Streamdownのh2にアンカーidとscroll-marginを付与するオーバーライド */
+const markdownComponents = {
+  h2: ({ children, ...props }: React.ComponentPropsWithoutRef<"h2">) => (
+    <h2 id={headingId(nodeText(children))} className="scroll-mt-24" {...props}>
+      {children}
+    </h2>
+  ),
+};
 
 export default function ColumnArticle() {
   const params = useParams<{ slug: string }>();
@@ -52,6 +79,11 @@ export default function ColumnArticle() {
 
   const toc = useMemo(
     () => (article ? extractH2(article.bodyMd) : []),
+    [article]
+  );
+
+  const readingMinutes = useMemo(
+    () => (article ? estimateReadingMinutes(article.bodyMd) : 0),
     [article]
   );
 
@@ -73,6 +105,10 @@ export default function ColumnArticle() {
 
   return (
     <div className="container max-w-3xl py-10">
+      <ReadingProgressBar targetSelector="article" />
+      <FloatingToc
+        items={toc.map((h) => ({ id: headingId(h), label: h }))}
+      />
       <nav className="mb-6 text-sm text-muted-foreground">
         <Link
           href="/columns"
@@ -95,10 +131,13 @@ export default function ColumnArticle() {
           <h1 className="text-[26px] md:text-[32px] font-bold leading-snug mb-3">
             {article.title}
           </h1>
-          <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
-            <Calendar className="h-4 w-4" />
-            内容確認基準日：{article.baseDate}
-          </p>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+            <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+              <Calendar className="h-4 w-4" />
+              内容確認基準日：{article.baseDate}
+            </p>
+            <ReadingTime minutes={readingMinutes} />
+          </div>
         </header>
 
         {keyPoints.length > 0 && (
@@ -136,10 +175,27 @@ export default function ColumnArticle() {
             <ol className="space-y-1.5 list-none">
               {toc.map((h, i) => (
                 <li key={h} className="text-[15px] leading-relaxed">
-                  <span className="inline-block w-6 font-bold text-amber-600">
-                    {i + 1}.
-                  </span>
-                  <span className="text-foreground/90">{h}</span>
+                  <a
+                    href={`#${headingId(h)}`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      const el = document.getElementById(headingId(h));
+                      if (el) {
+                        const top =
+                          el.getBoundingClientRect().top + window.scrollY - 76;
+                        window.scrollTo({ top, behavior: "smooth" });
+                        history.replaceState(null, "", `#${headingId(h)}`);
+                      }
+                    }}
+                    className="group inline-flex items-baseline gap-0"
+                  >
+                    <span className="inline-block w-6 font-bold text-amber-600">
+                      {i + 1}.
+                    </span>
+                    <span className="text-foreground/90 group-hover:text-brand group-hover:underline underline-offset-2 transition-colors">
+                      {h}
+                    </span>
+                  </a>
                 </li>
               ))}
             </ol>
@@ -147,7 +203,7 @@ export default function ColumnArticle() {
         )}
 
         <div className="article-body">
-          <Streamdown>{article.bodyMd}</Streamdown>
+          <Streamdown components={markdownComponents}>{article.bodyMd}</Streamdown>
         </div>
 
         {(article.sources ?? []).length > 0 && (
@@ -170,6 +226,11 @@ export default function ColumnArticle() {
             </ul>
           </section>
         )}
+
+        <RelatedArticles
+          currentSlug={slug}
+          tags={(article.tags ?? []) as string[]}
+        />
 
         <Card className="mt-10 border-primary/30 bg-primary/5">
           <CardContent className="pt-6 pb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
