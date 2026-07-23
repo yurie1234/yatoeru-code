@@ -200,8 +200,8 @@ export default function ColumnErabikata() {
 
         {/* 前提：登録支援機関とは */}
         <section id="zentei" className="scroll-mt-20">
-          <h2 className="text-xl font-bold mb-4">登録支援機関とは（30秒でわかる前提）</h2>
-          <div className="space-y-4 text-sm leading-relaxed text-muted-foreground">
+          <h2 className="article-h2 text-[22px] md:text-2xl font-bold mb-4">登録支援機関とは（30秒でわかる前提）</h2>
+          <div className="space-y-4 text-base leading-[1.9] text-foreground/90">
             <p>
               登録支援機関は、特定技能1号外国人を受け入れる企業から委託を受けて、
               <strong className="text-foreground">義務的支援10項目</strong>
@@ -215,7 +215,7 @@ export default function ColumnErabikata() {
 
         {/* 料金相場 */}
         <section id="ryokin" className="scroll-mt-20">
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+          <h2 className="article-h2 text-[22px] md:text-2xl font-bold mb-4 flex items-center gap-2">
             <Wallet className="h-5 w-5 text-brand" />
             料金相場：月額の目安と内訳
           </h2>
@@ -241,7 +241,7 @@ export default function ColumnErabikata() {
               </table>
             </CardContent>
           </Card>
-          <div className="mt-4 space-y-3 text-sm leading-relaxed text-muted-foreground">
+          <div className="mt-4 space-y-3 text-base leading-[1.9] text-foreground/90">
             <p>
               表を見て「安い機関にすればよい」と思った方は、一度立ち止まってください。月額1.5万円の機関と4万円の機関は、同じ商品の値引きではなく、含まれる支援の範囲が違う別の商品であることが多いからです。だから相見積は金額ではなく、月額に含まれる支援項目の範囲を書面でそろえて比べます。もう一つ、金額以前の原則があります。
               <strong className="text-foreground">支援に要する費用は受入れ企業が負担すべきものであり、外国人本人に直接・間接を問わず負担させることはできません</strong>
@@ -255,7 +255,7 @@ export default function ColumnErabikata() {
 
         {/* 7項目チェックリスト */}
         <section id="check7" className="scroll-mt-20">
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+          <h2 className="article-h2 text-[22px] md:text-2xl font-bold mb-4 flex items-center gap-2">
             <CheckCircle2 className="h-5 w-5 text-brand" />
             契約前に確認すべき7項目
           </h2>
@@ -265,7 +265,7 @@ export default function ColumnErabikata() {
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base">{c.title}</CardTitle>
                 </CardHeader>
-                <CardContent className="text-sm text-muted-foreground leading-relaxed">
+                <CardContent className="text-base text-foreground/90 leading-[1.9]">
                   {c.body}
                 </CardContent>
               </Card>
@@ -275,11 +275,11 @@ export default function ColumnErabikata() {
 
         {/* 登録番号の確認方法 */}
         <section id="kakunin" className="scroll-mt-20">
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+          <h2 className="article-h2 text-[22px] md:text-2xl font-bold mb-4 flex items-center gap-2">
             <Search className="h-5 w-5 text-brand" />
             登録番号の確認方法（3ステップ）
           </h2>
-          <div className="space-y-4 text-sm leading-relaxed text-muted-foreground">
+          <div className="space-y-4 text-base leading-[1.9] text-foreground/90">
             <p>
               7項目のうち最初の「登録番号の有効性」だけは、確認を飛ばすと取り返しがつきません。幸い、手順は3ステップで終わります。
               <br />
@@ -304,14 +304,14 @@ export default function ColumnErabikata() {
 
         {/* FAQ */}
         <section id="faq" className="scroll-mt-20">
-          <h2 className="text-xl font-bold mb-4">よくある質問</h2>
+          <h2 className="article-h2 text-[22px] md:text-2xl font-bold mb-4">よくある質問</h2>
           <div className="space-y-3">
             {FAQS.map((f) => (
               <Card key={f.q}>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base">{f.q}</CardTitle>
                 </CardHeader>
-                <CardContent className="text-sm text-muted-foreground leading-relaxed">
+                <CardContent className="text-base text-foreground/90 leading-[1.9]">
                   {f.a}
                 </CardContent>
               </Card>
@@ -321,7 +321,7 @@ export default function ColumnErabikata() {
 
         {/* 出典 */}
         <section id="shutten" className="scroll-mt-20">
-          <h2 className="text-xl font-bold mb-4">出典（一次情報）</h2>
+          <h2 className="article-h2 text-[22px] md:text-2xl font-bold mb-4">出典（一次情報）</h2>
           <Card>
             <CardContent className="p-5 space-y-2 text-sm">
               <a

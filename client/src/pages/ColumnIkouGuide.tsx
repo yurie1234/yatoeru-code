@@ -201,7 +201,7 @@ export default function ColumnIkouGuide() {
 
         {/* スケジュール */}
         <section id="schedule" className="scroll-mt-20">
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+          <h2 className="article-h2 text-[22px] md:text-2xl font-bold mb-4 flex items-center gap-2">
             <CalendarDays className="h-5 w-5 text-brand" />
             移行スケジュール（確定済みの日付）
           </h2>
@@ -227,7 +227,7 @@ export default function ColumnIkouGuide() {
               </table>
             </CardContent>
           </Card>
-          <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+          <p className="mt-4 text-base leading-[1.9] text-foreground/90">
             表の中で2027年4月より先に来る日付が一つあります。
             <strong className="text-foreground">
               2026年9月30日、「技能実習法に基づく監理団体の新規許可申請」の最終受付日
@@ -238,7 +238,7 @@ export default function ColumnIkouGuide() {
 
         {/* やることリスト */}
         <section id="steps" className="scroll-mt-20">
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+          <h2 className="article-h2 text-[22px] md:text-2xl font-bold mb-4 flex items-center gap-2">
             <ClipboardList className="h-5 w-5 text-brand" />
             移行準備の6ステップ
           </h2>
@@ -248,7 +248,7 @@ export default function ColumnIkouGuide() {
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base">{t.step}</CardTitle>
                 </CardHeader>
-                <CardContent className="text-sm text-muted-foreground leading-relaxed">
+                <CardContent className="text-base text-foreground/90 leading-[1.9]">
                   {t.detail}
                 </CardContent>
               </Card>
@@ -258,11 +258,11 @@ export default function ColumnIkouGuide() {
 
         {/* 制度の変更点への内部リンク */}
         <section id="awasete" className="scroll-mt-20">
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+          <h2 className="article-h2 text-[22px] md:text-2xl font-bold mb-4 flex items-center gap-2">
             <ArrowRight className="h-5 w-5 text-brand" />
             あわせて読む
           </h2>
-          <div className="space-y-4 text-sm leading-relaxed text-muted-foreground">
+          <div className="space-y-4 text-base leading-[1.9] text-foreground/90">
             <p>
               6ステップを見て「要は名前が変わるだけではないのか」と感じた方ほど、要件の差分を先に確かめてください。監理団体と監理支援機関の要件の違い（外部監査人の義務化・役職員の関与制限・業務範囲）は
               <Link href="/guide/kanri-shien-kikan">
@@ -286,14 +286,14 @@ export default function ColumnIkouGuide() {
 
         {/* FAQ */}
         <section id="faq" className="scroll-mt-20">
-          <h2 className="text-xl font-bold mb-4">よくある質問</h2>
+          <h2 className="article-h2 text-[22px] md:text-2xl font-bold mb-4">よくある質問</h2>
           <div className="space-y-3">
             {FAQS.map((f) => (
               <Card key={f.q}>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base">{f.q}</CardTitle>
                 </CardHeader>
-                <CardContent className="text-sm text-muted-foreground leading-relaxed">
+                <CardContent className="text-base text-foreground/90 leading-[1.9]">
                   {f.a}
                 </CardContent>
               </Card>
@@ -303,7 +303,7 @@ export default function ColumnIkouGuide() {
 
         {/* 出典 */}
         <section id="shutten" className="scroll-mt-20">
-          <h2 className="text-xl font-bold mb-4">出典（一次情報）</h2>
+          <h2 className="article-h2 text-[22px] md:text-2xl font-bold mb-4">出典（一次情報）</h2>
           <Card>
             <CardContent className="p-5 space-y-2 text-sm">
               <a

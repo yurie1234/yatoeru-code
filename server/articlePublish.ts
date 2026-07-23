@@ -30,6 +30,8 @@ const articleSchema = z.object({
   title: z.string().min(10).max(120),
   /** meta description・一覧カード用（80〜160字目安） */
   description: z.string().min(40).max(300),
+  /** 記事冒頭の「この記事のポイント」ボックス用3、5個の要点（1文ずつ、各20、90字目安） */
+  keyPoints: z.array(z.string().min(10).max(120)).min(3).max(5).optional(),
   /** 本文Markdown（H2見出し・表・箇条書き可。rawHTML不可） */
   bodyMd: z.string().min(1500).max(40000),
   tags: z.array(z.string().min(1).max(24)).min(1).max(5),
@@ -150,6 +152,7 @@ export async function articlePublishHandler(req: Request, res: Response) {
       slug: input.slug,
       title: input.title,
       description: input.description,
+      keyPoints: input.keyPoints ?? null,
       bodyMd: input.bodyMd,
       tags: input.tags,
       baseDate: input.baseDate,

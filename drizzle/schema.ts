@@ -282,6 +282,8 @@ export const articles = mysqlTable("articles", {
   title: varchar("title", { length: 255 }).notNull(),
   /** meta description・一覧カード用（120字前後） */
   description: varchar("description", { length: 512 }).notNull(),
+  /** 記事冒頭に表示する要点（3、5個。可読性向上のための「この記事のポイント」ボックス用） */
+  keyPoints: json("keyPoints").$type<string[]>(),
   /** 本文（Markdown。SSR/CSRともreact-markdown系で描画しrawHTMLは無効） */
   bodyMd: text("bodyMd").notNull(),
   /** タグ（表示用、最大5個） */

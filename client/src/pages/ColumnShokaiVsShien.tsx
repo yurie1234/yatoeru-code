@@ -189,8 +189,8 @@ export default function ColumnShokaiVsShien() {
 
         {/* なぜ混同が起きるか */}
         <section id="kondou" className="scroll-mt-20">
-          <h2 className="text-xl font-bold mb-4">なぜ混同が起きるのか</h2>
-          <div className="space-y-4 text-sm leading-relaxed text-muted-foreground">
+          <h2 className="article-h2 text-[22px] md:text-2xl font-bold mb-4">なぜ混同が起きるのか</h2>
+          <div className="space-y-4 text-base leading-[1.9] text-foreground/90">
             <p>
               「外国人材を紹介します。入社後のサポートもお任せください」——この営業文句のどこに疑う余地があるのでしょうか。紹介と入社後の支援は連続したサービスに見えるので、同じ資格でできる業務だと考えるのはむしろ自然です。
             </p>
@@ -202,7 +202,7 @@ export default function ColumnShokaiVsShien() {
 
         {/* 比較表 */}
         <section id="hikaku" className="scroll-mt-20">
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+          <h2 className="article-h2 text-[22px] md:text-2xl font-bold mb-4 flex items-center gap-2">
             <Scale className="h-5 w-5 text-brand" />
             比較表：人材紹介会社と登録支援機関
           </h2>
@@ -232,7 +232,7 @@ export default function ColumnShokaiVsShien() {
 
         {/* リスク */}
         <section id="risk" className="scroll-mt-20">
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+          <h2 className="article-h2 text-[22px] md:text-2xl font-bold mb-4 flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-brand" />
             登録を確認せずに委託した場合の3つのリスク
           </h2>
@@ -242,7 +242,7 @@ export default function ColumnShokaiVsShien() {
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base">{r.title}</CardTitle>
                 </CardHeader>
-                <CardContent className="text-sm text-muted-foreground leading-relaxed">
+                <CardContent className="text-base text-foreground/90 leading-[1.9]">
                   {r.body}
                 </CardContent>
               </Card>
@@ -252,11 +252,11 @@ export default function ColumnShokaiVsShien() {
 
         {/* 確認手順 */}
         <section id="tejun" className="scroll-mt-20">
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+          <h2 className="article-h2 text-[22px] md:text-2xl font-bold mb-4 flex items-center gap-2">
             <ShieldCheck className="h-5 w-5 text-brand" />
             委託前の確認手順（5分でできる）
           </h2>
-          <div className="space-y-4 text-sm leading-relaxed text-muted-foreground">
+          <div className="space-y-4 text-base leading-[1.9] text-foreground/90">
             <p>
               確認は難しそうに聞こえて、5分あれば終わります。
               <br />
@@ -285,14 +285,14 @@ export default function ColumnShokaiVsShien() {
 
         {/* FAQ */}
         <section id="faq" className="scroll-mt-20">
-          <h2 className="text-xl font-bold mb-4">よくある質問</h2>
+          <h2 className="article-h2 text-[22px] md:text-2xl font-bold mb-4">よくある質問</h2>
           <div className="space-y-3">
             {FAQS.map((f) => (
               <Card key={f.q}>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base">{f.q}</CardTitle>
                 </CardHeader>
-                <CardContent className="text-sm text-muted-foreground leading-relaxed">
+                <CardContent className="text-base text-foreground/90 leading-[1.9]">
                   {f.a}
                 </CardContent>
               </Card>
@@ -302,7 +302,7 @@ export default function ColumnShokaiVsShien() {
 
         {/* 出典 */}
         <section id="shutten" className="scroll-mt-20">
-          <h2 className="text-xl font-bold mb-4">出典（一次情報）</h2>
+          <h2 className="article-h2 text-[22px] md:text-2xl font-bold mb-4">出典（一次情報）</h2>
           <Card>
             <CardContent className="p-5 space-y-2 text-sm">
               <a

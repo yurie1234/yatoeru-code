@@ -182,11 +182,11 @@ export default function ColumnSaiyouCost() {
         <ArticleToc sections={TOC_SECTIONS} />
 
         <section id="matome" className="scroll-mt-20">
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+          <h2 className="article-h2 text-[22px] md:text-2xl font-bold mb-4 flex items-center gap-2">
             <Coins className="h-5 w-5 text-brand" />
             結論：採用手法別コスト早見表
           </h2>
-          <p className="text-sm text-muted-foreground leading-relaxed mb-4">
+          <p className="text-base text-foreground/90 leading-[1.9] mb-4">
             先に表を置きます。金額は企業規模・地域・委託先によって動くので幅で示していますが、幅の上端同士・下端同士で見比べても、順位はほとんど入れ替わりません。
           </p>
           <Card>
@@ -220,8 +220,8 @@ export default function ColumnSaiyouCost() {
         </section>
 
         <section id="tokutei" className="scroll-mt-20">
-          <h2 className="text-xl font-bold mb-4">特定技能採用のコスト内訳</h2>
-          <div className="space-y-4 text-sm leading-relaxed text-muted-foreground">
+          <h2 className="article-h2 text-[22px] md:text-2xl font-bold mb-4">特定技能採用のコスト内訳</h2>
+          <div className="space-y-4 text-base leading-[1.9] text-foreground/90">
             <p>
               表の中で特定技能だけ、なぜ「国内」と「海外」で金額が分かれているのか。理由はコストが<strong className="text-foreground">「初期費用」と「毎月の支援委託費」の2階建て</strong>になっていて、変動するのはほぼ初期費用側だけだからです。
               国内在住者なら在留資格申請の取次報酬（行政書士・登録支援機関、約10〜20万円）と健康診断・事前ガイダンス費用程度で済みますが、海外からの呼び寄せは送出機関への手数料と渡航費が乗って約30〜60万円まで上がります。
@@ -240,8 +240,8 @@ export default function ColumnSaiyouCost() {
         </section>
 
         <section id="ikusei" className="scroll-mt-20">
-          <h2 className="text-xl font-bold mb-4">育成就労採用のコスト内訳</h2>
-          <div className="space-y-4 text-sm leading-relaxed text-muted-foreground">
+          <h2 className="article-h2 text-[22px] md:text-2xl font-bold mb-4">育成就労採用のコスト内訳</h2>
+          <div className="space-y-4 text-base leading-[1.9] text-foreground/90">
             <p>
               早見表でひとつだけ突出して高いのが育成就労（技能実習から移行する新制度）です。監理支援機関への加入・監理費、送出機関費用、入国後講習費などで
               <strong className="text-foreground">初期費用約50〜145万円、監理費月2.5〜5万円/人</strong>。これだけ見ると選ぶ理由がなさそうに思えます。ただ、この金額は即戦力の採用費ではなく、未経験人材を3年かけて育成し特定技能1号へ接続するための育成費込みの値段です。比べる相手は人材紹介の成功報酬ではなく、「3年いてくれる人を育てるコスト」のほうです。
@@ -261,11 +261,11 @@ export default function ColumnSaiyouCost() {
         </section>
 
         <section id="kokunai" className="scroll-mt-20">
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+          <h2 className="article-h2 text-[22px] md:text-2xl font-bold mb-4 flex items-center gap-2">
             <TrendingDown className="h-5 w-5 text-brand" />
             国内採用（人材紹介・求人広告・派遣）のコスト
           </h2>
-          <div className="space-y-4 text-sm leading-relaxed text-muted-foreground">
+          <div className="space-y-4 text-base leading-[1.9] text-foreground/90">
             <p>
               では見慣れた国内手法の側はどうか。人材紹介は<strong className="text-foreground">理論年収の30〜35%</strong>が成功報酬の相場で、年収330万円の人材なら約100万円。即戦力を1名だけ確保したい場合には合理的です。ただ、介護・外食・建設では報酬を払う以前の問題があります。そもそも候補者が集まらないのです。
             </p>
@@ -280,7 +280,7 @@ export default function ColumnSaiyouCost() {
         </section>
 
         <section id="shiten" className="scroll-mt-20">
-          <h2 className="text-xl font-bold mb-4">コスト以外で比較すべき3つの視点</h2>
+          <h2 className="article-h2 text-[22px] md:text-2xl font-bold mb-4">コスト以外で比較すべき3つの視点</h2>
           <div className="grid gap-3 md:grid-cols-3">
             {[
               {
@@ -300,15 +300,15 @@ export default function ColumnSaiyouCost() {
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base">{c.t}</CardTitle>
                 </CardHeader>
-                <CardContent className="text-sm text-muted-foreground leading-relaxed">{c.d}</CardContent>
+                <CardContent className="text-base text-foreground/90 leading-[1.9]">{c.d}</CardContent>
               </Card>
             ))}
           </div>
         </section>
 
         <section id="joseikin" className="scroll-mt-20">
-          <h2 className="text-xl font-bold mb-4">助成金でどこまで下がるか</h2>
-          <div className="space-y-4 text-sm leading-relaxed text-muted-foreground">
+          <h2 className="article-h2 text-[22px] md:text-2xl font-bold mb-4">助成金でどこまで下がるか</h2>
+          <div className="space-y-4 text-base leading-[1.9] text-foreground/90">
             <p>
               ここまでの金額はすべて「定価」です。ではそこからいくら引けるのか。外国人労働者の就労環境整備に取り組む企業は、
               <strong className="text-foreground">人材確保等支援助成金（外国人労働者就労環境整備助成コース）で経費の1/2〜2/3・最大72万円</strong>
@@ -325,21 +325,21 @@ export default function ColumnSaiyouCost() {
         </section>
 
         <section id="faq" className="scroll-mt-20">
-          <h2 className="text-xl font-bold mb-4">よくある質問</h2>
+          <h2 className="article-h2 text-[22px] md:text-2xl font-bold mb-4">よくある質問</h2>
           <div className="space-y-3">
             {FAQS.map((f) => (
               <Card key={f.q}>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base">{f.q}</CardTitle>
                 </CardHeader>
-                <CardContent className="text-sm text-muted-foreground leading-relaxed">{f.a}</CardContent>
+                <CardContent className="text-base text-foreground/90 leading-[1.9]">{f.a}</CardContent>
               </Card>
             ))}
           </div>
         </section>
 
         <section id="shutten" className="scroll-mt-20">
-          <h2 className="text-xl font-bold mb-4">出典（一次情報）</h2>
+          <h2 className="article-h2 text-[22px] md:text-2xl font-bold mb-4">出典（一次情報）</h2>
           <ul className="space-y-2 text-sm text-muted-foreground">
             <li>
               <a
