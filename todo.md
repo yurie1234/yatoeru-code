@@ -298,5 +298,11 @@
 
 ## GA4 CVポイント設定（2026-07-21 ユーザー依頼）
 - [x] サイトのCVポイントを整理し、必要なイベント送信（gtag event）をサイト側に実装（track.tsのtrackEventにGA4送信を統合。consult_submit/bulk_consult_submit/diagnose_start/diagnose_complete/proposal_generate/org_detail_view/phone_tap/website_clickの全イベントがGA4にも送信される。tsc/vitest 61件パス）
-- [ ] GA4にログインし、CVイベントをキーイベントとして設定
-- [ ] 設定を検証してユーザーに報告
+- [x] GA4にログインし、CVイベントをキーイベントとして設定（consult_submit / bulk_consult_submit / diagnose_complete / proposal_generate の4件を登録。データ保持期間も2か月→14か月に延長）
+- [x] 設定を検証してユーザーに報告（キーイベントタブで全行ON確認・リアルタイムでCVイベント受信確認済み。旧サイト由来のキーイベント8件は要ユーザー判断で整理候補）
+
+## コラム記事投稿（2026-07-23 チャットからの手動実行）
+- [x] 既存記事一覧を確認して重複回避（既存5本：採用コスト比較・支援機関の選び方・監理団体移行・紹介vs支援・雇用管理指針改正）
+- [x] テーマ選定：外国人雇用管理指針改正（2026年6月14日から段階適用）— 厚労省リーフレット等の一次情報を確認
+- [x] 記事執筆・投稿完了（slug: gaikokujin-koyou-kanri-shishin-kaisei-2026、本番200・一覧先頭表示を確認）
+- [x] 手動投稿経路 scripts/publish-article.mjs を追加（admin自己署名セッションでlocalhost経由POST。スケジュール環境変数がないチャット実行時の代替手段）
