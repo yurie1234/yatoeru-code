@@ -123,3 +123,38 @@ describe("articlesルーターの公開仕様", () => {
     }
   });
 });
+
+describe("articles.related（関連記事）", () => {
+  it("タグ一致記事を優先し、自分自身を除外して返す", async () => {
+    const { appRouter } = await import("./routers");
+    const caller = appRouter.createCaller({
+      req: {} as never,
+      res: {} as never,
+      user: null,
+    });
+    const result = await caller.articles.related({
+      excludeSlug: "gaikokujin-koyou-kanri-shishin-kaisei-2026",
+      tags: ["育成就労", "法改正"],
+      limit: 3,
+    });
+    expect(Array.isArray(result)).toBe(true);
+    expect(result.length).toBeLessThanOrEqual(3);
+    for (const a of result) {
+      expect(a.slug).not.toBe("gaikokujin-koyou-kanri-shishin-kaisei-2026");
+      expect(typeof a.title).toBe("string");
+      expect(typeof a.baseDate).toBe("string");
+    }
+  });
+
+  it("limitの上限（6）を超える指定はバリデーションで拒否する", async () => {
+    const { appRouter } = await import("./routers");
+    const caller = appRouter.createCaller({
+      req: {} as never,
+      res: {} as never,
+      user: null,
+    });
+    await expect(
+      caller.articles.related({ tags: ["特定技能"], limit: 10 })
+    ).rejects.toThrow();
+  });
+});

@@ -13,6 +13,11 @@ import {
 import { useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { ArticleBreadcrumb, ArticleToc } from "@/components/ArticleToc";
+import {
+  FloatingToc,
+  ReadingProgressBar,
+  RelatedArticles,
+} from "@/components/ArticleExtras";
 
 /**
  * コラム②「監理団体から監理支援機関への移行ガイド：2026年9月の期限までにやること」
@@ -161,6 +166,8 @@ export default function ColumnIkouGuide() {
 
   return (
     <SiteLayout>
+      <ReadingProgressBar targetSelector="#article-main" />
+      <FloatingToc items={TOC_SECTIONS} />
       {/* ヒーロー：結論先頭 */}
       <div className="bg-brand text-brand-foreground py-12">
         <div className="container">
@@ -191,11 +198,14 @@ export default function ColumnIkouGuide() {
             <Badge variant="outline" className="text-brand-foreground/70 border-brand-foreground/30">
               出典：出入国在留管理庁・外国人技能実習機構
             </Badge>
+            <Badge variant="outline" className="text-brand-foreground/70 border-brand-foreground/30">
+              約5分で読めます
+            </Badge>
           </div>
         </div>
       </div>
 
-      <div className="container py-10 max-w-4xl space-y-10">
+      <div id="article-main" className="container py-10 max-w-4xl space-y-10">
         {/* 目次 */}
         <ArticleToc sections={TOC_SECTIONS} />
 
@@ -341,6 +351,11 @@ export default function ColumnIkouGuide() {
         </section>
 
         {/* CTA */}
+        <RelatedArticles
+          currentSlug="kanri-dantai-ikou-guide"
+          tags={["育成就労", "監理支援機関", "移行"]}
+        />
+
         <Card className="bg-brand text-brand-foreground">
           <CardContent className="p-6 md:flex items-center justify-between gap-6">
             <div className="mb-4 md:mb-0">

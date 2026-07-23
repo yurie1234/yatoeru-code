@@ -13,6 +13,11 @@ import {
 import { useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { ArticleBreadcrumb, ArticleToc } from "@/components/ArticleToc";
+import {
+  FloatingToc,
+  ReadingProgressBar,
+  RelatedArticles,
+} from "@/components/ArticleExtras";
 
 /**
  * 採用コスト比較記事：外国人採用（特定技能・育成就労）と国内採用手法のコスト比較
@@ -147,6 +152,8 @@ export default function ColumnSaiyouCost() {
 
   return (
     <SiteLayout>
+      <ReadingProgressBar targetSelector="#article-main" />
+      <FloatingToc items={TOC_SECTIONS} />
       <div className="bg-brand text-brand-foreground py-12">
         <div className="container">
           <ArticleBreadcrumb
@@ -174,11 +181,14 @@ export default function ColumnSaiyouCost() {
             <Badge variant="outline" className="text-brand-foreground/70 border-brand-foreground/30">
               出典：出入国在留管理庁・厚生労働省
             </Badge>
+            <Badge variant="outline" className="text-brand-foreground/70 border-brand-foreground/30">
+              約7分で読めます
+            </Badge>
           </div>
         </div>
       </div>
 
-      <div className="container py-10 max-w-4xl space-y-10">
+      <div id="article-main" className="container py-10 max-w-4xl space-y-10">
         <ArticleToc sections={TOC_SECTIONS} />
 
         <section id="matome" className="scroll-mt-20">
@@ -376,6 +386,11 @@ export default function ColumnSaiyouCost() {
             </li>
           </ul>
         </section>
+
+        <RelatedArticles
+          currentSlug="saiyou-cost-hikaku"
+          tags={["採用コスト", "特定技能", "比較"]}
+        />
 
         <Card className="border-amber-accent/50 bg-amber-accent/5">
           <CardContent className="py-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">

@@ -13,6 +13,11 @@ import {
 import { useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { ArticleBreadcrumb, ArticleToc } from "@/components/ArticleToc";
+import {
+  FloatingToc,
+  ReadingProgressBar,
+  RelatedArticles,
+} from "@/components/ArticleExtras";
 
 /**
  * コラム①「登録支援機関の選び方：料金相場・確認すべき7項目・登録番号の確認方法」
@@ -160,6 +165,8 @@ export default function ColumnErabikata() {
 
   return (
     <SiteLayout>
+      <ReadingProgressBar targetSelector="#article-main" />
+      <FloatingToc items={TOC_SECTIONS} />
       {/* ヒーロー：結論先頭 */}
       <div className="bg-brand text-brand-foreground py-12">
         <div className="container">
@@ -190,11 +197,14 @@ export default function ColumnErabikata() {
             <Badge variant="outline" className="text-brand-foreground/70 border-brand-foreground/30">
               出典：出入国在留管理庁
             </Badge>
+            <Badge variant="outline" className="text-brand-foreground/70 border-brand-foreground/30">
+              約7分で読めます
+            </Badge>
           </div>
         </div>
       </div>
 
-      <div className="container py-10 max-w-4xl space-y-10">
+      <div id="article-main" className="container py-10 max-w-4xl space-y-10">
         {/* 目次 */}
         <ArticleToc sections={TOC_SECTIONS} />
 
@@ -359,6 +369,11 @@ export default function ColumnErabikata() {
         </section>
 
         {/* CTA */}
+        <RelatedArticles
+          currentSlug="shien-kikan-erabikata"
+          tags={["特定技能", "登録支援機関", "料金"]}
+        />
+
         <Card className="bg-brand text-brand-foreground">
           <CardContent className="p-6 md:flex items-center justify-between gap-6">
             <div className="mb-4 md:mb-0">
