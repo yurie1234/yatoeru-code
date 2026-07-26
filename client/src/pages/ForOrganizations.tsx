@@ -79,7 +79,7 @@ export default function ForOrganizations() {
           </CardHeader>
           <CardContent className="text-sm leading-relaxed space-y-4">
             <p>
-              下記メールアドレス宛に、<strong>機関名・登録番号・ご担当者名・修正または確認したい内容</strong>をお送りください。
+              下記メールアドレス（info@tenbouworks.jp）宛に、<strong>機関名・登録番号・ご担当者名・修正または確認したい内容</strong>をお送りください。
               運営が事業者に確認のうえ、通常5営業日以内に反映します。
             </p>
             <Button
@@ -87,7 +87,7 @@ export default function ForOrganizations() {
               className="w-full sm:w-auto bg-amber-accent text-brand font-bold hover:bg-amber-accent/90"
               onClick={() => {
                 window.location.href =
-                  "mailto:info@yatoeru.jp?subject=" +
+                  "mailto:info@tenbouworks.jp?subject=" +
                   encodeURIComponent("【掲載情報の確認・修正依頼】") +
                   "&body=" +
                   encodeURIComponent(
