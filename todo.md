@@ -331,3 +331,9 @@
 
 ## 連絡先メールアドレスの変更（2026-07-26 ユーザー依頼）
 - [x] info@yatoeru.jp → info@tenbouworks.jp に変更（ForOrganizations.tsxのmailtoボタン＋本文にアドレス明示）
+
+## コラム記事投稿（2026-07-27 手動実行）
+- [x] 既存記事一覧を確認し重複回避のうえテーマ選定（特定技能の受入れ枠・充足率、7/3公表最新データ）
+- [x] 入管庁一次情報3点＋制度ページ＋閣議決定を確認し記事執筆（約4,900字・表2点・FAQ3問）
+- [x] slug: tokutei-ginou-jusokuritsu-wakugire-2026 をDBに投稿（status: published）
+- [x] 本番URLで表示確認（HTTP 200・SSR本文・JSON-LD・sitemap反映・keyPointsボックス・出典リンク）
