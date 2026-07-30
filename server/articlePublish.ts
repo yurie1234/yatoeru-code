@@ -113,6 +113,94 @@ export async function articleListHandler(req: Request, res: Response) {
   }
 }
 
+const articleUpdateSchema = z.object({
+  /** 更新対象の既存slug（必須） */
+  slug: z
+    .string()
+    .min(3)
+    .max(128)
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "slug must be lowercase kebab-case"),
+  /** 以下は任意。指定されたフィールドのみ更新する */
+  title: z.string().min(10).max(120).optional(),
+  description: z.string().min(40).max(300).optional(),
+  keyPoints: z.array(z.string().min(10).max(120)).min(3).max(5).optional(),
+  bodyMd: z.string().min(1500).max(40000).optional(),
+  tags: z.array(z.string().min(1).max(24)).min(1).max(5).optional(),
+  /** 内容確認基準日の更新 YYYY-MM-DD（加筆・再確認時は必ず更新すること） */
+  baseDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  sources: z.array(sourceSchema).min(1).max(10).optional(),
+});
+
+/**
+ * PUT: 既存記事の更新（部分更新）
+ *
+ * 既存記事のbaseDate更新・加筆用。指定されたフィールドだけを上書きする。
+ * updatedAtはDBのonUpdateNowで自動更新され、sitemapのlastmodと
+ * Article JSON-LDのdateModifiedに反映される。
+ */
+export async function articleUpdateHandler(req: Request, res: Response) {
+  try {
+    if (!(await authorize(req, res))) return;
+
+    const parsed = articleUpdateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({
+        error: "validation-failed",
+        issues: parsed.error.issues.map((i) => ({
+          path: i.path.join("."),
+          message: i.message,
+        })),
+      });
+    }
+    const input = parsed.data;
+
+    // 静的コラム（コード内コンポーネント）はこのAPIでは更新不可
+    if (STATIC_COLUMNS.some((c) => c.slug === input.slug)) {
+      return res.status(400).json({ error: "static-column-not-updatable" });
+    }
+
+    const db = await getDb();
+    if (!db) return res.status(500).json({ error: "db-unavailable" });
+
+    const existing = await db
+      .select({ id: articles.id })
+      .from(articles)
+      .where(eq(articles.slug, input.slug))
+      .limit(1);
+    if (existing.length === 0) {
+      return res.status(404).json({ error: "article-not-found", slug: input.slug });
+    }
+
+    const updates: Record<string, unknown> = {};
+    if (input.title !== undefined) updates.title = input.title;
+    if (input.description !== undefined) updates.description = input.description;
+    if (input.keyPoints !== undefined) updates.keyPoints = input.keyPoints;
+    if (input.bodyMd !== undefined) updates.bodyMd = input.bodyMd;
+    if (input.tags !== undefined) updates.tags = input.tags;
+    if (input.baseDate !== undefined) updates.baseDate = input.baseDate;
+    if (input.sources !== undefined) updates.sources = input.sources;
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ error: "no-fields-to-update" });
+    }
+
+    await db.update(articles).set(updates).where(eq(articles.slug, input.slug));
+
+    res.json({
+      ok: true,
+      slug: input.slug,
+      updatedFields: Object.keys(updates),
+      url: `https://yatoeru.jp/columns/${input.slug}`,
+    });
+  } catch (e) {
+    res.status(500).json({
+      error: e instanceof Error ? e.message : String(e),
+      stack: e instanceof Error ? e.stack : undefined,
+      context: { url: req.originalUrl },
+      timestamp: new Date().toISOString(),
+    });
+  }
+}
+
 /** POST: 新規記事の投稿 */
 export async function articlePublishHandler(req: Request, res: Response) {
   try {

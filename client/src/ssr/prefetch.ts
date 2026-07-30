@@ -10,6 +10,7 @@ import {
   UPCOMING_FIELDS,
 } from "@shared/tokutei";
 import { FIELD_DESCRIPTIONS } from "@shared/fieldDescriptions";
+import { ALL_BUNYA_PAGES } from "@shared/bunya";
 import {
   articleLd,
   breadcrumbLd,
@@ -141,30 +142,7 @@ const STATIC_HEADS: Record<string, { title: string; description: string }> = {
     description:
       "監理支援機関への移行状況（申請準備中・申請中・許可取得など）をご提供いただくと、移行状況トラッカーに確認済みバッジ付きで掲載されます。掲載・更新は無料です。",
   },
-  "/bunya/jidosha-unso": {
-    title:
-      "特定技能「自動車運送業」対応の登録支援機関一覧と採用ガイド【ドライバー採用の費用相場つき】 - ヤトエル",
-    description:
-      "特定技能「自動車運送業」（2024年3月新設・受入見込24,500人）の制度解説と対応登録支援機関の一覧。トラック・タクシー・バスの業務区分、第二種免許要件、支援委託費・紹介手数料の相場、選び方を実務目線で解説します。",
-  },
-  "/bunya/ringyo": {
-    title:
-      "特定技能「林業」対応の登録支援機関一覧と受入ガイド【2024年新設分野】 - ヤトエル",
-    description:
-      "特定技能「林業」（2024年3月新設）の制度解説と対応登録支援機関の一覧。育林・素材生産の業務範囲、伐木等特別教育の安全要件、中山間地での生活支援を担える支援機関の選び方と費用相場を解説します。",
-  },
-  "/bunya/mokuzai": {
-    title:
-      "特定技能「木材産業」対応の登録支援機関一覧と受入ガイド【製材・合板業の人材確保】 - ヤトエル",
-    description:
-      "特定技能「木材産業」（2024年3月新設）の制度解説と対応登録支援機関の一覧。製材・合板製造業の業務範囲、林業との違い、産地での生活支援や製造業系の支援実績で見極める選び方と費用相場を解説します。",
-  },
-  "/bunya/tetsudo": {
-    title:
-      "特定技能「鉄道」対応の登録支援機関一覧と受入ガイド【2024年新設分野】 - ヤトエル",
-    description:
-      "特定技能「鉄道」（2024年3月新設）の制度解説と対応登録支援機関の一覧。軌道整備・電気設備整備・車両整備・車両製造・運輸係員の5業務区分、日本語要件、鉄道事業者との取引実績で見極める支援機関の選び方を解説します。",
-  },
+  // /bunya/全分野のheadは下のObject.assignでALL_BUNYA_PAGESから自動生成
   "/area/aichi": {
     title:
       "愛知県の登録支援機関・監理団体ガイド【特定技能在留者数 全国1位】 - ヤトエル",
@@ -320,6 +298,14 @@ const STATIC_HEADS: Record<string, { title: string; description: string }> = {
       "ヤトエルの並び順ロジックと有料掲載（PR）の扱いを公開しています。掲載料による順位優遇は一切行わず、親和性スコア（分野40点・地域30点・言語20点・信頼性10点）の配点を明示しています。",
   },
 };
+
+// /bunya/全分野（19分野）のheadをshared/bunya.tsの定義から自動生成（ページ本文との一致を保証）
+for (const bp of ALL_BUNYA_PAGES) {
+  STATIC_HEADS[`/bunya/${bp.slug}`] = {
+    title: `${bp.title} - ヤトエル`,
+    description: bp.description,
+  };
+}
 
 export async function prefetchForPath(
   url: string,
@@ -551,6 +537,9 @@ export async function prefetchForPath(
           headline: article.title,
           path: `/columns/${slug}`,
           datePublished: article.baseDate,
+          dateModified: article.updatedAt
+            ? new Date(article.updatedAt).toISOString().slice(0, 10)
+            : undefined,
           description: article.description,
         }),
         breadcrumbLd([

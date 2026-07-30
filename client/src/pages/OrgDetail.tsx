@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc";
+import { FIELD_TO_BUNYA_SLUG } from "@shared/bunya";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -238,7 +239,14 @@ export default function OrgDetail() {
                     </div>
                     <div className="flex flex-wrap gap-1.5">
                       {data.org.fields.map((f) => (
-                        <Link key={f} href={`/field/${encodeURIComponent(f)}`}>
+                        <Link
+                          key={f}
+                          href={
+                            FIELD_TO_BUNYA_SLUG[f]
+                              ? `/bunya/${FIELD_TO_BUNYA_SLUG[f]}`
+                              : `/field/${encodeURIComponent(f)}`
+                          }
+                        >
                           <Badge variant="outline" className="font-normal hover:bg-accent cursor-pointer">
                             {f}
                           </Badge>

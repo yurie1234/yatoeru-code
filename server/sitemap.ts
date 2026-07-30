@@ -3,6 +3,7 @@ import type { Request, Response } from "express";
 import { getDb } from "./db";
 import { articles, supportOrgs } from "../drizzle/schema";
 import { PREFECTURES, TOKUTEI_FIELDS, UPCOMING_FIELDS } from "../shared/tokutei";
+import { ALL_BUNYA_PAGES } from "../shared/bunya";
 
 const SITE_URL = "https://yatoeru.jp";
 
@@ -33,10 +34,8 @@ const STATIC_PATHS = [
   "/ikusei-shuro/schedule",
   "/ikusei-shuro/checklist",
   "/ikusei-shuro/for-kanri-dantai",
-  "/bunya/jidosha-unso",
-  "/bunya/ringyo",
-  "/bunya/mokuzai",
-  "/bunya/tetsudo",
+  // /bunya/全分野（19分野）はshared/bunya.tsの定義から自動展開
+  ...ALL_BUNYA_PAGES.map((p) => `/bunya/${p.slug}`),
   "/area/aichi",
   "/area/osaka",
   "/area/tokyo",
@@ -111,11 +110,20 @@ export async function sitemapHandler(_req: Request, res: Response) {
     const dbArticles = !db
       ? []
       : await db
-          .select({ slug: articles.slug, baseDate: articles.baseDate })
+          .select({
+            slug: articles.slug,
+            baseDate: articles.baseDate,
+            updatedAt: articles.updatedAt,
+            status: articles.status,
+          })
           .from(articles);
     for (const a of dbArticles) {
+      if (a.status !== "published") continue;
+      // 加筆・更新された記事はupdatedAtをlastmodに反映（baseDateより新しい場合のみ）
+      const updated = a.updatedAt?.toISOString().slice(0, 10);
+      const lastmod = updated && updated > a.baseDate ? updated : a.baseDate;
       urls.push(
-        `<url><loc>${esc(`${SITE_URL}/columns/${a.slug}`)}</loc><lastmod>${a.baseDate}</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>`
+        `<url><loc>${esc(`${SITE_URL}/columns/${a.slug}`)}</loc><lastmod>${lastmod}</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>`
       );
     }
     for (const o of orgs) {

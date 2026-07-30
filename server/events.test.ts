@@ -2,10 +2,13 @@ import { describe, expect, it } from "vitest";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
 
-function publicCtx(): TrpcContext {
+const BROWSER_UA =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
+
+function publicCtx(ua: string | null = BROWSER_UA): TrpcContext {
   return {
     user: null,
-    req: { headers: {} } as TrpcContext["req"],
+    req: { headers: ua ? { "user-agent": ua } : {} } as unknown as TrpcContext["req"],
     res: { cookie: () => {}, clearCookie: () => {} } as unknown as TrpcContext["res"],
   };
 }
@@ -23,7 +26,7 @@ function adminCtx(): TrpcContext {
       updatedAt: new Date(),
       lastLoginAt: new Date(),
     } as unknown as NonNullable<TrpcContext["user"]>,
-    req: { headers: {} } as TrpcContext["req"],
+    req: { headers: { "user-agent": BROWSER_UA } } as unknown as TrpcContext["req"],
     res: { cookie: () => {}, clearCookie: () => {} } as unknown as TrpcContext["res"],
   };
 }
@@ -58,6 +61,30 @@ describe("events.track", () => {
       // @ts-expect-error 意図的に不正な値を渡す
       caller.events.track({ eventType: "hacky_event", orgId: null }),
     ).rejects.toThrow();
+  });
+
+  it("botのUser-Agentは記録されない（ok:false）", async () => {
+    const caller = appRouter.createCaller(
+      publicCtx("Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"),
+    );
+    const res = await caller.events.track({
+      eventType: "org_detail_view",
+      orgId: 1,
+      source: "vitest",
+      path: "/org/1",
+    });
+    expect(res.ok).toBe(false);
+  });
+
+  it("User-Agentなしは記録されない（ok:false）", async () => {
+    const caller = appRouter.createCaller(publicCtx(null));
+    const res = await caller.events.track({
+      eventType: "diagnose_start",
+      orgId: null,
+      source: "vitest",
+      path: "/diagnose",
+    });
+    expect(res.ok).toBe(false);
   });
 });
 

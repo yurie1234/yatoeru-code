@@ -1,0 +1,11 @@
+import 'dotenv/config';
+import mysql from "mysql2/promise";
+const conn = await mysql.createConnection(process.env.DATABASE_URL);
+const [rows] = await conn.execute(`SELECT regNo, name, fields FROM support_orgs WHERE fields IS NOT NULL LIMIT 5`);
+console.log(JSON.stringify(rows, null, 1).slice(0, 1500));
+const [cnt] = await conn.execute(`SELECT COUNT(*) AS withFields, SUM(fields IS NULL) AS nullFields FROM support_orgs`);
+console.log(cnt);
+const [like] = await conn.execute(`SELECT COUNT(*) AS c FROM support_orgs WHERE fields LIKE '%介護%'`);
+console.log('LIKE介護:', like[0].c);
+await conn.end();
+process.exit(0);

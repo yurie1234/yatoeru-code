@@ -8,7 +8,7 @@ import { registerStorageProxy } from "./storageProxy";
 import { appRouter } from "../routers";
 import { registrySyncHandler } from "../registrySync";
 import { sheetSyncHandler } from "../sheetSync";
-import { articleListHandler, articlePublishHandler } from "../articlePublish";
+import { articleListHandler, articlePublishHandler, articleUpdateHandler } from "../articlePublish";
 import { rssHandler } from "../rss";
 import { sitemapHandler } from "../sitemap";
 import { registerLlmsTxtRoute } from "../llms";
@@ -63,6 +63,8 @@ async function startServer() {
   // 週2回のコラム自動投稿（AGENT cronからの受け口。GET=既存一覧（重複回避）、POST=新規投稿）
   app.get("/api/scheduled/article-publish", articleListHandler);
   app.post("/api/scheduled/article-publish", articlePublishHandler);
+  // 既存記事の更新（PUT。baseDate更新・加筆用。POSTと同じ認証）
+  app.put("/api/scheduled/article-publish", articleUpdateHandler);
   // RSS 2.0フィード（AI・メディアの巡回導線。登録簿差分記事＋コラムを配信）
   app.get("/rss.xml", rssHandler);
   app.get("/sitemap.xml", sitemapHandler);

@@ -4,6 +4,8 @@
  * 原稿は実装キット（yatoeruikuseikit）のドラフトを正とし、[要確認]項目は安全側の表現に調整。
  */
 
+import { BUNYA_PAGES_15_ALL } from "./bunya15";
+
 export interface BunyaSection {
   heading: string;
   paragraphs: string[];
@@ -46,6 +48,10 @@ export interface BunyaPageDef {
   /** 関連分野slug（両分野対応の案内など） */
   related: { slug: string; label: string }[];
   priority: "P0" | "P1";
+  /** ヒーローのバッジ文言（省略時は「2024年3月新設分野」） */
+  badge?: string;
+  /** 制度開始当初からの既存分野（機関一覧の文言分岐に使用。新設分野はfalse/省略） */
+  isEstablished?: boolean;
 }
 
 const KAKUGI_URL =
@@ -492,6 +498,21 @@ export const BUNYA_PAGES: BunyaPageDef[] = [
   },
 ];
 
+/** 既存４分野＋15分野＝全19分野の統合配列 */
+export const ALL_BUNYA_PAGES: BunyaPageDef[] = [
+  ...BUNYA_PAGES,
+  ...BUNYA_PAGES_15_ALL,
+];
+
+/** 分野名（TOKUTEI_FIELDSと一致）→ /bunya/ slug のマップ */
+export const FIELD_TO_BUNYA_SLUG: Record<string, string> = Object.fromEntries(
+  ALL_BUNYA_PAGES.map((p) => [p.field, p.slug]),
+);
+
 export function getBunyaPage(slug: string): BunyaPageDef | undefined {
-  return BUNYA_PAGES.find((p) => p.slug === slug);
+  return ALL_BUNYA_PAGES.find((p) => p.slug === slug);
+}
+
+export function getAllBunyaSlugs(): string[] {
+  return ALL_BUNYA_PAGES.map((p) => p.slug);
 }

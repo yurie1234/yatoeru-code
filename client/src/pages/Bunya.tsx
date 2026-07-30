@@ -152,7 +152,7 @@ export default function Bunya() {
           </nav>
           <div className="flex items-center gap-2">
             <Badge variant="secondary" className="bg-amber-400 text-amber-950 hover:bg-amber-400">
-              2024年3月新設分野
+              {page.badge ?? "2024年3月新設分野"}
             </Badge>
             <Badge
               variant="outline"
@@ -230,10 +230,20 @@ export default function Bunya() {
                 <span>
                   <strong>「確認済み」バッジ</strong>
                   は、当サイトがメール・電話等で対応実績・受付状況を直接確認した機関のみに付与し、確認日を表示しています。
-                  {page.field}
-                  は新設分野のため、対応を明示する機関は現在
-                  {isLoading ? "確認中" : `${fieldCount}件`}
-                  です。件数が少ない場合も水増しせず、そのまま表示しています。
+                  {page.isEstablished ? (
+                    <>
+                      登録支援機関の登録簿には対応分野が原則記載されないため、下記は
+                      {page.field}
+                      分野への対応を公開情報・取材情報から確認・推定できた機関です。実際の受付可否は各機関に直接ご確認ください。
+                    </>
+                  ) : (
+                    <>
+                      {page.field}
+                      は新設分野のため、対応を明示する機関は現在
+                      {isLoading ? "確認中" : `${fieldCount}件`}
+                      です。件数が少ない場合も水増しせず、そのまま表示しています。
+                    </>
+                  )}
                 </span>
               </p>
             </CardContent>
@@ -253,7 +263,11 @@ export default function Bunya() {
                 <CardContent className="pt-5 text-sm leading-relaxed text-muted-foreground">
                   <p>
                     {page.field}
-                    分野への対応を登録簿・取材情報から確認できた機関は現在ありません。分野が新しいため、対応実績のある機関はまだ限られます。以下は全国の登録支援機関の一部です。分野対応の可否は各機関に直接ご確認いただくか、一括相談をご利用ください。
+                    分野への対応を登録簿・取材情報から確認できた機関は現在ありません。
+                    {page.isEstablished
+                      ? "登録簿には対応分野が原則記載されないため、実際には全国の多くの機関が対応しています。以下は全国の登録支援機関の一部です。"
+                      : "分野が新しいため、対応実績のある機関はまだ限られます。以下は全国の登録支援機関の一部です。"}
+                    分野対応の可否は各機関に直接ご確認いただくか、一括相談をご利用ください。
                   </p>
                 </CardContent>
               </Card>

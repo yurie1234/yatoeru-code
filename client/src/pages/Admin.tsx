@@ -14,6 +14,8 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 import {
   Select,
   SelectContent,
@@ -73,6 +75,30 @@ export default function Admin() {
     enabled: isAdmin,
   });
 
+  // GA4運営者除外フラグ（localStorage.yt_exclude）
+  const [gaExcluded, setGaExcluded] = useState(() => {
+    try {
+      return localStorage.getItem("yt_exclude") === "1";
+    } catch {
+      return false;
+    }
+  });
+  const toggleGaExclude = () => {
+    try {
+      if (gaExcluded) {
+        localStorage.removeItem("yt_exclude");
+        (window as unknown as Record<string, unknown>)["ga-disable-G-64NQW74LWS"] = false;
+        setGaExcluded(false);
+      } else {
+        localStorage.setItem("yt_exclude", "1");
+        (window as unknown as Record<string, unknown>)["ga-disable-G-64NQW74LWS"] = true;
+        setGaExcluded(true);
+      }
+    } catch {
+      // localStorage不可環境では何もしない
+    }
+  };
+
   // 月次レポート：対象年月（JST）
   const now = new Date();
   const [reportYm, setReportYm] = useState(
@@ -110,6 +136,34 @@ export default function Admin() {
       .map(([orgId, v]) => ({ orgId, ...v }))
       .sort((a, b) => b.total - a.total);
   }, [report]);
+
+  // 個社別営業サマリー（掲載確認メール差し込み用）
+  const [summaryOrgIdInput, setSummaryOrgIdInput] = useState("");
+  const [summaryOrgId, setSummaryOrgId] = useState<number | null>(null);
+  const { data: orgSummary, isLoading: summaryLoading } = trpc.events.orgSummary.useQuery(
+    { orgId: summaryOrgId ?? 0, months: 6 },
+    { enabled: isAdmin && summaryOrgId != null && summaryOrgId > 0 },
+  );
+  const summaryText = useMemo(() => {
+    if (!orgSummary?.org) return "";
+    const totalMap: Record<string, number> = {};
+    for (const t of orgSummary.totals) totalMap[t.eventType] = Number(t.count);
+    const monthlyViews = new Map<string, number>();
+    for (const m of orgSummary.monthly) {
+      if (m.eventType === "org_detail_view") {
+        monthlyViews.set(m.ym, (monthlyViews.get(m.ym) ?? 0) + Number(m.count));
+      }
+    }
+    const lines = [
+      `【${orgSummary.org.name}】（${orgSummary.org.regNo}）のヤトエル掲載ページ実績`,
+      `・詳細ページ閲覧（累計）: ${(totalMap["org_detail_view"] ?? 0).toLocaleString()}回`,
+      `・相談送信（累計）: ${((totalMap["consult_submit"] ?? 0) + (totalMap["bulk_consult_submit"] ?? 0)).toLocaleString()}件`,
+      `・電話タップ（累計）: ${(totalMap["phone_tap"] ?? 0).toLocaleString()}回 / サイトクリック（累計）: ${(totalMap["website_click"] ?? 0).toLocaleString()}回`,
+      `・月別閲覧: ${Array.from(monthlyViews.entries()).map(([ym, c]) => `${ym.replace("-", "年")}月 ${c}回`).join(" / ") || "まだありません"}`,
+      `＊bot・クローラー・運営者アクセスを除外したファーストパーティ計測値です。`,
+    ];
+    return lines.join("\n");
+  }, [orgSummary]);
 
   const downloadCsv = () => {
     const evCols = ["org_detail_view", "consult_submit", "bulk_consult_submit", "phone_tap", "website_click"];
@@ -153,6 +207,21 @@ export default function Admin() {
           <p className="text-sm text-muted-foreground mt-1">
             リード獲得・売上・Exit指標をモニタリングします。
           </p>
+          <div className="mt-3 flex items-center gap-3 rounded-lg border bg-muted/40 px-4 py-2.5 w-fit">
+            <div className="text-sm">
+              <span className="font-medium">このブラウザを計測から除外（GA4）</span>
+              <span className="text-xs text-muted-foreground ml-2">
+                現在: {gaExcluded ? "除外中（カウントされません）" : "計測対象"}
+              </span>
+            </div>
+            <Button
+              size="sm"
+              variant={gaExcluded ? "secondary" : "outline"}
+              onClick={toggleGaExclude}
+            >
+              {gaExcluded ? "除外を解除" : "除外する"}
+            </Button>
+          </div>
         </div>
 
         {kpiLoading ? (
@@ -414,6 +483,60 @@ export default function Admin() {
                           </TableBody>
                         </Table>
                       </>
+                    )}
+                  </CardContent>
+                </Card>
+                <Card className="mt-6">
+                  <CardHeader>
+                    <CardTitle className="text-base">個社別営業サマリー（掲載確認メール・月次レポート差し込み用）</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        className="w-40"
+                        placeholder="機関ID（例: 30001）"
+                        value={summaryOrgIdInput}
+                        onChange={(e) => setSummaryOrgIdInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            const v = Number(summaryOrgIdInput);
+                            if (Number.isInteger(v) && v > 0) setSummaryOrgId(v);
+                          }
+                        }}
+                      />
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          const v = Number(summaryOrgIdInput);
+                          if (Number.isInteger(v) && v > 0) setSummaryOrgId(v);
+                        }}
+                      >
+                        集計を表示
+                      </Button>
+                      {summaryText && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            void navigator.clipboard.writeText(summaryText).then(() => {
+                              toast.success("サマリーをコピーしました");
+                            });
+                          }}
+                        >
+                          テキストをコピー
+                        </Button>
+                      )}
+                    </div>
+                    {summaryLoading && summaryOrgId ? (
+                      <Skeleton className="h-24 w-full" />
+                    ) : summaryOrgId && orgSummary && !orgSummary.org ? (
+                      <p className="text-sm text-muted-foreground">機関ID {summaryOrgId} は見つかりませんでした。</p>
+                    ) : summaryText ? (
+                      <pre className="text-sm bg-muted/40 rounded-lg p-4 whitespace-pre-wrap font-sans">{summaryText}</pre>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        機関IDを入力すると、その機関の閲覧・問い合わせ実績（bot・運営者除外済み）をメール差し込み用テキストで出力します。機関IDは各機関詳細ページのURL（/org/○○）の番号です。
+                      </p>
                     )}
                   </CardContent>
                 </Card>

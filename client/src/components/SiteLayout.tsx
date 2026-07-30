@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { ALL_BUNYA_PAGES } from "@shared/bunya";
 import { Globe2, Menu } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
@@ -93,12 +94,15 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
                 <li><Link href="/area/osaka" className="hover:text-amber-accent transition-colors">大阪府の受入ガイド</Link></li>
                 <li><Link href="/area/tokyo" className="hover:text-amber-accent transition-colors">東京都の受入ガイド</Link></li>
               </ul>
-              <h3 className="font-bold mb-4 mt-8">新設4分野ガイド</h3>
-              <ul className="space-y-2 text-brand-foreground/70">
-                <li><Link href="/bunya/jidosha-unso" className="hover:text-amber-accent transition-colors">自動車運送業の支援機関ガイド</Link></li>
-                <li><Link href="/bunya/ringyo" className="hover:text-amber-accent transition-colors">林業の支援機関ガイド</Link></li>
-                <li><Link href="/bunya/mokuzai" className="hover:text-amber-accent transition-colors">木材産業の支援機関ガイド</Link></li>
-                <li><Link href="/bunya/tetsudo" className="hover:text-amber-accent transition-colors">鉄道の支援機関ガイド</Link></li>
+              <h3 className="font-bold mb-4 mt-8">分野別ガイド（全19分野）</h3>
+              <ul className="grid grid-cols-2 gap-x-4 gap-y-2 text-brand-foreground/70">
+                {ALL_BUNYA_PAGES.map((p) => (
+                  <li key={p.slug}>
+                    <Link href={`/bunya/${p.slug}`} className="hover:text-amber-accent transition-colors">
+                      {p.field}
+                    </Link>
+                  </li>
+                ))}
               </ul>
               <h3 className="font-bold mb-4 mt-8">運営</h3>
               <ul className="space-y-2 text-brand-foreground/70">

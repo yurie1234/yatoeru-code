@@ -396,3 +396,33 @@
 - [x] page状態をURLクエリと同期（直接アクセス・戻る進む対応、page=1はクエリなし正規形）
 - [x] SSR初期HTMLにページネーションリンクが出力されることを確認（page=2は2ページ目の機関カード＋固有title＋自己参照canonicalでindex可、フィルタ付きはnoindex維持）
 - [x] 検証（tsc・vitest 69件・curl）・チェックポイント保存（自動公開）・報告
+
+## 既存16分野の/bunya/展開＋人気ランキングページ（2026-07-30 ユーザー依頼）
+- [x] 既存実装の確認（shared/bunya.ts構造・TOKUTEI_FIELDS 16分野・表示回数データの持ち方）
+- [x] 16分野分の分野データ作成（実際は既堓4＋新規15で全19分野。各分野固有コンテンツ・出典付き）
+- [x] Bunyaテンプレが全19分野に対応（badge/isEstablished分岐・既存分野は2019年当初からの分野表記）
+- [x] SSR STATIC_HEADS・sitemap・llms.txt・フッター/内部リンクに全19分野を追加（ALL_BUNYA_PAGESから自動生成）
+- [ ] 「よく見られている支援機関」ランキングページ（/ranking）実装（表示回数データ、全国＋都道府県別、注記・出典明記）
+- [ ] ランキングのSSR・sitemap・内部リンク配線
+- [ ] 検証（tsc・vitest・SSR curl・スクリーンショット）・チェックポイント保存（自動公開）・報告
+
+## 方針修正（Claude Code承認条件、2026-07-30）
+- [x] 15分野の/bunya/データ作成は各分野固有コンテンツ必須（試験・協議会・在留者数統計・対応機関数・受入見込数、出典明記）
+- [x] 県×分野の掛け合わせページは作らない（全国版のみ）
+- [x] 機関詳細の対応分野バッジ→/bunya/各ページへ内部リンク（/field/ページにも導線追加）
+- [x] ランキング公開ページは作らない。bot除外付き閲覧数集計基盤のみ先行実装（クライアントUA/webdriver/yt_exclude除外＋サーバーUA bot除外）
+- [x] 個社別閲覧数の営業用出力（events.orgSummary adminProcedure＋Adminレポートタブに機関ID検索→月別/累計集計→メール差し込み用テキストコピー）
+
+## コラム基盤改修＋定期投稿プロンプト改訂（2026-07-30 Claude Code指摘）
+- [x] /columns/記事はsitemap.xmlに自動追加済みと確認。さらにlastmodをupdatedAt優先・publishedのみに改善
+- [x] 記事ページのArticle JSON-LD: datePublished/authorは実装済み。dateModified（updatedAt連動）をSSRに追加
+- [x] 既存記事の更新エンドポイント（PUT /api/scheduled/article-publish、部分更新・updatedAt自動反映）を追加
+- [x] 定期投稿プロンプト改訂：内部リンク優先順位（①分野ページ（19スラッグ列挙）②県・地域ページ③診断/検索、1〜3箇所）
+- [x] 定期投稿プロンプト改訂：選定基準の優先順位（(a)制度スケジュール＞(b)季節性＞(c)ニュース、ニュースは実務影響の解説角度があるもののみ）
+- [x] 定期投稿プロンプト改訂：常設テーマのバックログ10本追加（枯れ防止フォールバック）
+- [x] 定期投稿プロンプト改訂：週2上限の明記＋枯れ週は既存記事更新（PUT）に切替える手順も追記。schedule update実行済み（taskUid RRwAWbK9Ix7rgzzD5MQzNG）
+- [x] スケジュール済みタスクのプロンプトをこのセッションから直接更新完了（反映確認済み。cron・名前・runModeは変更なし）
+
+## GA4検証フィードバック対応（2026-07-30）
+- [x] GA4: SPAルート遷移時の手動page_view送信は実装済みと確認（App.tsx useGaPageView、wouter useLocation連動）
+- [x] GA4: 運営者除外フラグ（yt_exclude）をindex.htmlに追加＋Adminダッシュボードに除外トグルUI追加＋自前計測（events.track）もyt_exclude連動

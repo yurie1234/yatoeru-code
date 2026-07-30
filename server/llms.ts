@@ -1,6 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { articles } from "../drizzle/schema";
 import { getDb } from "./db";
+import { ALL_BUNYA_PAGES } from "../shared/bunya";
 
 /**
  * /llms.txt — AIクローラー・LLM向けのサイト概要（llmstxt.org準拠）
@@ -37,12 +38,9 @@ const LLMS_TXT = `# ヤトエル（Yatoeru）
 - [受入企業の準備チェックリスト10項目](${SITE_URL}/ikusei-shuro/checklist)
 - [監理団体向け：移行状況の情報提供（無料掲載）](${SITE_URL}/ikusei-shuro/for-kanri-dantai)
 
-## 分野特化ガイド（2024年3月新設4分野）
+## 分野特化ガイド（特定技能全19分野）
 
-- [特定技能「自動車運送業」対応の登録支援機関一覧と採用ガイド](${SITE_URL}/bunya/jidosha-unso): 受入見込24,500人。トラック・タクシー・バスの業務区分と費用相場
-- [特定技能「林業」対応の登録支援機関一覧と受入ガイド](${SITE_URL}/bunya/ringyo): 中山間地での生活支援を担える機関の選び方
-- [特定技能「木材産業」対応の登録支援機関一覧と受入ガイド](${SITE_URL}/bunya/mokuzai): 製材・合板業。林業との違いも解説
-- [特定技能「鉄道」対応の登録支援機関一覧と受入ガイド](${SITE_URL}/bunya/tetsudo): 5業務区分と日本語要件
+${ALL_BUNYA_PAGES.map((p) => `- [特定技能「${p.field}」対応の登録支援機関一覧と受入ガイド](${SITE_URL}/bunya/${p.slug})`).join("\n")}
 
 ## 都道府県別受入ガイド（特定技能在留者数上位10県・固有コンテンツ付き）
 

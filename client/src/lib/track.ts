@@ -19,6 +19,25 @@ export type TrackEventType =
 
 const SRC_KEY = "yatoeru_src";
 
+/** bot・ヘッドレス環境・運営者（yt_exclude）を計測から除外 */
+function isExcluded(): boolean {
+  try {
+    if (localStorage.getItem("yt_exclude") === "1") return true;
+  } catch {
+    /* noop */
+  }
+  try {
+    const ua = navigator.userAgent || "";
+    if (/bot|crawl|spider|slurp|headless|lighthouse|prerender|scrapy|python-requests|curl|wget/i.test(ua)) {
+      return true;
+    }
+    if ((navigator as { webdriver?: boolean }).webdriver) return true;
+  } catch {
+    /* noop */
+  }
+  return false;
+}
+
 /** ページ到達時に ?src= 流入元パラメータを保持（セッション内で維持） */
 export function captureSource(): void {
   try {
@@ -58,6 +77,7 @@ function sendGa4Event(eventType: TrackEventType, orgId?: number | null): void {
  * 自前DBとGA4の両方に送る。失敗してもUIに影響しない。
  */
 export function trackEvent(eventType: TrackEventType, orgId?: number | null): void {
+  if (isExcluded()) return;
   sendGa4Event(eventType, orgId);
   try {
     void trackClient.events.track

@@ -26,6 +26,14 @@ const trackInput = z.object({
   referrer: z.string().max(255).nullish(),
 });
 
+/** サーバー側bot判定（User-Agentベース。クライアント側除外をすり抜けたbotの保険） */
+export function isBotUserAgent(ua: string | undefined): boolean {
+  if (!ua) return true; // UAなしはプログラムアクセスとみなす
+  return /bot|crawl|spider|slurp|headless|lighthouse|prerender|scrapy|python-requests|python-httpx|curl|wget|go-http-client|java\/|okhttp|axios|node-fetch|phantomjs|selenium|puppeteer|playwright/i.test(
+    ua,
+  );
+}
+
 /** リファラはドメインのみ保存（プライバシー配慮） */
 function referrerDomain(ref: string | null | undefined): string | null {
   if (!ref) return null;
@@ -38,8 +46,12 @@ function referrerDomain(ref: string | null | undefined): string | null {
 
 export const eventsRouter = router({
   /** ファーストパーティイベント記録（fire-and-forget、失敗してもUIに影響させない） */
-  track: publicProcedure.input(trackInput).mutation(async ({ input }) => {
+  track: publicProcedure.input(trackInput).mutation(async ({ input, ctx }) => {
     try {
+      // botのUAは記録しない（営業用閲覧数の信頼性確保）
+      if (isBotUserAgent(ctx.req.headers["user-agent"])) {
+        return { ok: false } as const;
+      }
       const db = await getDb();
       if (!db) return { ok: false } as const;
       await db.insert(orgEvents).values({
@@ -107,5 +119,65 @@ export const eventsRouter = router({
         .groupBy(orgEvents.eventType);
 
       return { orgRows, siteRows, from, to };
+    }),
+
+  /**
+   * 個社別営業用サマリー（管理者専用）。
+   * 機関IDを指定して、月別のイベント集計と累計を返す。
+   * 掲載確認メール・月次レポート差し込み用。
+   */
+  orgSummary: adminProcedure
+    .input(
+      z.object({
+        orgId: z.number().int().positive(),
+        months: z.number().int().min(1).max(24).default(6),
+      }),
+    )
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { org: null, monthly: [], totals: [] };
+
+      const [org] = await db
+        .select({
+          id: supportOrgs.id,
+          name: supportOrgs.name,
+          regNo: supportOrgs.regNo,
+          prefecture: supportOrgs.prefecture,
+        })
+        .from(supportOrgs)
+        .where(eq(supportOrgs.id, input.orgId))
+        .limit(1);
+      if (!org) return { org: null, monthly: [], totals: [] };
+
+      // 直近Nヶ月の開始日（JST月初）
+      const nowJst = new Date(Date.now() + 9 * 3600 * 1000);
+      const from = new Date(
+        Date.UTC(nowJst.getUTCFullYear(), nowJst.getUTCMonth() - (input.months - 1), 1, -9),
+      );
+
+      // 月別×イベント種別集計（JST基準の年月）
+      const ymExpr = sql<string>`DATE_FORMAT(DATE_ADD(${orgEvents.createdAt}, INTERVAL 9 HOUR), '%Y-%m')`;
+      const monthly = await db
+        .select({
+          ym: ymExpr.as("ym"),
+          eventType: orgEvents.eventType,
+          count: sql<number>`count(*)`.as("count"),
+        })
+        .from(orgEvents)
+        .where(and(eq(orgEvents.orgId, input.orgId), gte(orgEvents.createdAt, from)))
+        .groupBy(sql`ym`, orgEvents.eventType)
+        .orderBy(sql`ym`);
+
+      // 全期間累計
+      const totals = await db
+        .select({
+          eventType: orgEvents.eventType,
+          count: sql<number>`count(*)`.as("count"),
+        })
+        .from(orgEvents)
+        .where(eq(orgEvents.orgId, input.orgId))
+        .groupBy(orgEvents.eventType);
+
+      return { org, monthly, totals };
     }),
 });

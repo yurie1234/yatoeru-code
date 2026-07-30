@@ -17,6 +17,7 @@ import {
 import { useEffect } from "react";
 import { Link, useLocation, useParams } from "wouter";
 import { FIELD_DESCRIPTIONS } from "@shared/fieldDescriptions";
+import { FIELD_TO_BUNYA_SLUG } from "@shared/bunya";
 
 export default function Field() {
   const params = useParams<{ field: string }>();
@@ -151,6 +152,13 @@ export default function Field() {
           <p className="text-brand-foreground/70 max-w-2xl leading-relaxed">
             {FIELD_DESCRIPTIONS[field]}
           </p>
+          {FIELD_TO_BUNYA_SLUG[field] && (
+            <Link href={`/bunya/${FIELD_TO_BUNYA_SLUG[field]}`}>
+              <span className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-amber-accent hover:underline cursor-pointer">
+                {field}分野の制度解説・費用相場・支援機関の選び方を見る →
+              </span>
+            </Link>
+          )}
           {orgData && orgData.total > 0 && (
             <div className="mt-6">
               <div className="text-3xl font-black text-amber-accent">
