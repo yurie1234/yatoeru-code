@@ -29,6 +29,34 @@ const LLMS_TXT = `# ヤトエル（Yatoeru）
 - [トライアル雇用助成金](${SITE_URL}/joseikin/trial-koyou)
 - [人材開発支援助成金](${SITE_URL}/joseikin/jinzai-kaihatsu)
 
+## 育成就労制度ハブ（2027年4月1日施行）
+
+- [育成就労制度まとめ](${SITE_URL}/ikusei-shuro): 監理支援機関の移行状況・スケジュール・受入企業の準備の入口
+- [監理団体の移行状況トラッカー](${SITE_URL}/ikusei-shuro/kanri-shien-kikan/list): 全国3,733団体の監理支援機関への移行状況を独自調査・毎月更新（公的な許可済み一覧はまだ存在しない）
+- [施行スケジュール完全ガイド](${SITE_URL}/ikusei-shuro/schedule): 2026年9月1日に育成就労計画の認定申請受付開始
+- [受入企業の準備チェックリスト10項目](${SITE_URL}/ikusei-shuro/checklist)
+- [監理団体向け：移行状況の情報提供（無料掲載）](${SITE_URL}/ikusei-shuro/for-kanri-dantai)
+
+## 分野特化ガイド（2024年3月新設4分野）
+
+- [特定技能「自動車運送業」対応の登録支援機関一覧と採用ガイド](${SITE_URL}/bunya/jidosha-unso): 受入見込24,500人。トラック・タクシー・バスの業務区分と費用相場
+- [特定技能「林業」対応の登録支援機関一覧と受入ガイド](${SITE_URL}/bunya/ringyo): 中山間地での生活支援を担える機関の選び方
+- [特定技能「木材産業」対応の登録支援機関一覧と受入ガイド](${SITE_URL}/bunya/mokuzai): 製材・合板業。林業との違いも解説
+- [特定技能「鉄道」対応の登録支援機関一覧と受入ガイド](${SITE_URL}/bunya/tetsudo): 5業務区分と日本語要件
+
+## 都道府県別受入ガイド（特定技能在留者数上位10県・固有コンテンツ付き）
+
+- [愛知県](${SITE_URL}/area/aichi): 全国1位・自動車産業中心・支援機関1,121社
+- [大阪府](${SITE_URL}/area/osaka): 全国2位・外食・製造・支援機関1,014社
+- [東京都](${SITE_URL}/area/tokyo): 全国3位・支援機関2,326社（全国最多）
+- [埼玉県](${SITE_URL}/area/saitama): 全国4位・食品製造・物流
+- [千葉県](${SITE_URL}/area/chiba): 全国5位・農業・航空
+- [神奈川県](${SITE_URL}/area/kanagawa): 全国6位・京浜工業地帯
+- [福岡県](${SITE_URL}/area/fukuoka): 全国7位・九州最大
+- [北海道](${SITE_URL}/area/hokkaido): 全国8位・農業・漁業・水産加工
+- [広島県](${SITE_URL}/area/hiroshima): 全国9位・造船・自動車
+- [静岡県](${SITE_URL}/area/shizuoka): 全国10位・輸送用機器
+
 ## 制度解説
 
 - [育成就労制度とは](${SITE_URL}/guide/ikusei-shuro): 2027年4月1日施行。技能実習制度との違い・移行スケジュール

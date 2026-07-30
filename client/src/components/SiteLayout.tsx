@@ -23,6 +23,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
             <Link href="/search" className="text-muted-foreground hover:text-foreground transition-colors">支援機関を探す</Link>
             <Link href="/diagnose" className="text-muted-foreground hover:text-foreground transition-colors">支援機関マッチ診断</Link>
             <Link href="/stats" className="text-muted-foreground hover:text-foreground transition-colors">統計データ</Link>
+            <Link href="/ikusei-shuro" className="text-muted-foreground hover:text-foreground transition-colors">育成就労</Link>
             <Link href="/updates" className="text-muted-foreground hover:text-foreground transition-colors">登録簿更新情報</Link>
             <Link href="/columns" className="text-muted-foreground hover:text-foreground transition-colors">コラム</Link>
           </nav>
@@ -41,6 +42,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
               <Link href="/search" onClick={() => setMobileOpen(false)} className="py-2">支援機関を探す</Link>
               <Link href="/diagnose" onClick={() => setMobileOpen(false)} className="py-2">支援機関マッチ診断</Link>
               <Link href="/stats" onClick={() => setMobileOpen(false)} className="py-2">統計データ</Link>
+              <Link href="/ikusei-shuro" onClick={() => setMobileOpen(false)} className="py-2">育成就労制度</Link>
               <Link href="/updates" onClick={() => setMobileOpen(false)} className="py-2">登録簿更新情報</Link>
               <Link href="/columns" onClick={() => setMobileOpen(false)} className="py-2">コラム</Link>
             </nav>
@@ -71,6 +73,9 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
                 <li><Link href="/stats" className="hover:text-amber-accent transition-colors">統計データ</Link></li>
                 <li><Link href="/updates" className="hover:text-amber-accent transition-colors">登録簿更新情報</Link></li>
                 <li><Link href="/joseikin" className="hover:text-amber-accent transition-colors">助成金ガイド</Link></li>
+                <li><Link href="/ikusei-shuro" className="hover:text-amber-accent transition-colors">育成就労制度まとめ</Link></li>
+                <li><Link href="/ikusei-shuro/kanri-shien-kikan/list" className="hover:text-amber-accent transition-colors">監理団体の移行状況トラッカー</Link></li>
+                <li><Link href="/ikusei-shuro/schedule" className="hover:text-amber-accent transition-colors">育成就労施行スケジュール</Link></li>
                 <li><Link href="/guide/ikusei-shuro" className="hover:text-amber-accent transition-colors">育成就労制度ガイド</Link></li>
                 <li><Link href="/guide/kanri-shien-kikan" className="hover:text-amber-accent transition-colors">監理支援機関とは</Link></li>
                 <li><Link href="/columns" className="hover:text-amber-accent transition-colors">コラム（実務解説）</Link></li>
@@ -84,6 +89,16 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
                 <li><Link href="/region/愛知県" className="hover:text-amber-accent transition-colors">愛知県の支援機関</Link></li>
                 <li><Link href="/region/大阪府" className="hover:text-amber-accent transition-colors">大阪府の支援機関</Link></li>
                 <li><Link href="/field/介護" className="hover:text-amber-accent transition-colors">介護分野の支援機関</Link></li>
+                <li><Link href="/area/aichi" className="hover:text-amber-accent transition-colors">愛知県の受入ガイド</Link></li>
+                <li><Link href="/area/osaka" className="hover:text-amber-accent transition-colors">大阪府の受入ガイド</Link></li>
+                <li><Link href="/area/tokyo" className="hover:text-amber-accent transition-colors">東京都の受入ガイド</Link></li>
+              </ul>
+              <h3 className="font-bold mb-4 mt-8">新設4分野ガイド</h3>
+              <ul className="space-y-2 text-brand-foreground/70">
+                <li><Link href="/bunya/jidosha-unso" className="hover:text-amber-accent transition-colors">自動車運送業の支援機関ガイド</Link></li>
+                <li><Link href="/bunya/ringyo" className="hover:text-amber-accent transition-colors">林業の支援機関ガイド</Link></li>
+                <li><Link href="/bunya/mokuzai" className="hover:text-amber-accent transition-colors">木材産業の支援機関ガイド</Link></li>
+                <li><Link href="/bunya/tetsudo" className="hover:text-amber-accent transition-colors">鉄道の支援機関ガイド</Link></li>
               </ul>
               <h3 className="font-bold mb-4 mt-8">運営</h3>
               <ul className="space-y-2 text-brand-foreground/70">

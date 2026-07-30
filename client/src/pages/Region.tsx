@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc";
 import { PREFECTURES } from "@shared/tokutei";
+import { getAreaByPref } from "@shared/area";
 import {
   AlertTriangle,
   ArrowRight,
@@ -37,6 +38,7 @@ export default function Region() {
   );
 
   const orgItems = orgData?.items ?? [];
+  const areaPage = getAreaByPref(prefecture);
 
   useEffect(() => {
     if (!isValid) return;
@@ -146,6 +148,14 @@ export default function Region() {
             出入国在留管理庁の登録簿に基づく、{prefecture}
             に所在する登録支援機関の一覧です。対応言語・分野・行政処分歴で比較し、無料で一括相談できます。
           </p>
+          {areaPage && (
+            <Link href={`/area/${areaPage.slug}`}>
+              <Badge className="mt-4 bg-amber-accent text-brand hover:bg-amber-accent/90 cursor-pointer py-1.5 px-3">
+                {prefecture}の受入ガイド（主要分野・支援制度・監理団体の移行状況）を見る
+                <ArrowRight className="h-3.5 w-3.5 ml-1" />
+              </Badge>
+            </Link>
+          )}
           <div className="flex flex-wrap gap-6 mt-6">
             <div>
               <div className="text-3xl font-black text-amber-accent">

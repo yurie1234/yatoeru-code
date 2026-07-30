@@ -1,8 +1,9 @@
 import { TRPCError } from "@trpc/server";
 import { and, desc, eq, like, or, sql } from "drizzle-orm";
 import { z } from "zod";
-import { kanriOrgs, sheetSyncLogs } from "../../drizzle/schema";
+import { kanriOrgs, kanriStatusSubmissions, sheetSyncLogs } from "../../drizzle/schema";
 import { getDb } from "../db";
+import { notifyOwner } from "../_core/notification";
 import { publicProcedure, router } from "../_core/trpc";
 import { PREFECTURES } from "../../shared/tokutei";
 
@@ -128,6 +129,60 @@ export const kanriRouter = router({
       .filter((r) => r.prefecture)
       .map((r) => ({ prefecture: r.prefecture as string, count: Number(r.count) }));
   }),
+
+  /** 監理団体からの移行状況の情報提供（/ikusei-shuro/for-kanri-dantai のフォーム） */
+  submitStatusInfo: publicProcedure
+    .input(
+      z.object({
+        orgName: z.string().min(1).max(255),
+        managementId: z.string().max(16).optional(),
+        prefecture: z.string().max(16).optional(),
+        migrationStatus: z.enum([
+          "preparing",
+          "applying",
+          "permitted",
+          "not_migrating",
+        ]),
+        contactName: z.string().min(1).max(128),
+        email: z.string().email().max(320),
+        phone: z.string().max(32).optional(),
+        note: z.string().max(2000).optional(),
+        /** プライバシーポリシー同意（必須） */
+        consentPrivacy: z.boolean(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      if (!input.consentPrivacy) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "プライバシーポリシーへの同意が必要です。",
+        });
+      }
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      await db.insert(kanriStatusSubmissions).values({
+        orgName: input.orgName,
+        managementId: input.managementId,
+        prefecture: input.prefecture,
+        migrationStatus: input.migrationStatus,
+        contactName: input.contactName,
+        email: input.email,
+        phone: input.phone,
+        note: input.note,
+        consentedAt: new Date(),
+        status: "new",
+      });
+      // 掲載作業（本人性確認→マスターシート反映）はオーナーが手動で行うため通知する
+      try {
+        await notifyOwner({
+          title: `【移行状況の情報提供】${input.orgName}`,
+          content: `監理団体から移行状況の情報提供がありました。\n団体名: ${input.orgName}\n管理ID: ${input.managementId ?? "未記入"}\n移行状況: ${input.migrationStatus}\n担当者: ${input.contactName} (${input.email})\n※本人性確認のうえマスターシートに反映してください。`,
+        });
+      } catch {
+        // 通知失敗は登録自体の失敗にしない
+      }
+      return { success: true };
+    }),
 
   /** 個別取得（管理ID） */
   byId: publicProcedure

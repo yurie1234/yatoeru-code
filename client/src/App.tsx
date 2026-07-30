@@ -15,9 +15,16 @@ import ColumnShokaiVsShien from "./pages/ColumnShokaiVsShien";
 import Consult from "./pages/Consult";
 import Diagnose from "./pages/Diagnose";
 import ForOrganizations from "./pages/ForOrganizations";
-import Field from "./pages/Field";
+import Field from "@/pages/Field";
+import Area from "@/pages/Area";
+import Bunya from "@/pages/Bunya";
 import GuideGinouJisshuChigai from "./pages/GuideGinouJisshuChigai";
-import GuideIkuseiShuro from "./pages/GuideIkuseiShuro";
+import GuideIkuseiShuro from "@/pages/GuideIkuseiShuro";
+import IkuseiHub from "@/pages/IkuseiHub";
+import IkuseiTrackerList from "@/pages/IkuseiTrackerList";
+import IkuseiSchedule from "@/pages/IkuseiSchedule";
+import IkuseiChecklist from "@/pages/IkuseiChecklist";
+import IkuseiForKanriDantai from "@/pages/IkuseiForKanriDantai";
 import GuideIkuseiShuroCost from "./pages/GuideIkuseiShuroCost";
 import GuideIkuseiShuroSchedule from "./pages/GuideIkuseiShuroSchedule";
 import GuideKanriShienKikan from "./pages/GuideKanriShienKikan";
@@ -79,7 +86,14 @@ function Router() {
       <Route path={"/updates/:baseDate"} component={UpdateDetail} />
       <Route path={"/region/:prefecture"} component={Region} />
       <Route path={"/field/:field"} component={Field} />
-      <Route path={"/guide/ikusei-shuro"} component={GuideIkuseiShuro} />
+      <Route path="/bunya/:slug" component={Bunya} />
+      <Route path="/area/:slug" component={Area} />
+      <Route path="/guide/ikusei-shuro" component={GuideIkuseiShuro} />
+      <Route path="/ikusei-shuro" component={IkuseiHub} />
+      <Route path="/ikusei-shuro/kanri-shien-kikan/list" component={IkuseiTrackerList} />
+      <Route path="/ikusei-shuro/schedule" component={IkuseiSchedule} />
+      <Route path="/ikusei-shuro/checklist" component={IkuseiChecklist} />
+      <Route path="/ikusei-shuro/for-kanri-dantai" component={IkuseiForKanriDantai} />
       <Route path={"/guide/ikusei-shuro-cost"} component={GuideIkuseiShuroCost} />
       <Route path={"/guide/ikusei-shuro-schedule"} component={GuideIkuseiShuroSchedule} />
       <Route path={"/guide/ginou-jisshu-chigai"} component={GuideGinouJisshuChigai} />

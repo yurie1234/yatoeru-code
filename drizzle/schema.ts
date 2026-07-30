@@ -354,6 +354,35 @@ export type InsertKanriOrg = typeof kanriOrgs.$inferInsert;
  * マスターDB（Googleスプレッドシート）→サイトDB同期の実行ログ。
  * 検証3ルール（件数10%減・登録番号重複・必須カラム欠損）の結果も記録する。
  */
+/**
+ * 監理団体からの移行状況情報提供（/ikusei-shuro/for-kanri-dantai のフォーム）。
+ * 本人性確認のうえオーナーがマスターシートに反映する運用（サイトDBへの直接反映はしない）。
+ */
+export const kanriStatusSubmissions = mysqlTable("kanri_status_submissions", {
+  id: int("id").autoincrement().primaryKey(),
+  orgName: varchar("orgName", { length: 255 }).notNull(),
+  /** トラッカー上の管理ID（I-/T-）任意 */
+  managementId: varchar("managementId", { length: 16 }),
+  prefecture: varchar("prefecture", { length: 16 }),
+  migrationStatus: mysqlEnum("migrationStatus", [
+    "preparing",
+    "applying",
+    "permitted",
+    "not_migrating",
+  ]).notNull(),
+  contactName: varchar("contactName", { length: 128 }).notNull(),
+  email: varchar("email", { length: 320 }).notNull(),
+  phone: varchar("phone", { length: 32 }),
+  note: text("note"),
+  /** プライバシーポリシー同意日時 */
+  consentedAt: timestamp("consented_at"),
+  status: mysqlEnum("status", ["new", "verified", "reflected", "rejected"])
+    .default("new")
+    .notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type KanriStatusSubmission = typeof kanriStatusSubmissions.$inferSelect;
+
 export const sheetSyncLogs = mysqlTable("sheet_sync_logs", {
   id: int("id").autoincrement().primaryKey(),
   /** 対象シート: shien=登録支援機関 / kanri=監理支援機関 / management=掲載管理 */
