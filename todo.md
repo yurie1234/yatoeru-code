@@ -380,13 +380,19 @@
 - [x] キットの原稿・仕様をP0/P1実装に反映（キットを正とする）
 
 ## インデックス問題診断と構成改善（2026-07-30 Claude Code指摘＋Search Console通知）
-- [ ] 本番全ページ系統のnoindexメタ/X-Robots-Tag残存チェック
-- [ ] Googlebot UAでのアクセス可否（Cloudflare/CDN遮断チェック）
-- [ ] robots.txt・sitemap.xml配信内容の確認
-- [ ] 「ページにリダイレクトがあります」の原因特定（www/http/manus.space 301等）
-- [ ] canonical整合確認
-- [ ] 特定した阻害要因の修正・検証
-- [ ] 機関詳細ページのtitle改善（{機関名}｜{県}の登録支援機関（対応分野：{分野}））
-- [ ] 機関詳細→育成就労ハブへの内部リンク（トラッカー導線）
-- [ ] E-E-A-T：運営者情報・掲載ポリシー・修正削除窓口・更新日表示の現状確認と不足補完
-- [ ] チェックポイント保存（自動公開）・Search Console再検証手順を含む報告
+- [x] 本番全ページ系統のnoindexメタ/X-Robots-Tag残存チェック（正規ページは全てnoindexなし。noindexは非実在URL・フィルタ付きURLへの意図的付与のみ＝正常）
+- [x] Googlebot UAでのアクセス可否（200で通過、Cloudflare遮断なし。Claude Code環境の403は一般ボット対策によるもの）
+- [x] robots.txt・sitemap.xml配信内容の確認（正常、11,567 URL配信中）
+- [x] 「ページにリダイレクトがあります」の原因特定（http→https・旧manus.space→yatoeru.jpの301＝正常な挙動）
+- [x] canonical整合確認（全系統正常）
+- [x] 特定した阻害要因の修正・検証（致命的な阻害要因なし。新規ドメイン2週目の通常の立ち上がりと判断）
+- [x] 機関詳細ページのtitle改善（{機関名}｜{県}の登録支援機関（対応分野）、SSR＋CSR同期、descriptionに対応言語追加）
+- [x] 機関詳細→育成就労ハブへの内部リンク（トラッカー＋制度まとめへの導線カード）
+- [x] E-E-A-T：運営者情報（/about）・中立性ポリシー（/neutrality-policy）・修正窓口（/for-organizations）・確認日表示は既に整備済みと確認
+- [x] チェックポイント保存（version 21671295・自動公開・本番反映確認済み）・Search Console再検証手順を含む報告
+
+## /searchページネーションの実リンク化（2026-07-30 Claude Code追加指摘）
+- [x] 「前へ／次へ」等のページネーションを<a href="/search?page=N">型の実リンクに変更（見た目はボタンのまま、rel=prev/next付き）
+- [x] page状態をURLクエリと同期（直接アクセス・戻る進む対応、page=1はクエリなし正規形）
+- [x] SSR初期HTMLにページネーションリンクが出力されることを確認（page=2は2ページ目の機関カード＋固有title＋自己参照canonicalでindex可、フィルタ付きはnoindex維持）
+- [x] 検証（tsc・vitest 69件・curl）・チェックポイント保存（自動公開）・報告

@@ -29,11 +29,16 @@ export default function Search() {
   const [, setLocation] = useLocation();
   const params = useMemo(() => new URLSearchParams(searchString), [searchString]);
 
+  const parsePageParam = (v: string | null) => {
+    const n = Number.parseInt(v ?? "1", 10);
+    return Number.isFinite(n) && n >= 1 ? n : 1;
+  };
+
   const [keyword, setKeyword] = useState(params.get("keyword") ?? "");
   const [prefecture, setPrefecture] = useState(params.get("prefecture") ?? ALL);
   const [language, setLanguage] = useState(params.get("language") ?? ALL);
   const [field, setField] = useState(params.get("field") ?? ALL);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(() => parsePageParam(params.get("page")));
   // 並び順は親和性順のみ（標準順の切替は廃止。APIのsortパラメータ自体は互換のため残存）
   const sort = "affinity" as const;
   // 検索条件（キーワード・都道府県・言語・分野）が何も指定されていない場合は、
@@ -42,14 +47,31 @@ export default function Search() {
     keyword.trim() !== "" || prefecture !== ALL || language !== ALL || field !== ALL;
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
-  // URLパラメータの変化を反映
+  // URLパラメータの変化を反映（ページネーション実リンク・戻る進むもここで同期）
   useEffect(() => {
     setKeyword(params.get("keyword") ?? "");
     setPrefecture(params.get("prefecture") ?? ALL);
     setLanguage(params.get("language") ?? ALL);
     setField(params.get("field") ?? ALL);
-    setPage(1);
+    setPage(parsePageParam(params.get("page")));
   }, [params]);
+
+  // 現在の検索条件を保ったまま指定pageのURLを生成（page=1はクエリなしの正規形）
+  const buildPageHref = (p: number) => {
+    const sp = new URLSearchParams();
+    if (keyword.trim() !== "") sp.set("keyword", keyword.trim());
+    if (prefecture !== ALL) sp.set("prefecture", prefecture);
+    if (language !== ALL) sp.set("language", language);
+    if (field !== ALL) sp.set("field", field);
+    if (p > 1) sp.set("page", String(p));
+    const qs = sp.toString();
+    return qs ? `/search?${qs}` : "/search";
+  };
+
+  const goToPage = (p: number) => {
+    setLocation(buildPageHref(p));
+    window.scrollTo({ top: 0 });
+  };
 
   const queryInput = useMemo(
     () => ({
@@ -320,27 +342,47 @@ export default function Search() {
               ))}
             </div>
 
-            {/* ページネーション */}
+            {/* ページネーション：クローラーが辿れるよう実リンク（a href）で描画し、
+                クリック時はSPAナビゲーションで処理する */}
             {data.totalPages > 1 && (
-              <div className="flex items-center justify-center gap-4 mt-8">
-                <Button
-                  variant="outline"
-                  disabled={page <= 1}
-                  onClick={() => { setPage(page - 1); window.scrollTo({ top: 0 }); }}
-                >
-                  <ChevronLeft className="h-4 w-4 mr-1" />前へ
-                </Button>
+              <nav
+                aria-label="ページネーション"
+                className="flex items-center justify-center gap-4 mt-8"
+              >
+                {page <= 1 ? (
+                  <Button variant="outline" disabled>
+                    <ChevronLeft className="h-4 w-4 mr-1" />前へ
+                  </Button>
+                ) : (
+                  <Button variant="outline" asChild>
+                    <a
+                      href={buildPageHref(page - 1)}
+                      rel="prev"
+                      onClick={(e) => { e.preventDefault(); goToPage(page - 1); }}
+                    >
+                      <ChevronLeft className="h-4 w-4 mr-1" />前へ
+                    </a>
+                  </Button>
+                )}
                 <span className="text-sm text-muted-foreground">
                   {data.page} / {data.totalPages.toLocaleString()}ページ
                 </span>
-                <Button
-                  variant="outline"
-                  disabled={page >= data.totalPages}
-                  onClick={() => { setPage(page + 1); window.scrollTo({ top: 0 }); }}
-                >
-                  次へ<ChevronRight className="h-4 w-4 ml-1" />
-                </Button>
-              </div>
+                {page >= data.totalPages ? (
+                  <Button variant="outline" disabled>
+                    次へ<ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                ) : (
+                  <Button variant="outline" asChild>
+                    <a
+                      href={buildPageHref(page + 1)}
+                      rel="next"
+                      onClick={(e) => { e.preventDefault(); goToPage(page + 1); }}
+                    >
+                      次へ<ChevronRight className="h-4 w-4 ml-1" />
+                    </a>
+                  </Button>
+                )}
+              </nav>
             )}
           </>
         ) : (

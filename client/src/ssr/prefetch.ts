@@ -417,7 +417,7 @@ export async function prefetchForPath(
     };
   }
 
-  // 検索ページ：ベースパスのみインデックス可。クエリ付きは実フィルタでシードしnoindex
+  // 検索ページ：ベースパスとpage付き（フィルタなし）はインデックス可。フィルタ付きは実フィルタでシードしnoindex
   if (clean === "/search") {
     const sp = new URLSearchParams(url.split("?").slice(1).join("?"));
     const keyword = sp.get("keyword") ?? undefined;
@@ -425,6 +425,8 @@ export async function prefetchForPath(
     const language = sp.get("language") ?? undefined;
     const field = sp.get("field") ?? undefined;
     const hasFilter = Boolean(keyword || prefecture || language || field);
+    const rawPage = Number.parseInt(sp.get("page") ?? "1", 10);
+    const page = Number.isFinite(rawPage) && rawPage >= 1 ? rawPage : 1;
     // Search.tsxのqueryInputと完全一致させる（条件なしはsort:"default"）ことで、
     // ハイドレーション時にキャッシュがヒットし、SSRのHTMLに機関カードが含まれる
     const input = {
@@ -432,18 +434,23 @@ export async function prefetchForPath(
       prefecture: prefecture || undefined,
       language: language || undefined,
       field: field || undefined,
-      page: 1,
+      page,
       limit: 20,
       sort: (hasFilter ? "affinity" : "default") as "affinity" | "default",
     };
     const result = await p.orgsSearch(input);
     seed(qc, getQueryKey(trpc.orgs.search, input, "query"), result);
+    const isPaged = page > 1;
     return {
-      title: "登録支援機関を検索 - ヤトエル",
+      title: isPaged
+        ? `登録支援機関を検索（${page}ページ目） - ヤトエル`
+        : "登録支援機関を検索 - ヤトエル",
       description:
         "全国の登録支援機関を対応言語・地域・業種・処分歴で検索。親和性スコア順に表示し、実確認済みの機関には確認日を表示します。",
-      canonicalPath: "/search",
-      noindex: hasFilter, // 内部検索結果はnoindex（ベース/searchのみインデックス）
+      // page付き（フィルタなし）は自己参照canonicalでインデックス可：
+      // sitemapに加えページネーション実リンク経由のクロール経路を確保する
+      canonicalPath: isPaged && !hasFilter ? `/search?page=${page}` : "/search",
+      noindex: hasFilter, // 内部検索結果（フィルタ付き）はnoindex
     };
   }
 
