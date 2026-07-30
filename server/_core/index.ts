@@ -10,7 +10,7 @@ import { registrySyncHandler } from "../registrySync";
 import { sheetSyncHandler } from "../sheetSync";
 import { articleListHandler, articlePublishHandler, articleUpdateHandler } from "../articlePublish";
 import { rssHandler } from "../rss";
-import { sitemapHandler } from "../sitemap";
+import { sitemapHandler, sitemapChildHandler } from "../sitemap";
 import { registerLlmsTxtRoute } from "../llms";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
@@ -67,7 +67,9 @@ async function startServer() {
   app.put("/api/scheduled/article-publish", articleUpdateHandler);
   // RSS 2.0フィード（AI・メディアの巡回導線。登録簿差分記事＋コラムを配信）
   app.get("/rss.xml", rssHandler);
+  // sitemap index（/sitemap.xml）＋分割子sitemap（1.5MB単一ファイルのSCタイムアウト対策）
   app.get("/sitemap.xml", sitemapHandler);
+  app.get("/sitemaps/:name", sitemapChildHandler);
   registerLlmsTxtRoute(app);
   // tRPC API
   app.use(

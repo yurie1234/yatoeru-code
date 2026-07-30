@@ -402,9 +402,9 @@
 - [x] 16分野分の分野データ作成（実際は既堓4＋新規15で全19分野。各分野固有コンテンツ・出典付き）
 - [x] Bunyaテンプレが全19分野に対応（badge/isEstablished分岐・既存分野は2019年当初からの分野表記）
 - [x] SSR STATIC_HEADS・sitemap・llms.txt・フッター/内部リンクに全19分野を追加（ALL_BUNYA_PAGESから自動生成）
-- [ ] 「よく見られている支援機関」ランキングページ（/ranking）実装（表示回数データ、全国＋都道府県別、注記・出典明記）
-- [ ] ランキングのSSR・sitemap・内部リンク配線
-- [ ] 検証（tsc・vitest・SSR curl・スクリーンショット）・チェックポイント保存（自動公開）・報告
+- [x] 「よく見られている支援機関」ランキング公開ページは方針修正（2026-07-30 Claude Code承認条件）により作らないことに確定。代わりにbot除外付き閲覧数集計基盤＋営業用出力を実装済み
+- [x] ランキングのSSR・sitemap配線は公開ページ撤回に伴い不要（/bunya/19分野の配線は完了）
+- [x] 検証完了（tscエラーなし・vitest 71件パス・SSR curlで/bunya/19件・JSON-LD dateModified・PUT 403・yt_exclude確認・スクリーンショット5枚）・チェックポイントb2e52c58保存（自動公開）
 
 ## 方針修正（Claude Code承認条件、2026-07-30）
 - [x] 15分野の/bunya/データ作成は各分野固有コンテンツ必須（試験・協議会・在留者数統計・対応機関数・受入見込数、出典明記）
@@ -426,3 +426,10 @@
 ## GA4検証フィードバック対応（2026-07-30）
 - [x] GA4: SPAルート遷移時の手動page_view送信は実装済みと確認（App.tsx useGaPageView、wouter useLocation連動）
 - [x] GA4: 運営者除外フラグ（yt_exclude）をindex.htmlに追加＋Adminダッシュボードに除外トグルUI追加＋自前計測（events.track）もyt_exclude連動
+
+## sitemap.xml高速化（2026-07-30 ユーザー報告: SCでエラー）
+- [x] 遅延原因の特定（実測74.9秒・非圧縮1.57MB・11,582 URLを1ファイルで返していたことが主因。Autoscaleでインスタンス別キャッシュミスも重なりSCのfetchがタイムアウト）
+- [x] sitemap index化＋分割（/sitemap.xml=index 612B、/sitemaps/core.xml・articles.xml・orgs-1..3.xml（5,000件毎））
+- [x] メモリキャッシュ（TTL 6時間、子sitemap単位）＋Cache-Control: max-age=3600付与
+- [x] robots.txtのSitemap行は https://yatoeru.jp/sitemap.xml のままで整合（indexを指す形になるので変更不要）
+- [x] 検証（devでindex 0.23s/子sitemap最大680KB 0.5s、XML妥当性・URL総数11,582一致・重複なし・範囲外404・vitest 71件パス）とチェックポイント保存（自動公開）・報告
