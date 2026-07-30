@@ -7,6 +7,7 @@ import { registerOAuthRoutes } from "./oauth";
 import { registerStorageProxy } from "./storageProxy";
 import { appRouter } from "../routers";
 import { registrySyncHandler } from "../registrySync";
+import { sheetSyncHandler } from "../sheetSync";
 import { articleListHandler, articlePublishHandler } from "../articlePublish";
 import { rssHandler } from "../rss";
 import { sitemapHandler } from "../sitemap";
@@ -57,6 +58,8 @@ async function startServer() {
   registerOAuthRoutes(app);
   // 週次の登録簿同期（AGENT cronからのPOST受け口。/api/scheduled/* は自動登録されないため明示マウント）
   app.post("/api/scheduled/registry-sync", registrySyncHandler);
+  // マスターDB（Googleスプレッドシート）→サイトDBの月次一方向同期（検証3ルール付き）
+  app.post("/api/scheduled/sheet-sync", sheetSyncHandler);
   // 週2回のコラム自動投稿（AGENT cronからの受け口。GET=既存一覧（重複回避）、POST=新規投稿）
   app.get("/api/scheduled/article-publish", articleListHandler);
   app.post("/api/scheduled/article-publish", articlePublishHandler);

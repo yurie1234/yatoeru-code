@@ -43,6 +43,13 @@
       "when": 1784424224355,
       "tag": "0005_cheerful_thaddeus_ross",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1785395565933,
+      "tag": "0006_ordinary_bloodaxe",
+      "breakpoints": true
     }
   ]
 }

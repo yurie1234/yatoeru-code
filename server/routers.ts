@@ -8,6 +8,7 @@ import { statsRouter } from "./routers/stats";
 import { updatesRouter } from "./routers/updates";
 import { eventsRouter } from "./routers/events";
 import { articlesRouter } from "./routers/articles";
+import { kanriRouter } from "./routers/kanri";
 
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -29,6 +30,7 @@ export const appRouter = router({
   updates: updatesRouter,
   events: eventsRouter,
   articles: articlesRouter,
+  kanri: kanriRouter,
 });
 
 export type AppRouter = typeof appRouter;

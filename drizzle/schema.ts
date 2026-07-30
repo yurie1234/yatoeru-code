@@ -299,3 +299,76 @@ export const articles = mysqlTable("articles", {
 
 export type Article = typeof articles.$inferSelect;
 export type InsertArticle = typeof articles.$inferInsert;
+
+/**
+ * 監理団体（技能実習）→ 監理支援機関（育成就労）移行トラッカーの本体。
+ * マスターはGoogleスプレッドシート「監理支援機関」シート。
+ * このテーブルはあくまで写しで、/api/scheduled/sheet-sync で一方向同期される。
+ */
+export const kanriOrgs = mysqlTable("kanri_orgs", {
+  id: int("id").autoincrement().primaryKey(),
+  /** 管理ID 例: I-0001（一般）/ T-0001（特定）。OTIT許可一覧に許可番号が無いため独自採番 */
+  managementId: varchar("managementId", { length: 16 }).notNull().unique(),
+  name: varchar("name", { length: 255 }).notNull(),
+  prefecture: varchar("prefecture", { length: 16 }),
+  address: text("address"),
+  phone: varchar("phone", { length: 32 }),
+  /** 許可区分: general=一般監理事業 / specific=特定監理事業 */
+  permitType: mysqlEnum("permitType", ["general", "specific"]).notNull(),
+  /** 許可年月日 YYYY-MM-DD */
+  permitDate: varchar("permitDate", { length: 16 }),
+  /** 許可有効期限 YYYY-MM-DD */
+  permitExpiry: varchar("permitExpiry", { length: 16 }),
+  /** 受入国（カンマ区切りの原文） */
+  receiveCountries: text("receiveCountries"),
+  /** 取扱職種コード配列 例: ["1-1","3-6"] */
+  jobCodes: json("jobCodes").$type<string[]>(),
+  /** 介護職種対応 */
+  kaigoSupport: boolean("kaigoSupport").default(false),
+  /** 監理支援機関（育成就労）への移行ステータス。独自アンケート・電話ヒアリングで確認。
+   * unconfirmed=未確認 / preparing=申請準備中 / applying=申請中 / permitted=許可取得 / not_migrating=移行しない */
+  migrationStatus: mysqlEnum("migrationStatus", [
+    "unconfirmed",
+    "preparing",
+    "applying",
+    "permitted",
+    "not_migrating",
+  ])
+    .default("unconfirmed")
+    .notNull(),
+  /** ステータス確認日 YYYY-MM-DD */
+  statusConfirmedAt: varchar("statusConfirmedAt", { length: 16 }),
+  /** 確認方法（アンケート回答・電話・公表資料など）・公開可のメモ */
+  statusNote: text("statusNote"),
+  /** 実績確認バッジ: メール/電話で一次確認できた機関のみtrue（confirmed.csv管理と連動） */
+  isVerified: boolean("isVerified").default(false),
+  verifiedAt: varchar("verifiedAt", { length: 16 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type KanriOrg = typeof kanriOrgs.$inferSelect;
+export type InsertKanriOrg = typeof kanriOrgs.$inferInsert;
+
+/**
+ * マスターDB（Googleスプレッドシート）→サイトDB同期の実行ログ。
+ * 検証3ルール（件数10%減・登録番号重複・必須カラム欠損）の結果も記録する。
+ */
+export const sheetSyncLogs = mysqlTable("sheet_sync_logs", {
+  id: int("id").autoincrement().primaryKey(),
+  /** 対象シート: shien=登録支援機関 / kanri=監理支援機関 / management=掲載管理 */
+  target: mysqlEnum("target", ["shien", "kanri", "management"]).notNull(),
+  /** データ基準日 YYYY-MM-DD */
+  baseDate: varchar("baseDate", { length: 16 }).notNull(),
+  status: mysqlEnum("status", ["success", "aborted", "error"]).notNull(),
+  totalCount: int("totalCount").default(0).notNull(),
+  added: int("added").default(0).notNull(),
+  updated: int("updated").default(0).notNull(),
+  removed: int("removed").default(0).notNull(),
+  /** 検証結果・中断理由などの詳細 */
+  detail: text("detail"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type SheetSyncLog = typeof sheetSyncLogs.$inferSelect;
+export type InsertSheetSyncLog = typeof sheetSyncLogs.$inferInsert;
