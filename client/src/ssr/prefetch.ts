@@ -387,9 +387,20 @@ export async function prefetchForPath(
       knowsLanguage:
         org.languages && org.languages.length > 0 ? org.languages : undefined,
     };
+    // title固有性：県・分野を含めて同型titleの量産を避ける（全件「｜登録支援機関の詳細」だと重複ページ扱いされやすい）
+    const orgFields = (org.fields ?? []) as string[];
+    const fieldsPart =
+      orgFields.length > 0
+        ? `（対応分野：${orgFields.slice(0, 2).join("・")}${orgFields.length > 2 ? " ほか" : ""}）`
+        : "";
+    const prefPart = org.prefecture ? `${org.prefecture}の` : "";
+    const langPart =
+      org.languages && (org.languages as string[]).length > 0
+        ? `対応言語：${(org.languages as string[]).slice(0, 3).join("・")}。`
+        : "";
     return {
-      title: `${org.name}｜登録支援機関の詳細 - ヤトエル`,
-      description: `${org.name}（登録番号：${org.regNo}）の登録支援機関情報。${org.address ? `所在地：${org.address}。` : ""}${verified}対応言語・処分歴・相談受付状況を掲載しています。`,
+      title: `${org.name}｜${prefPart}登録支援機関${fieldsPart} - ヤトエル`,
+      description: `${org.name}（登録番号：${org.regNo}）は${prefPart}登録支援機関です。${org.address ? `所在地：${org.address}。` : ""}${langPart}${verified}処分歴・相談受付状況も掲載しています。`,
       ogType: "article",
       canonicalPath: `/org/${org.id}`,
       modifiedTime: org.verifiedAt

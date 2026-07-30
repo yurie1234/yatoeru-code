@@ -70,7 +70,14 @@ export default function OrgDetail() {
     // SSRでheadに焼き込まれた同idのscriptとの重複を防ぐ
     document.getElementById("org-jsonld")?.remove();
     document.head.appendChild(script);
-    document.title = `${org.name}｜登録支援機関の詳細 - ヤトエル`;
+    // SSR側（prefetch.ts）と同じtitle形式に同期（県・分野入りで固有性を確保）
+    const titleFields = (org.fields ?? []) as string[];
+    const titleFieldsPart =
+      titleFields.length > 0
+        ? `（対応分野：${titleFields.slice(0, 2).join("・")}${titleFields.length > 2 ? " ほか" : ""}）`
+        : "";
+    const titlePrefPart = org.prefecture ? `${org.prefecture}の` : "";
+    document.title = `${org.name}｜${titlePrefPart}登録支援機関${titleFieldsPart} - ヤトエル`;
     return () => {
       document.getElementById("org-jsonld")?.remove();
       document.title = "登録支援機関を条件で比較｜ヤトエル";
@@ -284,6 +291,27 @@ export default function OrgDetail() {
                   自社情報を確認・修正する（無料）
                 </Link>
                 から掲載内容の確認・修正をいつでも無料でご依頼いただけます。
+              </CardContent>
+            </Card>
+
+            {/* 育成就労ハブへの内部リンク（ハブの孤島化防止＋監理団体検討ユーザーの回遊） */}
+            <Card className="border-brand/30 bg-brand/5">
+              <CardContent className="p-4 md:p-5 text-sm leading-relaxed">
+                <p className="font-bold mb-1 flex items-center gap-1.5">
+                  <Globe2 className="h-4 w-4 text-brand" />
+                  技能実習（監理団体）からの切替を検討中の方へ
+                </p>
+                <p className="text-muted-foreground">
+                  2027年4月1日の育成就労制度施行で、監理団体は「監理支援機関」への移行（新規許可）が必要になります。全国3,733団体の移行状況は
+                  <Link href="/ikusei-shuro/kanri-shien-kikan/list" className="underline font-medium text-foreground hover:text-brand mx-1">
+                    監理団体の移行状況トラッカー
+                  </Link>
+                  で、制度全体のスケジュールや準備は
+                  <Link href="/ikusei-shuro" className="underline font-medium text-foreground hover:text-brand mx-1">
+                    育成就労制度まとめ
+                  </Link>
+                  で確認できます。
+                </p>
               </CardContent>
             </Card>
 
