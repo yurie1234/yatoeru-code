@@ -212,7 +212,7 @@ export const orgsRouter = router({
     if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
 
     const [org] = await db.select().from(supportOrgs).where(eq(supportOrgs.id, input));
-    if (!org) throw new TRPCError({ code: "NOT_FOUND" });
+    if (!org || org.isDeleted) throw new TRPCError({ code: "NOT_FOUND" });
 
     const orgReviews = await db
       .select()

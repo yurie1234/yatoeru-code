@@ -106,7 +106,7 @@ export default function OrgDetail() {
             <Skeleton className="h-40 w-full rounded-xl" />
             <Skeleton className="h-64 w-full rounded-xl" />
           </div>
-        ) : error || !data ? (
+        ) : error || !data || data.org.isDeleted ? (
           <Card>
             <CardContent className="py-16 text-center text-muted-foreground">
               <Building2 className="h-10 w-10 mx-auto mb-4 opacity-40" />
@@ -150,6 +150,11 @@ export default function OrgDetail() {
                       以下の項目は、運営が事業者に直接確認した情報です（登録簿由来の情報とは区別して表示しています）。
                     </p>
                     <div className="mt-3 space-y-2 text-sm text-emerald-900 dark:text-emerald-200">
+                      {data.org.verifiedNote && (
+                        <div className="mb-3 pb-3 border-b border-emerald-500/30">
+                          <p className="text-xs whitespace-pre-wrap">{data.org.verifiedNote}</p>
+                        </div>
+                      )}
                       {data.org.consultStatus !== "unknown" && (
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="text-xs font-medium w-40 shrink-0">新規受入企業の相談</span>

@@ -96,6 +96,10 @@ export const supportOrgs = mysqlTable("support_orgs", {
   aliases: json("aliases").$type<string[]>(),
   /** 運営による実確認日（掲載情報 運営確認済み）。親和性スコアの鮮度加点に使用。確認は無料で全機関に開かれており有料プランとは一切非連動 */
   verifiedAt: timestamp("verifiedAt"),
+  /** 確認済み情報の追記内容（事業者申告・実績・特徴など。verifiedAtが設定されている場合のみ表示） */
+  verifiedNote: text("verifiedNote"),
+  /** 削除フラグ（削除依頼受領時=true。404/410返却、sitemap除外。復元可能形式） */
+  isDeleted: boolean("isDeleted").default(false).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -257,6 +261,8 @@ export const orgEvents = mysqlTable("org_events", {
   id: int("id").autoincrement().primaryKey(),
   /** 対象機関ID（サイト全体イベントは null） */
   orgId: int("orgId"),
+  /** 対象エンティティ種別: org=登録支援機関 / kanri=監理団体 */
+  entityType: mysqlEnum("entityType", ["org", "kanri"]).default("org").notNull(),
   /** イベント種別: org_detail_view / consult_submit / bulk_consult_submit / phone_tap / website_click / diagnose_start / diagnose_complete / proposal_generate */
   eventType: varchar("eventType", { length: 48 }).notNull(),
   /** 流入元識別（URLパラメータ ?src= 等） */
@@ -310,9 +316,15 @@ export const kanriOrgs = mysqlTable("kanri_orgs", {
   /** 管理ID 例: I-0001（一般）/ T-0001（特定）。OTIT許可一覧に許可番号が無いため独自採番 */
   managementId: varchar("managementId", { length: 16 }).notNull().unique(),
   name: varchar("name", { length: 255 }).notNull(),
+  /** 団体名フリガナ（OTIT名簿由来。未取得はnull） */
+  nameKana: varchar("nameKana", { length: 255 }),
   prefecture: varchar("prefecture", { length: 16 }),
+  /** 市区町村（住所から機械分解。分解不能はnull） */
+  city: varchar("city", { length: 64 }),
   address: text("address"),
   phone: varchar("phone", { length: 32 }),
+  /** 事業所情報（OTIT名簿の事業所欄原文。未取得はnull） */
+  offices: text("offices"),
   /** 許可区分: general=一般監理事業 / specific=特定監理事業 */
   permitType: mysqlEnum("permitType", ["general", "specific"]).notNull(),
   /** 許可年月日 YYYY-MM-DD */
@@ -326,10 +338,13 @@ export const kanriOrgs = mysqlTable("kanri_orgs", {
   /** 介護職種対応 */
   kaigoSupport: boolean("kaigoSupport").default(false),
   /** 監理支援機関（育成就労）への移行ステータス。独自アンケート・電話ヒアリングで確認。
-   * unconfirmed=未確認 / preparing=申請準備中 / applying=申請中 / permitted=許可取得 / not_migrating=移行しない */
+   * unconfirmed=移行情報なし(初期値) / planned=申請予定 / preparing=検討・準備中 / undecided=未定 /
+   * not_migrating=移行しない予定 / applying=申請済み / permitted=許可済み */
   migrationStatus: mysqlEnum("migrationStatus", [
     "unconfirmed",
+    "planned",
     "preparing",
+    "undecided",
     "applying",
     "permitted",
     "not_migrating",
@@ -343,6 +358,16 @@ export const kanriOrgs = mysqlTable("kanri_orgs", {
   /** 実績確認バッジ: メール/電話で一次確認できた機関のみtrue（confirmed.csv管理と連動） */
   isVerified: boolean("isVerified").default(false),
   verifiedAt: varchar("verifiedAt", { length: 16 }),
+  /** 確認済み追記（事業者への直接確認で得た公開可の補足情報） */
+  verifiedNote: text("verifiedNote"),
+  /** 処分公表（許可取消等）の有無 */
+  hasPenalty: boolean("hasPenalty").default(false),
+  /** 処分内容（公表資料の要旨） */
+  penaltyDetail: text("penaltyDetail"),
+  /** 処分公表の出典URL */
+  penaltySource: varchar("penaltySource", { length: 512 }),
+  /** 名簿データ取得日 YYYY-MM-DD（出典ブロック表示用） */
+  sourceDate: varchar("sourceDate", { length: 16 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

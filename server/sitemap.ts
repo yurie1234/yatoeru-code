@@ -1,4 +1,4 @@
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import type { Request, Response } from "express";
 import { getDb } from "./db";
 import { articles, supportOrgs } from "../drizzle/schema";
@@ -184,6 +184,7 @@ async function buildOrgsSitemap(page: number): Promise<string | null> {
       updatedAt: supportOrgs.updatedAt,
     })
     .from(supportOrgs)
+    .where(eq(supportOrgs.isDeleted, false))
     .orderBy(sql`${supportOrgs.verifiedAt} IS NULL, ${supportOrgs.id}`)
     .limit(ORGS_PER_SITEMAP)
     .offset(offset);
