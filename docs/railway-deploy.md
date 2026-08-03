@@ -38,3 +38,20 @@ task #37。Railwayはこのサンドボックスからアカウント操作（�
   未使用と確認済み。ホスティング移行では影響しないため今回は削除しない）
 - `client/src/components/Map.tsx` の `VITE_FRONTEND_FORGE_API_*`（同上、死んだ
   依存として既に把握済み。Railwayの環境変数には設定不要）
+
+## 2026-08-03追記: railway.jsonを削除した理由
+
+同一リポジトリから複数のRailwayサービス（本番Webサーバー`airy-prosperity`と、
+コラム記事自動投稿用のCronサービス`yatoeru-code`）を作った際、リポジトリ直下の
+`railway.json`（config-as-code）の`deploy.startCommand`が**全サービス共通で
+強制適用**され、Cronサービス側でSettings画面から個別に設定したCustom Start
+Commandが上書きされてしまう問題が起きた（Cronサービスなのに本番Webサーバーが
+起動してしまった）。
+
+railway.jsonを削除し、各サービスのCustom Start Command（Settings→Deploy）を
+個別設定する方式に変更した。Railwayのデフォルトビルダー（Railpack）は
+package.jsonの`scripts.start`を自動検出するため、明示的な設定ファイルなしでも
+本番Webサーバー側の動作は変わらない。
+
+**今後、同一リポジトリに複数サービスを追加する場合は、common設定を
+railway.jsonに書かないこと**（サービスごとにSettings UIで個別設定する）。
