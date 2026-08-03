@@ -313,7 +313,6 @@ ${pageText ? `\n【実際に取得したページ内容】\n${pageText}\n` : noP
 `;
 
       const llmResult = await invokeLLM({
-        model: "gpt-4o-mini",
         messages: [{ role: "user", content: prompt }],
         response_format: {
           type: "json_schema",
@@ -599,7 +598,6 @@ ${pageText ? `\n【実際に取得したページ内容】\n${pageText}\n` : noP
 `;
 
       const llmResult = await invokeLLM({
-        model: "gpt-4o-mini",
         messages: [{ role: "user", content: prompt }],
         max_tokens: 4000,
       });
@@ -615,7 +613,6 @@ ${pageText ? `\n【実際に取得したページ内容】\n${pageText}\n` : noP
       if (finishReason === "length" && content) {
         try {
           const contResult = await invokeLLM({
-            model: "gpt-4o-mini",
             messages: [
               { role: "user", content: prompt },
               { role: "assistant", content },
