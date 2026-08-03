@@ -80,6 +80,8 @@ async function main() {
 
   const styleGuidePath = path.resolve(process.cwd(), "docs/writing-style-guide.md");
   const styleGuide = fs.existsSync(styleGuidePath) ? fs.readFileSync(styleGuidePath, "utf8") : "";
+  const aiTellChecklistPath = path.resolve(process.cwd(), "docs/ai-tell-checklist.md");
+  const aiTellChecklist = fs.existsSync(aiTellChecklistPath) ? fs.readFileSync(aiTellChecklistPath, "utf8") : "";
 
   const today = new Date().toISOString().slice(0, 10);
 
@@ -87,6 +89,8 @@ async function main() {
 以下の執筆規範に厳密に従って日本語の記事本文を書いてください。
 
 ${styleGuide}
+
+${aiTellChecklist}
 
 【編集方針・厳守事項】
 - 与えられた「事実」以外の具体的な数値・統計・固有の出典を新たに創作しないこと。事実の列挥にない情報が必要な場合は、一般的な説明として書き、数値は出さない。
