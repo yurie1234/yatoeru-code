@@ -4,10 +4,15 @@ import { type Server } from "http";
 import { nanoid } from "nanoid";
 import path from "path";
 import superjson from "superjson";
+import { fileURLToPath } from "url";
 import { createServer as createViteServer } from "vite";
 import viteConfig from "../../vite.config";
 import { buildSsrPrefetch } from "./ssrCaller";
 import type { HeadMeta } from "../../client/src/ssr/prefetch";
+
+// import.meta.dirnameはNode 20.11+限定のため、全Nodeバージョンで動く
+// fileURLToPath経由で自前算出する（Railway等がNode 18を使う環境向け）。
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // SECURITY: head値はDB由来（機関名等）の可能性がある。生HTMLへの補間は
 // Reactの自動エスケープを迂回するため、headTagsに入る全値をescapeHtmlする。
@@ -150,7 +155,7 @@ export async function setupVite(app: Express, server: Server) {
 
     try {
       const clientTemplate = path.resolve(
-        import.meta.dirname,
+        __dirname,
         "../..",
         "client",
         "index.html"
@@ -192,8 +197,8 @@ export async function setupVite(app: Express, server: Server) {
 export function serveStatic(app: Express) {
   const distPath =
     process.env.NODE_ENV === "development"
-      ? path.resolve(import.meta.dirname, "../..", "dist", "public")
-      : path.resolve(import.meta.dirname, "public");
+      ? path.resolve(__dirname, "../..", "dist", "public")
+      : path.resolve(__dirname, "public");
   if (!fs.existsSync(distPath)) {
     console.error(
       `Could not find the build directory: ${distPath}, make sure to build the client first`
@@ -222,13 +227,13 @@ export function serveStatic(app: Express) {
   const serverEntryPath =
     process.env.NODE_ENV === "development"
       ? path.resolve(
-          import.meta.dirname,
+          __dirname,
           "../..",
           "dist",
           "server-ssr",
           "entry-server.js"
         )
-      : path.resolve(import.meta.dirname, "server-ssr", "entry-server.js");
+      : path.resolve(__dirname, "server-ssr", "entry-server.js");
 
   app.use("*", async (req, res) => {
     try {
