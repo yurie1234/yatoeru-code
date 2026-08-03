@@ -43,6 +43,9 @@ async function startServer() {
   // 2026-07-16 本番yatoeru.jp公開：noindex解除済み（robots.txt開放と同日実施）。
   // 旧 *.manus.space ドメインへのアクセスは本番ドメインへ301リダイレクト（重複インデックス・評価分散防止）。
   // ※ sandboxプレビュー（*.manus.computer）とlocalhostは対象外。
+  // 2026-08-03 www.yatoeru.jpのDNS統合：www→非wwwに301リダイレクト
+  // （canonicalタグ・sitemap.xml等が非wwwを正本にしているため揃える。
+  //   点検ビト・民泊ビトのWorkerと同じ正規化ルール）。
   app.use((req, res, next) => {
     // 本番はプロキシ経由のため x-forwarded-host を優先して元のホスト名を判定する
     const fwdHost = req.headers["x-forwarded-host"];
@@ -50,6 +53,9 @@ async function startServer() {
       (Array.isArray(fwdHost) ? fwdHost[0] : fwdHost) ?? req.headers.host ?? "";
     const host = rawHost.split(",")[0].trim().toLowerCase();
     if (host.endsWith(".manus.space")) {
+      return res.redirect(301, `https://yatoeru.jp${req.originalUrl}`);
+    }
+    if (host === "www.yatoeru.jp") {
       return res.redirect(301, `https://yatoeru.jp${req.originalUrl}`);
     }
     next();
