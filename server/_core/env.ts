@@ -11,4 +11,10 @@ export const ENV = {
   // ANTHROPIC_API_KEY未設定時はSDKが ANTHROPIC_AUTH_TOKEN 等にフォールバックする。
   anthropicApiKey: process.env.ANTHROPIC_API_KEY ?? "",
   anthropicModel: process.env.ANTHROPIC_MODEL ?? "claude-opus-5",
+  // Manus OAuth依存を切るための自前認証設定（server/_core/sdk.tsで使用）。
+  // ADMIN_PASSWORD: /admin ダッシュボードのオーナーログイン用パスワード。
+  // CRON_SECRET: 週次/月次の同期ジョブ（旧Manus Agent cron）を自前のスケジューラ
+  //   （GitHub Actions等）から叩く際の共有シークレット（Authorization: Bearer）。
+  adminPassword: process.env.ADMIN_PASSWORD ?? "",
+  cronSecret: process.env.CRON_SECRET ?? "",
 };

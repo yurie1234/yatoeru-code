@@ -3,7 +3,7 @@ import express from "express";
 import { createServer } from "http";
 import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
-import { registerOAuthRoutes } from "./oauth";
+import { registerAdminAuthRoutes } from "./adminAuth";
 import { registerStorageProxy } from "./storageProxy";
 import { appRouter } from "../routers";
 import { registrySyncHandler } from "../registrySync";
@@ -55,7 +55,7 @@ async function startServer() {
     next();
   });
   registerStorageProxy(app);
-  registerOAuthRoutes(app);
+  registerAdminAuthRoutes(app);
   // 週次の登録簿同期（AGENT cronからのPOST受け口。/api/scheduled/* は自動登録されないため明示マウント）
   app.post("/api/scheduled/registry-sync", registrySyncHandler);
   // マスターDB（Googleスプレッドシート）→サイトDBの月次一方向同期（検証3ルール付き）

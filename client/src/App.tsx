@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Admin from "./pages/Admin";
+import AdminLogin from "./pages/AdminLogin";
 import ColumnErabikata from "./pages/ColumnErabikata";
 import ColumnIkouGuide from "./pages/ColumnIkouGuide";
 import ColumnSaiyouCost from "./pages/ColumnSaiyouCost";
@@ -110,6 +111,7 @@ function Router() {
       <Route path={"/terms"} component={Terms} />
       <Route path={"/privacy"} component={Privacy} />
       <Route path={"/neutrality-policy"} component={NeutralityPolicy} />
+      <Route path={"/admin/login"} component={AdminLogin} />
       <Route path={"/admin"} component={Admin} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
