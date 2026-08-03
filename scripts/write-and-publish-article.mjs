@@ -110,21 +110,34 @@ ${topic.sources.map((s) => `- ${s.name}: ${s.url}`).join("\n")}
 - title: 10〜120字
 - description: 40〜300字（meta description・一覧カード用）
 - keyPoints: 3〜5個、各10〜120字（記事冒頭の「この記事のポイント」）
-- bodyMd: 1500〜40000字のMarkdown本文（見出し構成は自由、上記の事実を根拠に厚みのある解説にする）
+- bodyMd: 1500〜4000字程度のMarkdown本文（長すぎるとトークン上限で出力が途中で
+  切れるため、上記の事実を根拠にしつつこの範囲に収めること）
 - tags: 1〜5個、各1〜24字`;
 
   const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
   const message = await client.messages.create({
     model: ANTHROPIC_MODEL,
-    max_tokens: 8000,
+    max_tokens: 16000,
     system: systemPrompt,
     messages: [{ role: "user", content: userPrompt }],
     output_config: { format: { type: "json_schema", schema: ARTICLE_JSON_SCHEMA } },
   });
 
+  if (message.stop_reason !== "end_turn") {
+    throw new Error(
+      `LLM response did not finish normally (stop_reason=${message.stop_reason}). ` +
+        `おそらくmax_tokens不足で出力が途中で切れている。max_tokensを増やすか、bodyMdの上限を下げること。`
+    );
+  }
+
   const textBlock = message.content.find((b) => b.type === "text");
   if (!textBlock) throw new Error("no text block in LLM response");
-  const article = JSON.parse(textBlock.text);
+  let article;
+  try {
+    article = JSON.parse(textBlock.text);
+  } catch (e) {
+    throw new Error(`LLM出力のJSON解析に失敗（文字数: ${textBlock.text.length}）: ${e.message}`);
+  }
 
   const errors = validate(article, topic.slug);
   if (errors.length > 0) {
