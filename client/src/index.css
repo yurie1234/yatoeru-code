@@ -386,6 +386,99 @@
   .article-body [data-streamdown="table-wrapper"] {
     overflow-x: auto;
   }
+
+  /* 初心者向け視覚装飾キット（AI生成記事のbodyMd内に直接HTMLとして埋め込む） */
+  .article-body .col-callout {
+    margin: 1.6em 0;
+    padding: 1em 1.25em;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--amber-accent);
+    background: var(--secondary);
+  }
+  .article-body .col-callout p { margin: 0.5em 0; }
+  .article-body .col-callout p:first-child { margin-top: 0; }
+  .article-body .col-callout p:last-child { margin-bottom: 0; }
+  .article-body .col-callout__label {
+    display: inline-block;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.4em;
+    color: var(--primary);
+  }
+  .article-body .col-callout--warning {
+    border-left-color: #d97706;
+    background: #fffbeb;
+  }
+  .article-body .col-callout--warning .col-callout__label { color: #b45309; }
+  .article-body .col-callout--danger {
+    border-left-color: var(--destructive);
+    background: #fef2f2;
+  }
+  .article-body .col-callout--danger .col-callout__label { color: #b91c1c; }
+
+  .article-body .col-highlight {
+    background: oklch(0.88 0.12 85 / 45%);
+    padding: 0.05em 0.35em;
+    border-radius: 0.25rem;
+    font-weight: 700;
+  }
+  .article-body .col-big {
+    display: inline-block;
+    font-size: 1.3em;
+    font-weight: 700;
+    color: var(--primary);
+  }
+
+  .article-body .col-steps {
+    margin: 1.6em 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: col-step;
+  }
+  .article-body .col-steps li {
+    position: relative;
+    padding: 0.8em 1em 0.8em 3rem;
+    margin-bottom: 0.75em;
+    background: var(--secondary);
+    border-radius: 0.5rem;
+    counter-increment: col-step;
+  }
+  .article-body .col-steps li::before {
+    content: counter(col-step);
+    position: absolute;
+    left: 0.75em;
+    top: 0.75em;
+    width: 1.6rem;
+    height: 1.6rem;
+    background: var(--primary);
+    color: var(--primary-foreground);
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.85rem;
+  }
+
+  .article-body .col-compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1em;
+    margin: 1.6em 0;
+  }
+  .article-body .col-compare > div {
+    padding: 1em;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border);
+  }
+  .article-body .col-compare > div:first-child { background: var(--secondary); }
+  .article-body .col-compare > div:last-child { background: oklch(0.88 0.12 85 / 20%); }
+  .article-body .col-compare h4 { margin: 0 0 0.5em; font-size: 0.9rem; font-weight: 700; }
+  @media (max-width: 640px) {
+    .article-body .col-compare { grid-template-columns: 1fr; }
+  }
 }
 
 /* 静的コラムページのh2見出し帯（article-bodyのh2と統一デザイン） */

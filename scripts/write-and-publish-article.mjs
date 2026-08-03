@@ -82,6 +82,8 @@ async function main() {
   const styleGuide = fs.existsSync(styleGuidePath) ? fs.readFileSync(styleGuidePath, "utf8") : "";
   const aiTellChecklistPath = path.resolve(process.cwd(), "docs/ai-tell-checklist.md");
   const aiTellChecklist = fs.existsSync(aiTellChecklistPath) ? fs.readFileSync(aiTellChecklistPath, "utf8") : "";
+  const visualGuidePath = path.resolve(process.cwd(), "docs/visual-formatting-guide.md");
+  const visualGuide = fs.existsSync(visualGuidePath) ? fs.readFileSync(visualGuidePath, "utf8") : "";
 
   const today = new Date().toISOString().slice(0, 10);
 
@@ -92,10 +94,12 @@ ${styleGuide}
 
 ${aiTellChecklist}
 
+${visualGuide}
+
 【編集方針・厳守事項】
 - 与えられた「事実」以外の具体的な数値・統計・固有の出典を新たに創作しないこと。事実の列挥にない情報が必要な場合は、一般的な説明として書き、数値は出さない。
 - 与えられた出典以外の出典URLを創作しないこと。
-- 本文はMarkdown形式（見出しはH2まで、表・箇条書き可）。生のHTMLは使わない。
+- 本文はMarkdown形式（見出しはH2まで、表・箇条書き可）。上記「使ってよい視覚装飾」の5種類のHTMLブロックのみ埋め込み可。それ以外の生HTMLやinline styleは使わない。
 - 中立性: 特定の事業者名を推奨・批判しない。読者（外国人材の受け入れを検討する企業、または支援機関自身）が判断に使える記事にする。`;
 
   const userPrompt = `以下のテーマで記事を1本書いてください。
