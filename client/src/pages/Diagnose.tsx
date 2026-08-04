@@ -907,168 +907,10 @@ export default function Diagnose() {
               </CardContent>
             </Card>
 
-            {/* 連絡先（任意）。以前は質問6/6としてウィザードの最後に置いていたが、
-                結果を見る前に個人情報を求める形になっていた。結果を見たあとに
-                「相談フォームへの自動入力」という具体的な用途とともに聞く。 */}
-            {!isDemo && (
-              <Card>
-                <CardContent className="p-5">
-                  <p className="font-bold mb-1">相談フォームへの自動入力（任意）</p>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    入力しておくと、支援機関への相談フォームに会社名とメールアドレスが自動で入ります。
-                    入力しなくても診断結果はこのまま閲覧できます。当サイトから営業のご連絡はしません。
-                  </p>
-                  <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
-                    <Input
-                      placeholder="会社名"
-                      value={contactCompany}
-                      onChange={(e) => setContactCompany(e.target.value)}
-                    />
-                    <Input
-                      type="email"
-                      placeholder="メールアドレス"
-                      value={contactEmail}
-                      onChange={(e) => setContactEmail(e.target.value)}
-                    />
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        try {
-                          sessionStorage.setItem(
-                            "yatoeru_contact",
-                            JSON.stringify({ company: contactCompany, email: contactEmail })
-                          );
-                          toast.success("相談フォームに自動入力されます");
-                        } catch {
-                          toast.error("この環境では保存できませんでした");
-                        }
-                      }}
-                    >
-                      保存する
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* 人数連動の概算費用レンジ */}
-            {costRange && (
-              <Card className="border-2 border-brand/20">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Coins className="h-5 w-5 text-amber-accent" />
-                    受入れ費用の目安（{costRange.headcount}の場合）
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="rounded-lg bg-muted/50 p-4">
-                      <div className="text-xs text-muted-foreground mb-1">初期費用（国内在留者・目安）</div>
-                      <div className="font-bold">{costRange.initial}</div>
-                    </div>
-                    <div className="rounded-lg bg-muted/50 p-4">
-                      <div className="text-xs text-muted-foreground mb-1">月額支援委託費（目安）</div>
-                      <div className="font-bold">{costRange.monthly}</div>
-                    </div>
-                    <div className="rounded-lg bg-amber-accent/10 border border-amber-accent/30 p-4">
-                      <div className="text-xs text-muted-foreground mb-1">年間合計（目安）</div>
-                      <div className="font-bold">{costRange.yearly}</div>
-                    </div>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-3 leading-relaxed">
-                    ※ 登録支援機関への支援委託費の業界相場（月額約2〜3万円/人）をもとにした概算です。海外からの新規受入れは初期費用30〜60万円程度まで幅があります。実際の費用は各機関に直接ご確認ください。
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* 助成金候補。既定では閉じておく。
-                助成金は「あとで読む」情報で、開いたまま長く置くと支援機関の候補まで
-                スクロールされずに離脱するため、見出しだけ見せて任意で開かせる。 */}
-            {joseikinCandidates.length > 0 && (
-              <Card className="border-2 border-emerald-200">
-                <Collapsible open={joseikinOpen} onOpenChange={setJoseikinOpen}>
-                  <CollapsibleTrigger asChild>
-                    <button
-                      type="button"
-                      className="flex w-full items-center gap-2 p-5 text-left hover:bg-emerald-50/60 transition-colors"
-                    >
-                      <Coins className="h-5 w-5 text-emerald-600 shrink-0" />
-                      <span className="font-bold text-lg flex-1">
-                        使える可能性のある助成金候補
-                        <Badge variant="secondary" className="ml-2 align-middle">
-                          {joseikinCandidates.length}件
-                        </Badge>
-                      </span>
-                      <span className="text-sm text-muted-foreground shrink-0">
-                        {joseikinOpen ? "閉じる" : "開いて見る"}
-                      </span>
-                      <ChevronDown
-                        className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${joseikinOpen ? "rotate-180" : ""}`}
-                      />
-                    </button>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                <CardContent className="space-y-3">
-                  {joseikinCandidates.map((j) => (
-                    <div key={j.id} className="rounded-lg border p-4">
-                      <div className="flex flex-wrap items-center gap-2 mb-1">
-                        <Badge className={j.relevance === "high" ? "bg-emerald-600 text-white hover:bg-emerald-600" : "bg-muted text-muted-foreground hover:bg-muted"}>
-                          {j.relevance === "high" ? "該当可能性あり" : "条件次第"}
-                        </Badge>
-                        <span className="text-xs text-muted-foreground">{j.agency}</span>
-                      </div>
-                      <h3 className="font-bold text-sm">{j.name}</h3>
-                      <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{j.summary}</p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2 text-xs">
-                        <div className="rounded bg-muted/50 px-2.5 py-1.5"><span className="font-semibold">金額目安：</span>{j.amountHint}</div>
-                        <div className="rounded bg-muted/50 px-2.5 py-1.5"><span className="font-semibold">主な条件：</span>{j.conditionHint}</div>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-3 mt-2">
-                        <p className="text-xs text-emerald-800">{j.relevanceReason}</p>
-                        <a href={j.officialUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-brand underline inline-flex items-center gap-0.5">
-                          公式情報を見る<ExternalLink className="h-3 w-3" />
-                        </a>
-                      </div>
-                    </div>
-                  ))}
-                  <p className="text-xs text-muted-foreground leading-relaxed">{JOSEIKIN_DISCLAIMER}</p>
-                  <div className="text-center pt-1">
-                    <Link href="/joseikin" className="text-sm text-brand underline">助成金の詳しい解説記事を見る</Link>
-                  </div>
-                </CardContent>
-                  </CollapsibleContent>
-                </Collapsible>
-              </Card>
-            )}
-
-            {/* 提案書生成CTA */}
-            {result.field && diagnosisId && (
-              <Card className="border-dashed border-2">
-                <CardContent className="p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-                  <div className="flex items-start gap-3">
-                    <FileText className="h-8 w-8 text-brand shrink-0" />
-                    <div>
-                      <h3 className="font-bold">社内稟議用「特定技能導入提案書」をAIが自動作成</h3>
-                      <p className="text-sm text-muted-foreground">診断結果をもとに、上司への説明に使える提案書草案を無料生成します。</p>
-                    </div>
-                  </div>
-                  <Button
-                    variant="outline"
-                    className="shrink-0"
-                    onClick={() =>
-                      setLocation(
-                        `/proposal?diagnosisId=${diagnosisId}&companyName=${encodeURIComponent(result.companyName)}&field=${encodeURIComponent(result.field ?? "")}&headcount=${encodeURIComponent(result.headcount)}`
-                      )
-                    }
-                  >
-                    提案書を作成する
-                    <ArrowRight className="h-4 w-4 ml-1" />
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-
+            {/* 表示順は「診断結果 → 支援機関 → 連絡先 → 費用 → 助成金 → 提案書」。
+                支援機関の候補が費用・助成金・提案書CTAの下にあった頃は、スコアを見た
+                利用者が3ブロック分スクロールしないと候補に到達できず、離脱していた。
+                サイトの目的は支援機関の比較なので、結果の直後に候補を置く。 */}
             {/* 推奨支援機関（フィルター付き） */}
             {recommendedOrgs && recommendedOrgs.length > 0 && (
               <div>
@@ -1248,6 +1090,168 @@ export default function Diagnose() {
                 )}
               </div>
             )}
+            {/* 連絡先（任意）。以前は質問6/6としてウィザードの最後に置いていたが、
+                結果を見る前に個人情報を求める形になっていた。結果を見たあとに
+                「相談フォームへの自動入力」という具体的な用途とともに聞く。 */}
+            {!isDemo && (
+              <Card>
+                <CardContent className="p-5">
+                  <p className="font-bold mb-1">相談フォームへの自動入力（任意）</p>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    入力しておくと、支援機関への相談フォームに会社名とメールアドレスが自動で入ります。
+                    入力しなくても診断結果はこのまま閲覧できます。当サイトから営業のご連絡はしません。
+                  </p>
+                  <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+                    <Input
+                      placeholder="会社名"
+                      value={contactCompany}
+                      onChange={(e) => setContactCompany(e.target.value)}
+                    />
+                    <Input
+                      type="email"
+                      placeholder="メールアドレス"
+                      value={contactEmail}
+                      onChange={(e) => setContactEmail(e.target.value)}
+                    />
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        try {
+                          sessionStorage.setItem(
+                            "yatoeru_contact",
+                            JSON.stringify({ company: contactCompany, email: contactEmail })
+                          );
+                          toast.success("相談フォームに自動入力されます");
+                        } catch {
+                          toast.error("この環境では保存できませんでした");
+                        }
+                      }}
+                    >
+                      保存する
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* 人数連動の概算費用レンジ */}
+            {costRange && (
+              <Card className="border-2 border-brand/20">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Coins className="h-5 w-5 text-amber-accent" />
+                    受入れ費用の目安（{costRange.headcount}の場合）
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="rounded-lg bg-muted/50 p-4">
+                      <div className="text-xs text-muted-foreground mb-1">初期費用（国内在留者・目安）</div>
+                      <div className="font-bold">{costRange.initial}</div>
+                    </div>
+                    <div className="rounded-lg bg-muted/50 p-4">
+                      <div className="text-xs text-muted-foreground mb-1">月額支援委託費（目安）</div>
+                      <div className="font-bold">{costRange.monthly}</div>
+                    </div>
+                    <div className="rounded-lg bg-amber-accent/10 border border-amber-accent/30 p-4">
+                      <div className="text-xs text-muted-foreground mb-1">年間合計（目安）</div>
+                      <div className="font-bold">{costRange.yearly}</div>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-3 leading-relaxed">
+                    ※ 登録支援機関への支援委託費の業界相場（月額約2〜3万円/人）をもとにした概算です。海外からの新規受入れは初期費用30〜60万円程度まで幅があります。実際の費用は各機関に直接ご確認ください。
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* 助成金候補。既定では閉じておく。
+                助成金は「あとで読む」情報で、開いたまま長く置くと支援機関の候補まで
+                スクロールされずに離脱するため、見出しだけ見せて任意で開かせる。 */}
+            {joseikinCandidates.length > 0 && (
+              <Card className="border-2 border-emerald-200">
+                <Collapsible open={joseikinOpen} onOpenChange={setJoseikinOpen}>
+                  <CollapsibleTrigger asChild>
+                    <button
+                      type="button"
+                      className="flex w-full items-center gap-2 p-5 text-left hover:bg-emerald-50/60 transition-colors"
+                    >
+                      <Coins className="h-5 w-5 text-emerald-600 shrink-0" />
+                      <span className="font-bold text-lg flex-1">
+                        使える可能性のある助成金候補
+                        <Badge variant="secondary" className="ml-2 align-middle">
+                          {joseikinCandidates.length}件
+                        </Badge>
+                      </span>
+                      <span className="text-sm text-muted-foreground shrink-0">
+                        {joseikinOpen ? "閉じる" : "開いて見る"}
+                      </span>
+                      <ChevronDown
+                        className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${joseikinOpen ? "rotate-180" : ""}`}
+                      />
+                    </button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                <CardContent className="space-y-3">
+                  {joseikinCandidates.map((j) => (
+                    <div key={j.id} className="rounded-lg border p-4">
+                      <div className="flex flex-wrap items-center gap-2 mb-1">
+                        <Badge className={j.relevance === "high" ? "bg-emerald-600 text-white hover:bg-emerald-600" : "bg-muted text-muted-foreground hover:bg-muted"}>
+                          {j.relevance === "high" ? "該当可能性あり" : "条件次第"}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">{j.agency}</span>
+                      </div>
+                      <h3 className="font-bold text-sm">{j.name}</h3>
+                      <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{j.summary}</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2 text-xs">
+                        <div className="rounded bg-muted/50 px-2.5 py-1.5"><span className="font-semibold">金額目安：</span>{j.amountHint}</div>
+                        <div className="rounded bg-muted/50 px-2.5 py-1.5"><span className="font-semibold">主な条件：</span>{j.conditionHint}</div>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-3 mt-2">
+                        <p className="text-xs text-emerald-800">{j.relevanceReason}</p>
+                        <a href={j.officialUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-brand underline inline-flex items-center gap-0.5">
+                          公式情報を見る<ExternalLink className="h-3 w-3" />
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                  <p className="text-xs text-muted-foreground leading-relaxed">{JOSEIKIN_DISCLAIMER}</p>
+                  <div className="text-center pt-1">
+                    <Link href="/joseikin" className="text-sm text-brand underline">助成金の詳しい解説記事を見る</Link>
+                  </div>
+                </CardContent>
+                  </CollapsibleContent>
+                </Collapsible>
+              </Card>
+            )}
+
+            {/* 提案書生成CTA */}
+            {result.field && diagnosisId && (
+              <Card className="border-dashed border-2">
+                <CardContent className="p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="flex items-start gap-3">
+                    <FileText className="h-8 w-8 text-brand shrink-0" />
+                    <div>
+                      <h3 className="font-bold">社内稟議用「特定技能導入提案書」をAIが自動作成</h3>
+                      <p className="text-sm text-muted-foreground">診断結果をもとに、上司への説明に使える提案書草案を無料生成します。</p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    className="shrink-0"
+                    onClick={() =>
+                      setLocation(
+                        `/proposal?diagnosisId=${diagnosisId}&companyName=${encodeURIComponent(result.companyName)}&field=${encodeURIComponent(result.field ?? "")}&headcount=${encodeURIComponent(result.headcount)}`
+                      )
+                    }
+                  >
+                    提案書を作成する
+                    <ArrowRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
           </div>
         )}
 
@@ -1257,7 +1261,7 @@ export default function Diagnose() {
             {[
               { icon: Globe2, title: "1. 会社名かURLを入力", desc: "会社名またはWebサイトURLを入力するだけ。会員登録は不要です。" },
               { icon: Sparkles, title: "2. 1問ずつ簡単回答", desc: "AIが読み取った分野・地域を1画面で確認し、人数・時期などに答えるだけ（最短4問）。" },
-              { icon: Building2, title: "3. 費用・助成金・機関を提示", desc: "概算費用と助成金候補、条件に合う支援機関をまとめてご案内します。" },
+              { icon: Building2, title: "3. 支援機関・費用・助成金を提示", desc: "条件に合う支援機関を先に提示し、概算費用と助成金候補も続けてご案内します。" },
             ].map((item, i) => (
               <Card key={item.title} className={`fade-up-${i + 1} fade-up`}>
                 <CardHeader>
