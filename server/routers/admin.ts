@@ -230,17 +230,10 @@ export const adminRouter = router({
           message: "同一登録番号が複数件あります。手動確認が必要です",
         });
       }
-      const applied = await writeReferralInfo(db, rows[0].id, {
+      await writeReferralInfo(db, rows[0].id, {
         intent: input.intent,
         note: input.note,
       });
-      if (!applied) {
-        throw new TRPCError({
-          code: "PRECONDITION_FAILED",
-          message:
-            "送客優先度の列が未適用です。Railway Consoleで node scripts/apply-referral-intent-columns.mjs を実行してください",
-        });
-      }
       return { ok: true as const };
     }),
 

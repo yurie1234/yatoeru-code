@@ -481,12 +481,6 @@ export default function AdminOrgListingEditor() {
                   親和性スコア・並び順には一切出しません。紹介料で検索順位を動かす場合は、
                   景品表示法（ステマ規制）対応としてPR表示のある別枠が必要です。
                 </p>
-                {org.referral?.applied === false && (
-                  <p className="text-xs font-medium text-amber-700">
-                    ※この項目のDB列がまだ未適用です。
-                    Railway Consoleで node scripts/apply-referral-intent-columns.mjs を実行してください。
-                  </p>
-                )}
               </div>
               <div className="grid gap-3 sm:grid-cols-[16rem_1fr]">
                 <div className="space-y-1.5">
@@ -516,7 +510,7 @@ export default function AdminOrgListingEditor() {
               <Button
                 variant="secondary"
                 size="sm"
-                disabled={saveReferral.isPending || org.referral?.applied === false}
+                disabled={saveReferral.isPending}
                 onClick={() =>
                   saveReferral.mutate({
                     regNo: org.regNo,

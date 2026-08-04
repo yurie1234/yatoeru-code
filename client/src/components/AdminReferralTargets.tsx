@@ -49,12 +49,6 @@ export default function AdminReferralTargets() {
           別枠が必要です。
         </p>
 
-        {data?.applied === false && (
-          <p className="text-xs font-medium text-amber-700">
-            DB列が未適用です。Railway Console で node scripts/apply-referral-intent-columns.mjs を実行すると使えるようになります。
-          </p>
-        )}
-
         <Table>
           <TableHeader>
             <TableRow>

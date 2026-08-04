@@ -1,4 +1,5 @@
-import { sql } from "drizzle-orm";
+import { eq, inArray, sql } from "drizzle-orm";
+import { supportOrgs } from "../drizzle/schema";
 import type { getDb } from "./db";
 import { REFERRAL_INTENTS, type ReferralIntent } from "../shared/referralIntent";
 
@@ -13,17 +14,18 @@ export { REFERRAL_INTENTS, type ReferralIntent };
  * 景品表示法（ステマ規制）に触れる。表示に反映するときは必ずPR表示を伴う
  * 別枠として実装する。
  *
- * 列は scripts/apply-referral-intent-columns.mjs で追加する
- * （内容の記録は drizzle/manual/2026-08-04-referral-intent.sql）。
- * drizzle/schema.ts には載せていない（載せると公開クエリが列を要求するため、
- * 列追加前にコードがデプロイされた瞬間にサイト全体が落ちる）。そのため
- * ここでは生SQLで読み書きし、列が無い場合は applied=false を返して
- * 管理画面に「未適用」と出す。
+ * 列は drizzle/schema.ts の supportOrgs に載っている
+ * （マイグレーション drizzle/0010_solid_war_machine.sql）。
+ *
+ * 以前は列を drizzle/schema.ts に載せず生SQLで読み書きし、
+ * information_schema で列の有無を毎回確かめていた。列追加より先にコードが
+ * デプロイされると公開クエリが「Unknown column」で落ちる、という懸念による
+ * 暫定措置だったが、列は適用済みでスキーマにも載ったため通常の型付きクエリに戻した。
+ * 公開レスポンスからの除去は server/routers/orgs.ts の sanitizeOrg が担い、
+ * server/referralIntentPrivacy.test.ts が漏れないことを固定している。
  */
 
 export type ReferralInfo = {
-  /** 列が未適用の環境では false（管理画面に「未適用」と表示する） */
-  applied: boolean;
   intent: ReferralIntent;
   note: string | null;
   updatedAt: string | null;
@@ -31,119 +33,82 @@ export type ReferralInfo = {
 
 type Db = NonNullable<Awaited<ReturnType<typeof getDb>>>;
 
-/**
- * 列の有無を information_schema で判定する。
- *
- * 当初は「Unknown column」というエラーメッセージで判定していたが、drizzleが例外を
- * `Failed query: SELECT ...` で包むため元のメッセージが message に現れず、判定を
- * すり抜けて管理画面にエラーが出た。文言に依存しない方法に変える。
- *
- * 適用済み（true）だけキャッシュする。未適用のうちは毎回問い合わせるが、
- * 管理者操作時のみ呼ばれるうえ information_schema の1行取得なので負荷は無視できる。
- */
-let referralColumnsApplied = false;
-
-async function hasReferralColumns(db: Db): Promise<boolean> {
-  if (referralColumnsApplied) return true;
-  const res = await db.execute(
-    sql`SELECT COUNT(*) AS c FROM information_schema.columns
-        WHERE table_schema = DATABASE()
-          AND table_name = 'support_orgs'
-          AND column_name IN ('referralIntent', 'referralNote', 'referralUpdatedAt')`
-  );
-  const row = unwrapRows(res)[0];
-  const applied = Number(row?.c ?? 0) >= 3;
-  if (applied) referralColumnsApplied = true;
-  return applied;
-}
-
-/** テスト用：キャッシュを戻す */
-export function resetReferralColumnCache() {
-  referralColumnsApplied = false;
-}
-
-function unwrapRows(result: unknown): Array<Record<string, unknown>> {
-  // mysql2 は [rows, fields] を返す。drizzleのexecuteはドライバの戻りをそのまま渡す
-  if (Array.isArray(result)) {
-    const first = result[0];
-    if (Array.isArray(first)) return first as Array<Record<string, unknown>>;
-    return result as Array<Record<string, unknown>>;
-  }
-  return [];
+function toIntent(value: unknown): ReferralIntent {
+  const v = String(value ?? "unknown");
+  return (REFERRAL_INTENTS as readonly string[]).includes(v) ? (v as ReferralIntent) : "unknown";
 }
 
 export async function readReferralInfo(db: Db, orgId: number): Promise<ReferralInfo> {
-  if (!(await hasReferralColumns(db))) {
-    return { applied: false, intent: "unknown", note: null, updatedAt: null };
-  }
-  const res = await db.execute(
-    sql`SELECT referralIntent, referralNote, referralUpdatedAt FROM support_orgs WHERE id = ${orgId} LIMIT 1`
-  );
-  const row = unwrapRows(res)[0];
-  if (!row) return { applied: true, intent: "unknown", note: null, updatedAt: null };
-  const intent = String(row.referralIntent ?? "unknown");
+  const [row] = await db
+    .select({
+      intent: supportOrgs.referralIntent,
+      note: supportOrgs.referralNote,
+      updatedAt: supportOrgs.referralUpdatedAt,
+    })
+    .from(supportOrgs)
+    .where(eq(supportOrgs.id, orgId))
+    .limit(1);
+  if (!row) return { intent: "unknown", note: null, updatedAt: null };
   return {
-    applied: true,
-    intent: (REFERRAL_INTENTS as readonly string[]).includes(intent)
-      ? (intent as ReferralIntent)
-      : "unknown",
-    note: row.referralNote == null ? null : String(row.referralNote),
-    updatedAt: row.referralUpdatedAt == null ? null : String(row.referralUpdatedAt),
+    intent: toIntent(row.intent),
+    note: row.note ?? null,
+    updatedAt: row.updatedAt == null ? null : String(row.updatedAt),
   };
 }
 
-/**
- * 送客優先度を更新する。列が未適用なら false を返し、呼び出し側で
- * 「マイグレーション未適用」として扱う（無言で捨てない）。
- */
+/** 送客優先度を更新する。渡された項目だけを書き換える */
 export async function writeReferralInfo(
   db: Db,
   orgId: number,
   input: { intent?: ReferralIntent; note?: string | null }
-): Promise<boolean> {
-  if (input.intent === undefined && input.note === undefined) return true;
-  if (!(await hasReferralColumns(db))) return false;
-
-  if (input.intent !== undefined && input.note !== undefined) {
-    await db.execute(
-      sql`UPDATE support_orgs SET referralIntent = ${input.intent}, referralNote = ${input.note}, referralUpdatedAt = CURRENT_TIMESTAMP WHERE id = ${orgId}`
-    );
-  } else if (input.intent !== undefined) {
-    await db.execute(
-      sql`UPDATE support_orgs SET referralIntent = ${input.intent}, referralUpdatedAt = CURRENT_TIMESTAMP WHERE id = ${orgId}`
-    );
-  } else {
-    await db.execute(
-      sql`UPDATE support_orgs SET referralNote = ${input.note ?? null}, referralUpdatedAt = CURRENT_TIMESTAMP WHERE id = ${orgId}`
-    );
-  }
-  return true;
+): Promise<void> {
+  const patch: Record<string, unknown> = {};
+  if (input.intent !== undefined) patch.referralIntent = input.intent;
+  if (input.note !== undefined) patch.referralNote = input.note;
+  if (Object.keys(patch).length === 0) return;
+  patch.referralUpdatedAt = new Date();
+  await db.update(supportOrgs).set(patch).where(eq(supportOrgs.id, orgId));
 }
+
+const ACTIVE_INTENTS: ReferralIntent[] = ["interested", "negotiating", "agreed"];
 
 /** 送客先の候補一覧（意向ありの機関）。運用画面でのみ使う */
 export async function listReferralTargets(db: Db): Promise<{
-  applied: boolean;
-  rows: Array<{ id: number; regNo: string; name: string; prefecture: string | null; intent: ReferralIntent; consultStatus: string; note: string | null }>;
+  rows: Array<{
+    id: number;
+    regNo: string;
+    name: string;
+    prefecture: string | null;
+    intent: ReferralIntent;
+    consultStatus: string;
+    note: string | null;
+  }>;
 }> {
-  if (!(await hasReferralColumns(db))) return { applied: false, rows: [] };
+  const rows = await db
+    .select({
+      id: supportOrgs.id,
+      regNo: supportOrgs.regNo,
+      name: supportOrgs.name,
+      prefecture: supportOrgs.prefecture,
+      intent: supportOrgs.referralIntent,
+      consultStatus: supportOrgs.consultStatus,
+      note: supportOrgs.referralNote,
+    })
+    .from(supportOrgs)
+    .where(inArray(supportOrgs.referralIntent, ACTIVE_INTENTS))
+    // 条件合意 → 交渉中 → 意向あり の順（送客判断でこの順に見る）
+    .orderBy(sql`FIELD(${supportOrgs.referralIntent},'agreed','negotiating','interested')`, supportOrgs.name)
+    .limit(200);
 
-  const res = await db.execute(
-    sql`SELECT id, regNo, name, prefecture, referralIntent, consultStatus, referralNote
-        FROM support_orgs
-        WHERE referralIntent IN ('interested','negotiating','agreed')
-        ORDER BY FIELD(referralIntent,'agreed','negotiating','interested'), name
-        LIMIT 200`
-  );
   return {
-    applied: true,
-    rows: unwrapRows(res).map((r) => ({
+    rows: rows.map((r) => ({
       id: Number(r.id),
       regNo: String(r.regNo),
       name: String(r.name),
-      prefecture: r.prefecture == null ? null : String(r.prefecture),
-      intent: String(r.referralIntent) as ReferralIntent,
+      prefecture: r.prefecture ?? null,
+      intent: toIntent(r.intent),
       consultStatus: String(r.consultStatus ?? "unknown"),
-      note: r.referralNote == null ? null : String(r.referralNote),
+      note: r.note ?? null,
     })),
   };
 }

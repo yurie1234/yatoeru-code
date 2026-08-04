@@ -13,9 +13,19 @@
 -- （mysql "$DATABASE_URL" < ...）ことはできない。上のスクリプトが mysql2 経由で
 -- 同じ内容を冪等に適用する。このファイルは適用内容の記録として残す。
 --
--- drizzle-kitのマイグレーションに載せていないのは、列の追加より先にコードが
--- デプロイされると公開クエリが「Unknown column」で落ちてサイト全体が停止するため。
--- 適用後に drizzle/schema.ts へ取り込み、通常のマイグレーション管理に戻す。
+-- 【2026-08-04 追記】このファイルは適用の記録として残すだけになった。
+-- 列は drizzle/schema.ts の supportOrgs に取り込み済みで、正本のマイグレーションは
+-- drizzle/0010_solid_war_machine.sql（内容は下のALTERと同じ・COMMENTは付かない）。
+-- 新しい環境では通常のマイグレーションで作られるので、このSQLを流す必要はない。
+--
+-- 本番DBは旧環境のダンプ復元で作ったため __drizzle_migrations が無く、
+-- そのままでは drizzle-kit migrate が0000から失敗する。一度だけ
+--   node scripts/baseline-drizzle-migrations.mjs --apply
+-- を実行して既存スキーマをベースラインとして記録すれば、以降は差分だけが流れる。
+--
+-- （当初この列をマイグレーションに載せなかったのは、列の追加より先にコードが
+--   デプロイされると公開クエリが「Unknown column」で落ちてサイト全体が停止する
+--   ためだった。列の適用が済んだので通常管理へ戻した。）
 
 ALTER TABLE `support_orgs`
   ADD COLUMN `referralIntent` ENUM('unknown','interested','negotiating','agreed','declined')

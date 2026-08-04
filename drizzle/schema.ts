@@ -100,6 +100,36 @@ export const supportOrgs = mysqlTable("support_orgs", {
   verifiedNote: text("verifiedNote"),
   /** 削除フラグ（削除依頼受領時=true。404/410返却、sitemap除外。復元可能形式） */
   isDeleted: boolean("isDeleted").default(false).notNull(),
+  /**
+   * 送客優先度（紹介料の意向）。**完全非公開の運用情報**。
+   *
+   * unknown=未確認 / interested=意向あり・金額未定 / negotiating=条件交渉中 /
+   * agreed=条件合意 / declined=意向なし
+   *
+   * 用途は「相談リードが来たときの手動振り分け」と「営業の優先順位づけ」だけ。
+   * 親和性スコア・並び順・公開ページ・API・構造化データには一切出さない。
+   * 紹介料で順位が動くならそれは広告であり、ラベルなしで検索結果に混ぜると
+   * 景品表示法（ステマ規制）に触れる。表示・順位に反映するときは必ずPR表示を
+   * 伴う別枠として実装する。
+   *
+   * 公開レスポンスからの除去は server/routers/orgs.ts の sanitizeOrg が担い、
+   * server/referralIntentPrivacy.test.ts で漏れないことを固定している。
+   * この列をスキーマに載せたことで `db.select().from(supportOrgs)`（全列取得）が
+   * 値を取ってくるようになったため、sanitizeOrg を通さない公開経路を作らないこと。
+   */
+  referralIntent: mysqlEnum("referralIntent", [
+    "unknown",
+    "interested",
+    "negotiating",
+    "agreed",
+    "declined",
+  ])
+    .default("unknown")
+    .notNull(),
+  /** 紹介料に関する非公開メモ（提示条件・担当者の反応・次アクション） */
+  referralNote: text("referralNote"),
+  /** 紹介料の意向を最後に更新した日時（非公開） */
+  referralUpdatedAt: timestamp("referralUpdatedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
