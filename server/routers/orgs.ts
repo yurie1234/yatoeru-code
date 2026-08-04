@@ -178,6 +178,7 @@ export const orgsRouter = router({
               verifiedAt: org.verifiedAt,
               preferredFields: org.preferredFields as string[] | null,
               preferredRegions: org.preferredRegions as string[] | null,
+              consultStatus: org.consultStatus,
             });
             return { ...sanitizeOrg(org), affinity };
           })
@@ -499,6 +500,7 @@ ${pageText ? `\n【実際に取得したページ内容】\n${pageText}\n` : noP
               verifiedAt: org.verifiedAt,
               preferredFields: org.preferredFields as string[] | null,
               preferredRegions: org.preferredRegions as string[] | null,
+              consultStatus: org.consultStatus,
             }
           ),
         }))

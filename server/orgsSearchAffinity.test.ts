@@ -98,7 +98,7 @@ describe("orgs.search の親和性スコア", () => {
     }
   });
 
-  it("地域を指定するとスコアを返し、満点は地域30＋信頼性10＝40になる", async () => {
+  it("地域を指定するとスコアを返し、満点は地域30＋受入状況10＋信頼性10＝50になる", async () => {
     const r = await createCaller().orgs.search({
       prefecture: "熊本県",
       page: 1,
@@ -106,27 +106,27 @@ describe("orgs.search の親和性スコア", () => {
       sort: "affinity",
     });
     expect(r.items[0].affinity).toBeDefined();
-    expect(r.items[0].affinity?.maxScore).toBe(40);
+    expect(r.items[0].affinity?.maxScore).toBe(50);
   });
 
-  it("分野を指定するとスコアを返し、満点は分野40＋信頼性10＝50になる", async () => {
+  it("分野を指定するとスコアを返し、満点は分野40＋受入状況10＋信頼性10＝60になる", async () => {
     const r = await createCaller().orgs.search({
       field: "介護",
       page: 1,
       limit: 20,
       sort: "affinity",
     });
-    expect(r.items[0].affinity?.maxScore).toBe(50);
+    expect(r.items[0].affinity?.maxScore).toBe(60);
   });
 
-  it("言語を指定するとスコアを返し、満点は言語20＋信頼性10＝30になる", async () => {
+  it("言語を指定するとスコアを返し、満点は言語20＋受入状況10＋信頼性10＝40になる", async () => {
     const r = await createCaller().orgs.search({
       language: "ベトナム語",
       page: 1,
       limit: 20,
       sort: "affinity",
     });
-    expect(r.items[0].affinity?.maxScore).toBe(30);
+    expect(r.items[0].affinity?.maxScore).toBe(40);
   });
 
   it("sort=default を明示した場合はスコアを返さない", async () => {

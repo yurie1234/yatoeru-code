@@ -95,6 +95,8 @@ export interface AffinityOrgData {
   preferredFields?: string[] | null;
   /** 希望する相談条件：受けたい地域（都道府県名・地方名・"全国"） */
   preferredRegions?: string[] | null;
+  /** 新規受入企業の相談ステータス（本人確認済みの申告）。未確認は "unknown" */
+  consultStatus?: string | null;
 }
 
 /**
@@ -134,8 +136,9 @@ export interface AffinityResult {
   /**
    * 指定された条件で評価できる満点。
    * 分野・地域・言語は指定されて初めて配点対象になるため、指定が無い項目の配点
-   * （40/30/20）は満点から丸ごと落ちる。条件が1つも無ければ信頼性の10点だけが残る
-   * ＝スコアを出す根拠が無い状態。/100として見せると根拠のない点数に見えるため、
+   * （40/30/20）は満点から丸ごと落ちる。条件が1つも無ければ、条件に依らず評価できる
+   * 受入状況10＋信頼性10の20点だけが残る＝スコアを出す根拠が無い状態。
+   * 固定の分母で見せると評価していない配点まで含んだ点数に見えるため、
    * 表示側はこの満点と併記する。
    */
   maxScore: number;
@@ -151,7 +154,8 @@ export function hasAffinityCondition(input: AffinityInput): boolean {
 
 /**
  * 指定条件で評価できる満点。
- * 信頼性（処分歴なし・実確認鮮度）は条件に依らず全機関で評価できるため常に含める。
+ * 受入状況（相談ステータス）と信頼性（処分歴なし・実確認鮮度）は条件に依らず
+ * 全機関で評価できるため常に含める。
  */
 export function calcMaxScore(input: AffinityInput): number {
   const hasField =
@@ -160,20 +164,23 @@ export function calcMaxScore(input: AffinityInput): number {
     (hasField ? AFFINITY_WEIGHTS.field : 0) +
     (input.targetPrefecture ? AFFINITY_WEIGHTS.prefSame : 0) +
     (input.targetLanguage ? AFFINITY_WEIGHTS.language : 0) +
+    AFFINITY_WEIGHTS.consultOpenActive +
     AFFINITY_WEIGHTS.noPenalty +
     AFFINITY_WEIGHTS.freshness
   );
 }
 
 /**
- * 親和性スコア算出（満点100）
+ * 親和性スコア算出（指定条件で評価できる満点は calcMaxScore を参照。全条件指定時は110）
  * - 分野一致: 40（確認済み分野・希望相談条件一致=40 / 機関名からの推定一致=40 / シグナルなし=中立20 / 他分野特化とみられる=10）
  * - 地域一致: 30（同一都道府県または希望相談地域一致=30 / 隣接都道府県=15）
  * - 言語一致: 20
+ * - 受入状況: 10（新規相談 受付中（積極受入）=10 / 受付中=7 / 未確認・一時停止=0）
  * - 信頼性: 10（処分歴なし=5、実確認鮮度=最大5：運営による実確認日からの経過で減衰する連続値。
  *   90日以内=5点〜180日で2.5点〜365日で0点。未確認=0点）
  * 同点の場合の最終タイブレークは登録年月日の古い順とする。
- * 制約：鮮度加点は信頼性枠の5点を超えず、有料プランと確認ステータスは一切連動しない。
+ * 制約：鮮度加点は信頼性枠の5点を超えず、有料プラン・紹介料の有無はスコアに一切反映しない。
+ * 受入状況・確認ステータスの登録は無料で全機関に開かれている。
  */
 export function calcAffinity(input: AffinityInput, org: AffinityOrgData, now: Date = new Date()): AffinityResult {
   const reasons: AffinityReason[] = [];
@@ -238,6 +245,17 @@ export function calcAffinity(input: AffinityInput, org: AffinityOrgData, now: Da
     reasons.push({ label: `${input.targetLanguage}対応`, points: AFFINITY_WEIGHTS.language });
   }
 
+  // --- 受入状況（0-10：新規相談を受け付けていることが本人確認済みか） ---
+  // 相談を受け付けていない機関を上位に出しても利用者の役に立たないため、
+  // 条件適合と並ぶ評価軸として扱う。未確認・一時停止は0点（減点はしない）。
+  if (org.consultStatus === "open_active") {
+    score += AFFINITY_WEIGHTS.consultOpenActive;
+    reasons.push({ label: "新規相談 受付中（積極受入）", points: AFFINITY_WEIGHTS.consultOpenActive });
+  } else if (org.consultStatus === "open") {
+    score += AFFINITY_WEIGHTS.consultOpen;
+    reasons.push({ label: "新規相談 受付中", points: AFFINITY_WEIGHTS.consultOpen });
+  }
+
   // --- 信頼性（0-10：処分歴なし5＋実確認鮮度最大5） ---
   if (org.hasPenalty === false || org.hasPenalty === null) {
     score += AFFINITY_WEIGHTS.noPenalty;
@@ -267,4 +285,4 @@ export function calcAffinity(input: AffinityInput, org: AffinityOrgData, now: Da
  * AEO観点：引用可能な明確なメソドロジーとして一貫した文言を全ページで使う。
  */
 export const AFFINITY_METHODOLOGY =
-  "親和性スコアはヤトエル独自の指標です。分野・地域・言語のうち、指定された条件だけを評価します（条件を指定していない項目は配点に含めないため、満点は条件に応じて変わります。スコアは「得点／満点」で表示します）。条件を1つも指定していない一覧では、算定の根拠が無いためスコアを表示しません。分野一致40点（登録情報で確認済みの対応分野・希望する相談条件のほか、機関名等からの推定を含みます。推定の場合はその旨を表示）／地域一致30点（同一都道府県・確認済み対応地域30・隣接都道府県15）／言語一致20点／信頼性10点（処分歴なし5点＋実確認鮮度最大5点、条件指定に関わらず常に評価）。運営による実確認済みの情報には、情報の確からしさとして最大5点を加点しています（確認日から時間経過で減衰）。有料掲載の有無はスコアに影響しません。情報の確認・修正は全ての機関が無料で行えます。同点の機関は登録年月日の古い順に表示します。支援の質を保証するものではなく、比較検討の参考値としてご利用ください。";
+  "親和性スコアはヤトエル独自の指標です。分野・地域・言語のうち、指定された条件だけを評価します（条件を指定していない項目は配点に含めないため、満点は条件に応じて変わります。スコアは「得点／満点」で表示します）。条件を1つも指定していない一覧では、算定の根拠が無いためスコアを表示しません。分野一致40点（登録情報で確認済みの対応分野・希望する相談条件のほか、機関名等からの推定を含みます。推定の場合はその旨を表示）／地域一致30点（同一都道府県・確認済み対応地域30・隣接都道府県15）／言語一致20点／受入状況10点（新規相談の受付状況が本人確認済みの場合。積極受入10点・受付中7点・未確認および一時停止0点。相談を受け付けていない機関を上位に出しても比較の役に立たないため評価軸に含めています）／信頼性10点（処分歴なし5点＋実確認鮮度最大5点）。受入状況と信頼性は条件指定に関わらず常に評価します。運営による実確認済みの情報には、情報の確からしさとして最大5点を加点しています（確認日から時間経過で減衰）。有料掲載の有無・当サイトへの紹介料の有無はスコアに影響しません。情報の確認・修正および受入状況の登録は、全ての機関が無料で行えます。同点の機関は登録年月日の古い順に表示します。支援の質を保証するものではなく、比較検討の参考値としてご利用ください。";

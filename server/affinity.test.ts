@@ -240,8 +240,15 @@ describe("AFFINITY_METHODOLOGY（算定説明文）", () => {
   it("鮮度加点の開示文（最大5点・減衰・有料非連動・無料確認）を含む", () => {
     expect(AFFINITY_METHODOLOGY).toContain("最大5点");
     expect(AFFINITY_METHODOLOGY).toContain("減衰");
-    expect(AFFINITY_METHODOLOGY).toContain("有料掲載の有無はスコアに影響しません");
+    expect(AFFINITY_METHODOLOGY).toContain("有料掲載の有無");
+    expect(AFFINITY_METHODOLOGY).toContain("紹介料の有無はスコアに影響しません");
     expect(AFFINITY_METHODOLOGY).toContain("無料");
+  });
+
+  it("受入状況を評価軸に含めたことと、その理由・配点を開示している", () => {
+    expect(AFFINITY_METHODOLOGY).toContain("受入状況10点");
+    expect(AFFINITY_METHODOLOGY).toContain("積極受入10点・受付中7点");
+    expect(AFFINITY_METHODOLOGY).toContain("未確認および一時停止0点");
   });
 });
 
@@ -271,32 +278,32 @@ describe("スコアを出す根拠（指定条件）と満点", () => {
   });
 
   it("満点は指定された条件の配点＋信頼性10点だけで構成される", () => {
-    expect(calcMaxScore({})).toBe(10);
-    expect(calcMaxScore({ targetPrefecture: "東京都" })).toBe(40);
-    expect(calcMaxScore({ targetField: "介護" })).toBe(50);
-    expect(calcMaxScore({ targetLanguage: "英語" })).toBe(30);
-    expect(calcMaxScore({ targetField: "介護", targetPrefecture: "東京都" })).toBe(80);
+    expect(calcMaxScore({})).toBe(20);
+    expect(calcMaxScore({ targetPrefecture: "東京都" })).toBe(50);
+    expect(calcMaxScore({ targetField: "介護" })).toBe(60);
+    expect(calcMaxScore({ targetLanguage: "英語" })).toBe(40);
+    expect(calcMaxScore({ targetField: "介護", targetPrefecture: "東京都" })).toBe(90);
     expect(
       calcMaxScore({ targetField: "介護", targetPrefecture: "東京都", targetLanguage: "英語" })
-    ).toBe(100);
+    ).toBe(110);
   });
 
   it("19分野に無い分野名は配点に数えない（満点を押し上げない）", () => {
-    expect(calcMaxScore({ targetField: "なにか" })).toBe(10);
+    expect(calcMaxScore({ targetField: "なにか" })).toBe(20);
   });
 
   it("分野の指定が無いとき、全機関に一律加点しない（根拠のない点数を出さない）", () => {
     const r = calcAffinity({ targetPrefecture: "東京都" }, org);
     // 地域30 + 処分歴なし5 = 35。以前はここに分野配点の半分20が乗って55になっていた
     expect(r.score).toBe(35);
-    expect(r.maxScore).toBe(40);
+    expect(r.maxScore).toBe(50);
     expect(r.reasons.some((x) => x.label.includes("分野"))).toBe(false);
   });
 
   it("条件が1つも無いときは信頼性だけが残り、満点も10になる", () => {
     const r = calcAffinity({}, org);
     expect(r.score).toBe(5);
-    expect(r.maxScore).toBe(10);
+    expect(r.maxScore).toBe(20);
     expect(r.reasons.map((x) => x.label)).toEqual(["処分歴なし"]);
   });
 
@@ -321,5 +328,63 @@ describe("スコアを出す根拠（指定条件）と満点", () => {
     expect(AFFINITY_METHODOLOGY).toContain("指定された条件だけを評価");
     expect(AFFINITY_METHODOLOGY).toContain("得点／満点");
     expect(AFFINITY_METHODOLOGY).toContain("スコアを表示しません");
+  });
+});
+
+describe("受入状況（新規相談の受付ステータス）の配点", () => {
+  const org = {
+    name: "テスト協同組合",
+    prefecture: "東京都",
+    fields: ["介護"],
+    languages: ["英語"],
+    hasPenalty: false,
+    registeredDate: "2019-04-01",
+    preferredFields: ["介護"],
+    preferredRegions: ["東京都"],
+  };
+  const input = { targetField: "介護", targetPrefecture: "東京都" };
+
+  it("積極受入は10点、受付中は7点、未確認・一時停止は0点", () => {
+    expect(calcAffinity(input, { ...org, consultStatus: "open_active" }).score).toBe(85);
+    expect(calcAffinity(input, { ...org, consultStatus: "open" }).score).toBe(82);
+    expect(calcAffinity(input, { ...org, consultStatus: "unknown" }).score).toBe(75);
+    expect(calcAffinity(input, { ...org, consultStatus: "paused" }).score).toBe(75);
+    expect(calcAffinity(input, { ...org, consultStatus: null }).score).toBe(75);
+  });
+
+  it("一時停止は減点しない（未確認と同点）", () => {
+    const paused = calcAffinity(input, { ...org, consultStatus: "paused" });
+    const unknown = calcAffinity(input, { ...org, consultStatus: "unknown" });
+    expect(paused.score).toBe(unknown.score);
+  });
+
+  it("受付中の加点は理由として表示される", () => {
+    const r = calcAffinity(input, { ...org, consultStatus: "open_active" });
+    expect(r.reasons.some((x) => x.label === "新規相談 受付中（積極受入）")).toBe(true);
+    const r2 = calcAffinity(input, { ...org, consultStatus: "open" });
+    expect(r2.reasons.some((x) => x.label === "新規相談 受付中")).toBe(true);
+  });
+
+  it("未確認では受入状況の理由を出さない（推定で埋めない）", () => {
+    const r = calcAffinity(input, { ...org, consultStatus: "unknown" });
+    expect(r.reasons.some((x) => x.label.includes("新規相談"))).toBe(false);
+  });
+
+  it("受入状況は条件指定に関わらず満点に含まれる", () => {
+    expect(calcAffinity({}, { ...org, consultStatus: "open_active" }).maxScore).toBe(20);
+    expect(calcAffinity({}, { ...org, consultStatus: "unknown" }).maxScore).toBe(20);
+  });
+
+  it("受入状況だけで分野一致（40点）を逆転できない", () => {
+    // 分野が合っていない積極受入 vs 分野が合っている未確認
+    const activeNoField = calcAffinity(input, {
+      ...org,
+      name: "テスト鉄工所",
+      fields: ["工業製品製造業"],
+      preferredFields: ["工業製品製造業"],
+      consultStatus: "open_active",
+    });
+    const unknownWithField = calcAffinity(input, { ...org, consultStatus: "unknown" });
+    expect(unknownWithField.score).toBeGreaterThan(activeNoField.score);
   });
 });
