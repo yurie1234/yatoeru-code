@@ -12,10 +12,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { trpc } from "@/lib/trpc";
 import { captureSource, trackEvent } from "@/lib/track";
 import { FILTER_ACCENT_CLASS } from "@/pages/Proposal";
 import { JOSEIKIN_DISCLAIMER, matchJoseikin } from "@shared/joseikin";
+import { normalizedScore } from "@shared/affinity";
 import { HEADCOUNT_OPTIONS, MAJOR_LANGUAGES, PREFECTURES, TOKUTEI_FIELDS } from "@shared/tokutei";
 import {
   buildQuestionSteps,
@@ -25,7 +31,7 @@ import {
   stripScoreIntro,
   type QuestionStep,
 } from "@shared/diagnoseWizard";
-import { AlertTriangle, ArrowLeft, ArrowRight, Building2, CheckCircle2, Coins, ExternalLink, FileText, Globe2, Languages, Loader2, MapPin, Search as SearchIcon, Sparkles } from "lucide-react";
+import { AlertTriangle, ArrowLeft, ArrowRight, Building2, CheckCircle2, ChevronDown, Coins, ExternalLink, FileText, Globe2, Languages, Loader2, MapPin, Search as SearchIcon, Sparkles } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Link, useLocation, useSearch } from "wouter";
@@ -118,6 +124,8 @@ export default function Diagnose() {
     recommendedOrgs: RecommendedOrgs | null;
     diagnosisId: number | null;
   } | null>(null);
+  /** 助成金候補の開閉。既定は閉（支援機関の候補まで到達させるため） */
+  const [joseikinOpen, setJoseikinOpen] = useState(false);
   /** 確認画面で個別の選び直しを開いているか */
   const [editingField, setEditingField] = useState(false);
   const [editingPrefecture, setEditingPrefecture] = useState(false);
@@ -974,15 +982,33 @@ export default function Diagnose() {
               </Card>
             )}
 
-            {/* 助成金候補 */}
+            {/* 助成金候補。既定では閉じておく。
+                助成金は「あとで読む」情報で、開いたまま長く置くと支援機関の候補まで
+                スクロールされずに離脱するため、見出しだけ見せて任意で開かせる。 */}
             {joseikinCandidates.length > 0 && (
               <Card className="border-2 border-emerald-200">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Coins className="h-5 w-5 text-emerald-600" />
-                    使える可能性のある助成金候補（{joseikinCandidates.length}件）
-                  </CardTitle>
-                </CardHeader>
+                <Collapsible open={joseikinOpen} onOpenChange={setJoseikinOpen}>
+                  <CollapsibleTrigger asChild>
+                    <button
+                      type="button"
+                      className="flex w-full items-center gap-2 p-5 text-left hover:bg-emerald-50/60 transition-colors"
+                    >
+                      <Coins className="h-5 w-5 text-emerald-600 shrink-0" />
+                      <span className="font-bold text-lg flex-1">
+                        使える可能性のある助成金候補
+                        <Badge variant="secondary" className="ml-2 align-middle">
+                          {joseikinCandidates.length}件
+                        </Badge>
+                      </span>
+                      <span className="text-sm text-muted-foreground shrink-0">
+                        {joseikinOpen ? "閉じる" : "開いて見る"}
+                      </span>
+                      <ChevronDown
+                        className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${joseikinOpen ? "rotate-180" : ""}`}
+                      />
+                    </button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
                 <CardContent className="space-y-3">
                   {joseikinCandidates.map((j) => (
                     <div key={j.id} className="rounded-lg border p-4">
@@ -1011,6 +1037,8 @@ export default function Diagnose() {
                     <Link href="/joseikin" className="text-sm text-brand underline">助成金の詳しい解説記事を見る</Link>
                   </div>
                 </CardContent>
+                  </CollapsibleContent>
+                </Collapsible>
               </Card>
             )}
 
@@ -1152,9 +1180,13 @@ export default function Diagnose() {
                               </Badge>
                             )}
                             {org.affinity && (
-                              <Badge variant="outline" className="font-bold border-brand/40 text-brand bg-brand/5">
-                                親和性 {org.affinity.score}
-                                <span className="font-normal opacity-70">/{org.affinity.maxScore}</span>
+                              <Badge
+                                variant="outline"
+                                className="font-bold border-brand/40 text-brand bg-brand/5"
+                                title={`内訳: ${org.affinity.score} / ${org.affinity.maxScore}点（指定条件での満点）を100点換算`}
+                              >
+                                親和性 {normalizedScore(org.affinity.score, org.affinity.maxScore)}
+                                <span className="font-normal opacity-70">/100</span>
                               </Badge>
                             )}
                             <span className="text-xs text-muted-foreground">{org.regNo}</span>

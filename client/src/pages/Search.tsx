@@ -15,7 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { trpc } from "@/lib/trpc";
 import { FILTER_ACCENT_CLASS } from "@/pages/Proposal";
-import { AFFINITY_METHODOLOGY } from "@shared/affinity";
+import { AFFINITY_METHODOLOGY, normalizedScore } from "@shared/affinity";
 import { MAJOR_LANGUAGES, PREFECTURES, TOKUTEI_FIELDS } from "@shared/tokutei";
 import { AlertTriangle, ArrowDownWideNarrow, Building2, CheckSquare, ChevronLeft, ChevronRight, Info, Languages, MapPin, Search as SearchIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -258,20 +258,23 @@ export default function Search() {
                                 <Badge
                                   variant="outline"
                                   className={`gap-1 cursor-help font-bold ${
-                                    org.affinity.score / org.affinity.maxScore >= 0.7
+                                    normalizedScore(org.affinity.score, org.affinity.maxScore) >= 70
                                       ? "border-amber-accent text-amber-700 bg-amber-accent/10"
-                                      : org.affinity.score / org.affinity.maxScore >= 0.4
+                                      : normalizedScore(org.affinity.score, org.affinity.maxScore) >= 40
                                         ? "border-brand/40 text-brand bg-brand/5"
                                         : "text-muted-foreground"
                                   }`}
                                 >
-                                  親和性 {org.affinity.score}
-                                  <span className="font-normal opacity-70">/{org.affinity.maxScore}</span>
+                                  親和性 {normalizedScore(org.affinity.score, org.affinity.maxScore)}
+                                  <span className="font-normal opacity-70">/100</span>
                                   <Info className="h-3 w-3 opacity-60" />
                                 </Badge>
                               </TooltipTrigger>
                               <TooltipContent side="bottom" className="max-w-xs text-xs">
-                                <p className="font-bold mb-1">スコア内訳（指定条件での満点 {org.affinity.maxScore}）</p>
+                                <p className="font-bold mb-1">
+                                  スコア内訳（{org.affinity.score} / {org.affinity.maxScore}点 →
+                                  100点換算で {normalizedScore(org.affinity.score, org.affinity.maxScore)}点）
+                                </p>
                                 <ul className="space-y-0.5">
                                   {org.affinity.reasons.map((r) => (
                                     <li key={r.label}>・{r.label}（+{r.points}）</li>

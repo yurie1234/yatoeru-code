@@ -6,6 +6,7 @@ import {
   calcMaxScore,
   estimateOrgFields,
   hasAffinityCondition,
+  normalizedScore,
 } from "../shared/affinity";
 import { TOKUTEI_FIELDS, UPCOMING_FIELDS } from "../shared/tokutei";
 
@@ -324,9 +325,10 @@ describe("スコアを出す根拠（指定条件）と満点", () => {
     expect(a.score).toBeGreaterThan(b.score);
   });
 
-  it("算定方法の説明に、指定条件だけを評価することと満点併記が書かれている", () => {
+  it("算定方法の説明に、指定条件だけを評価すること・100点換算・非表示条件が書かれている", () => {
     expect(AFFINITY_METHODOLOGY).toContain("指定された条件だけを評価");
-    expect(AFFINITY_METHODOLOGY).toContain("得点／満点");
+    expect(AFFINITY_METHODOLOGY).toContain("100点満点に換算");
+    expect(AFFINITY_METHODOLOGY).toContain("その条件での満点を併記");
     expect(AFFINITY_METHODOLOGY).toContain("スコアを表示しません");
   });
 });
@@ -444,5 +446,47 @@ describe("分野一致の配点は確認済み > 推定 > 分野非限定 > 他�
   it("算定説明文に推定の配点を明記している", () => {
     expect(AFFINITY_METHODOLOGY).toContain("推定による一致は25点");
     expect(AFFINITY_METHODOLOGY).toContain("分野非限定として20点");
+  });
+});
+
+describe("normalizedScore（100点満点への換算）", () => {
+  it("満点を取ると100点になる", () => {
+    expect(normalizedScore(50, 50)).toBe(100);
+    expect(normalizedScore(110, 110)).toBe(100);
+  });
+
+  it("0点は0点", () => {
+    expect(normalizedScore(0, 50)).toBe(0);
+  });
+
+  it("条件が違っても同じ達成率なら同じ表示になる（満点の変動を利用者に見せない）", () => {
+    // 地域だけ指定（満点50）で35点 = 70%
+    expect(normalizedScore(35, 50)).toBe(70);
+    // 全条件指定（満点110）で77点 = 70%
+    expect(normalizedScore(77, 110)).toBe(70);
+  });
+
+  it("0〜100の範囲に収める", () => {
+    expect(normalizedScore(200, 50)).toBe(100);
+    expect(normalizedScore(-10, 50)).toBe(0);
+  });
+
+  it("満点が0以下でも落ちない", () => {
+    expect(normalizedScore(10, 0)).toBe(0);
+    expect(normalizedScore(10, -1)).toBe(0);
+  });
+
+  it("換算しても順位は変わらない（同一条件内では単調変換）", () => {
+    const max = 90;
+    const raws = [90, 87, 75, 65, 35, 0];
+    const norm = raws.map((r) => normalizedScore(r, max));
+    for (let i = 1; i < norm.length; i++) {
+      expect(norm[i]).toBeLessThanOrEqual(norm[i - 1]);
+    }
+  });
+
+  it("算定説明文が100点換算であることを明記している", () => {
+    expect(AFFINITY_METHODOLOGY).toContain("100点満点に換算");
+    expect(AFFINITY_METHODOLOGY).toContain("換算前の得点");
   });
 });
