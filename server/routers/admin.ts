@@ -10,6 +10,7 @@ import {
 import { getDb } from "../db";
 import { protectedProcedure, router } from "../_core/trpc";
 import { PREFECTURES, TOKUTEI_FIELDS } from "../../shared/tokutei";
+import { normalizeLanguageList } from "../../shared/languageNormalize";
 import { PENDING_LISTING_UPDATES } from "../pendingListingUpdates";
 import {
   listReferralTargets,
@@ -339,6 +340,11 @@ export const adminRouter = router({
       for (const [key, value] of Object.entries(rest)) {
         if (value === undefined) continue;
         patch[key] = key === "verifiedAt" && typeof value === "string" ? new Date(value) : value;
+      }
+      // 言語は別名・表記ゆれを正式名称に寄せる。管理画面で「カンボジア語」と
+      // 入力した機関が、検索の「クメール語」で引っかからなくなるのを防ぐ
+      if (Array.isArray(patch.languages)) {
+        patch.languages = normalizeLanguageList(patch.languages as string[]);
       }
       if (Object.keys(patch).length === 0) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "更新する項目がありません" });

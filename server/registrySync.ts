@@ -11,6 +11,7 @@ import { getDb } from "./db";
 import { respondServerError } from "./_core/sanitizeError";
 import { sdk } from "./_core/sdk";
 import { PREFECTURES } from "../shared/tokutei";
+import { normalizeLanguageList, normalizeLanguages } from "../shared/languageNormalize";
 
 /**
  * 登録簿同期エンドポイント /api/scheduled/registry-sync
@@ -134,7 +135,13 @@ export async function registrySyncHandler(req: Request, res: Response) {
         officeName: o.officeName ?? null,
         optionalSupport: o.optionalSupport ?? false,
         startDate: o.startDate ?? null,
-        languages: o.languages ?? null,
+        // 言語は必ず正規化を通す。cronが送ってくる languages は登録簿の原文を
+        // 素朴に分割しただけなので、そのまま入れると「カンボジア語」のような
+        // 別名や「ウズベキスタン語」のような未知の言語名が検索から漏れる。
+        // 原文（languagesRaw）が来ていればそこから作り直すのが最も正確
+        languages: o.languagesRaw
+          ? normalizeLanguages(o.languagesRaw).languages
+          : normalizeLanguageList(o.languages),
         languagesRaw: o.languagesRaw ?? null,
       });
     }
