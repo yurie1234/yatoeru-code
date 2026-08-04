@@ -13,7 +13,12 @@ import { getDb } from "../db";
 import { invokeLLM } from "../_core/llm";
 import { publicProcedure, router } from "../_core/trpc";
 import { ADJACENT_PREFECTURES, PREFECTURES, TOKUTEI_FIELDS, UPCOMING_FIELDS } from "../../shared/tokutei";
-import { calcAffinity, estimateOrgFields, FIELD_NAME_KEYWORDS } from "../../shared/affinity";
+import {
+  calcAffinity,
+  estimateOrgFields,
+  FIELD_NAME_KEYWORDS,
+  hasAffinityCondition,
+} from "../../shared/affinity";
 import type { TokuteiField } from "../../shared/tokutei";
 
 /**
@@ -111,10 +116,20 @@ export const orgsRouter = router({
         .from(supportOrgs)
         .where(whereClause);
 
+      // 親和性スコアは分野・地域・言語の指定があって初めて算定できる。
+      // キーワードだけの検索や条件なしの一覧では算定根拠が無いため、スコアを付けず
+      // 標準順（登録年月日順）で返す。以前は条件なしでも全機関に同じ点数（分野配点の
+      // 半分＋処分歴なし＝25点）が付き、根拠のないスコアが並んでいた。
+      const affinityInput = {
+        targetField: input.field ?? null,
+        targetPrefecture: input.prefecture ?? null,
+        targetLanguage: input.language ?? null,
+      };
+
       // 親和性スコア順ソートの場合は、条件に合致する候補を広めに取得して
       // アプリ側でスコア算出・並べ替え・ページングする。
       // 注：将来、有料掲載を同点内で優先表示する場合は、景品表示法（ステマ規制）対応のためPRラベルの明示が必須。
-      if (input.sort === "affinity") {
+      if (input.sort === "affinity" && hasAffinityCondition(affinityInput)) {
         // 候補Capの取得順はレビュー数→登録日の古い順。
         // id降順だと新規登録（登録年数加点0点）ばかりがCapを占め、古参機関（+3点）が候補外に
         // 落ちてスコア分解能が死ぬ（全件同点の原因）。
@@ -153,24 +168,17 @@ export const orgsRouter = router({
 
         const scored = candidates
           .map((org) => {
-            const affinity = calcAffinity(
-              {
-                targetField: input.field ?? null,
-                targetPrefecture: input.prefecture ?? null,
-                targetLanguage: input.language ?? null,
-              },
-              {
-                name: org.name,
-                prefecture: org.prefecture,
-                fields: org.fields as string[] | null,
-                languages: org.languages as string[] | null,
-                hasPenalty: org.hasPenalty,
-                registeredDate: org.regDate ? String(org.regDate) : null,
-                verifiedAt: org.verifiedAt,
-                preferredFields: org.preferredFields as string[] | null,
-                preferredRegions: org.preferredRegions as string[] | null,
-              }
-            );
+            const affinity = calcAffinity(affinityInput, {
+              name: org.name,
+              prefecture: org.prefecture,
+              fields: org.fields as string[] | null,
+              languages: org.languages as string[] | null,
+              hasPenalty: org.hasPenalty,
+              registeredDate: org.regDate ? String(org.regDate) : null,
+              verifiedAt: org.verifiedAt,
+              preferredFields: org.preferredFields as string[] | null,
+              preferredRegions: org.preferredRegions as string[] | null,
+            });
             return { ...sanitizeOrg(org), affinity };
           })
           // 同点時の最終タイブレークは登録年月日の古い順

@@ -41,10 +41,10 @@ export default function Search() {
   const [page, setPage] = useState(() => parsePageParam(params.get("page")));
   // 並び順は親和性順のみ（標準順の切替は廃止。APIのsortパラメータ自体は互換のため残存）
   const sort = "affinity" as const;
-  // 検索条件（キーワード・都道府県・言語・分野）が何も指定されていない場合は、
-  // 親和性スコアを算定する根拠がないため表示しない（登録年月日順の一覧として扱う）
-  const hasCondition =
-    keyword.trim() !== "" || prefecture !== ALL || language !== ALL || field !== ALL;
+  // 親和性スコアは分野・地域・言語の一致で決まる。キーワードはスコアの入力ではないので、
+  // キーワードだけの検索では算定根拠が無い（以前はキーワードだけでも全機関に同じ点数が
+  // 並んでいた）。スコア表示と親和性順ソートは、この3条件のいずれかがある場合だけ。
+  const hasAffinityCondition = prefecture !== ALL || language !== ALL || field !== ALL;
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
   // URLパラメータの変化を反映（ページネーション実リンク・戻る進むもここで同期）
@@ -82,9 +82,9 @@ export default function Search() {
       page,
       limit: 20,
       // 条件未指定時は親和性計算を行わず従来順（登録年月日順）で取得
-      sort: hasCondition ? sort : ("default" as const),
+      sort: hasAffinityCondition ? sort : ("default" as const),
     }),
-    [keyword, prefecture, language, field, page, sort, hasCondition]
+    [keyword, prefecture, language, field, page, sort, hasAffinityCondition]
   );
 
   const { data, isLoading } = trpc.orgs.search.useQuery(queryInput);
@@ -204,11 +204,11 @@ export default function Search() {
               <div className="flex items-center gap-1.5">
                 <ArrowDownWideNarrow className="h-4 w-4 text-muted-foreground" />
                 <span className="text-xs text-muted-foreground">
-                  並び順：{hasCondition ? "親和性順" : "標準（登録年月日順）"}
+                  並び順：{hasAffinityCondition ? "親和性順" : "標準（登録年月日順）"}
                 </span>
               </div>
             </div>
-            {sort === "affinity" && hasCondition ? (
+            {sort === "affinity" && hasAffinityCondition ? (
               <p className="text-xs text-muted-foreground mb-4 leading-relaxed rounded-md bg-muted/40 border px-3 py-2">
                 <Info className="h-3.5 w-3.5 inline-block mr-1 -mt-0.5" />
                 {AFFINITY_METHODOLOGY}
@@ -252,31 +252,32 @@ export default function Search() {
                               新規相談受付中{org.consultStatus === "open_active" ? "（積極受入）" : ""}
                             </Badge>
                           )}
-                          {sort === "affinity" && hasCondition && org.affinity && (
+                          {sort === "affinity" && hasAffinityCondition && org.affinity && (
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Badge
                                   variant="outline"
                                   className={`gap-1 cursor-help font-bold ${
-                                    org.affinity.score >= 70
+                                    org.affinity.score / org.affinity.maxScore >= 0.7
                                       ? "border-amber-accent text-amber-700 bg-amber-accent/10"
-                                      : org.affinity.score >= 40
+                                      : org.affinity.score / org.affinity.maxScore >= 0.4
                                         ? "border-brand/40 text-brand bg-brand/5"
                                         : "text-muted-foreground"
                                   }`}
                                 >
                                   親和性 {org.affinity.score}
+                                  <span className="font-normal opacity-70">/{org.affinity.maxScore}</span>
                                   <Info className="h-3 w-3 opacity-60" />
                                 </Badge>
                               </TooltipTrigger>
                               <TooltipContent side="bottom" className="max-w-xs text-xs">
-                                <p className="font-bold mb-1">スコア内訳（満点100）</p>
+                                <p className="font-bold mb-1">スコア内訳（指定条件での満点 {org.affinity.maxScore}）</p>
                                 <ul className="space-y-0.5">
                                   {org.affinity.reasons.map((r) => (
                                     <li key={r.label}>・{r.label}（+{r.points}）</li>
                                   ))}
                                 </ul>
-                                <p className="mt-1.5 opacity-70">配点：分野40／地域30／言語20／信頼性10（処分歴なし5＋実確認鮮度最大5）</p>
+                                <p className="mt-1.5 opacity-70">配点：分野40／地域30／言語20／信頼性10（処分歴なし5＋実確認鮮度最大5）。指定していない条件は配点に含めないため、満点は条件により変わります。</p>
                                 <p className="mt-1 opacity-70">運営による実確認済みの情報には、情報の確からしさとして最大5点を加点しています（確認日から時間経過で減衰）。有料掲載の有無はスコアに影響しません。</p>
                               </TooltipContent>
                             </Tooltip>
@@ -306,7 +307,7 @@ export default function Search() {
                             </p>
                           </div>
                         )}
-                        {sort === "affinity" && hasCondition && org.affinity && org.affinity.reasons.length > 0 && (
+                        {sort === "affinity" && hasAffinityCondition && org.affinity && org.affinity.reasons.length > 0 && (
                           <div className="flex flex-wrap gap-1.5 mt-2">
                             {org.affinity.reasons.slice(0, 4).map((r) => (
                               <Badge key={r.label} variant="outline" className="text-xs font-normal text-muted-foreground border-dashed">

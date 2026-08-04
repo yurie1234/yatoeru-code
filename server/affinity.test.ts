@@ -3,7 +3,9 @@ import {
   AFFINITY_METHODOLOGY,
   calcAffinity,
   calcFreshnessPoints,
+  calcMaxScore,
   estimateOrgFields,
+  hasAffinityCondition,
 } from "../shared/affinity";
 import { TOKUTEI_FIELDS, UPCOMING_FIELDS } from "../shared/tokutei";
 
@@ -240,5 +242,84 @@ describe("AFFINITY_METHODOLOGY（算定説明文）", () => {
     expect(AFFINITY_METHODOLOGY).toContain("減衰");
     expect(AFFINITY_METHODOLOGY).toContain("有料掲載の有無はスコアに影響しません");
     expect(AFFINITY_METHODOLOGY).toContain("無料");
+  });
+});
+
+describe("スコアを出す根拠（指定条件）と満点", () => {
+  const org = {
+    name: "テスト協同組合",
+    prefecture: "東京都",
+    fields: ["介護"],
+    languages: ["英語"],
+    hasPenalty: false,
+    registeredDate: "2019-04-01",
+    preferredFields: ["介護"],
+    preferredRegions: ["東京都"],
+  };
+
+  it("分野・地域・言語のいずれも指定が無ければ、スコアの根拠が無いと判定する", () => {
+    expect(hasAffinityCondition({})).toBe(false);
+    expect(hasAffinityCondition({ targetField: null, targetPrefecture: null, targetLanguage: null })).toBe(
+      false
+    );
+  });
+
+  it("1つでも指定があれば根拠ありと判定する", () => {
+    expect(hasAffinityCondition({ targetPrefecture: "熊本県" })).toBe(true);
+    expect(hasAffinityCondition({ targetField: "介護" })).toBe(true);
+    expect(hasAffinityCondition({ targetLanguage: "英語" })).toBe(true);
+  });
+
+  it("満点は指定された条件の配点＋信頼性10点だけで構成される", () => {
+    expect(calcMaxScore({})).toBe(10);
+    expect(calcMaxScore({ targetPrefecture: "東京都" })).toBe(40);
+    expect(calcMaxScore({ targetField: "介護" })).toBe(50);
+    expect(calcMaxScore({ targetLanguage: "英語" })).toBe(30);
+    expect(calcMaxScore({ targetField: "介護", targetPrefecture: "東京都" })).toBe(80);
+    expect(
+      calcMaxScore({ targetField: "介護", targetPrefecture: "東京都", targetLanguage: "英語" })
+    ).toBe(100);
+  });
+
+  it("19分野に無い分野名は配点に数えない（満点を押し上げない）", () => {
+    expect(calcMaxScore({ targetField: "なにか" })).toBe(10);
+  });
+
+  it("分野の指定が無いとき、全機関に一律加点しない（根拠のない点数を出さない）", () => {
+    const r = calcAffinity({ targetPrefecture: "東京都" }, org);
+    // 地域30 + 処分歴なし5 = 35。以前はここに分野配点の半分20が乗って55になっていた
+    expect(r.score).toBe(35);
+    expect(r.maxScore).toBe(40);
+    expect(r.reasons.some((x) => x.label.includes("分野"))).toBe(false);
+  });
+
+  it("条件が1つも無いときは信頼性だけが残り、満点も10になる", () => {
+    const r = calcAffinity({}, org);
+    expect(r.score).toBe(5);
+    expect(r.maxScore).toBe(10);
+    expect(r.reasons.map((x) => x.label)).toEqual(["処分歴なし"]);
+  });
+
+  it("スコアは満点を超えない", () => {
+    const r = calcAffinity(
+      { targetField: "介護", targetPrefecture: "東京都", targetLanguage: "英語" },
+      { ...org, verifiedAt: new Date() }
+    );
+    expect(r.score).toBeLessThanOrEqual(r.maxScore);
+    expect(r.score).toBe(100);
+  });
+
+  it("一律加点をやめても順位は変わらない（全機関に同じ点だったため）", () => {
+    const inKumamoto = { ...org, prefecture: "熊本県", preferredRegions: ["熊本県"] };
+    const inTokyo = { ...org, prefecture: "東京都", preferredRegions: ["東京都"] };
+    const a = calcAffinity({ targetPrefecture: "熊本県" }, inKumamoto);
+    const b = calcAffinity({ targetPrefecture: "熊本県" }, inTokyo);
+    expect(a.score).toBeGreaterThan(b.score);
+  });
+
+  it("算定方法の説明に、指定条件だけを評価することと満点併記が書かれている", () => {
+    expect(AFFINITY_METHODOLOGY).toContain("指定された条件だけを評価");
+    expect(AFFINITY_METHODOLOGY).toContain("得点／満点");
+    expect(AFFINITY_METHODOLOGY).toContain("スコアを表示しません");
   });
 });

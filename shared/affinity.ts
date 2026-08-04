@@ -131,9 +131,38 @@ export interface AffinityReason {
 
 export interface AffinityResult {
   score: number;
+  /**
+   * 指定された条件で評価できる満点。
+   * 分野・地域・言語は指定されて初めて配点対象になるため、指定が無い項目の配点
+   * （40/30/20）は満点から丸ごと落ちる。条件が1つも無ければ信頼性の10点だけが残る
+   * ＝スコアを出す根拠が無い状態。/100として見せると根拠のない点数に見えるため、
+   * 表示側はこの満点と併記する。
+   */
+  maxScore: number;
   reasons: AffinityReason[];
   /** 機関名から推定した得意分野（表示用） */
   estimatedFields: TokuteiField[];
+}
+
+/** 親和性スコアの根拠となる条件（分野・地域・言語）が1つでも指定されているか */
+export function hasAffinityCondition(input: AffinityInput): boolean {
+  return Boolean(input.targetField || input.targetPrefecture || input.targetLanguage);
+}
+
+/**
+ * 指定条件で評価できる満点。
+ * 信頼性（処分歴なし・実確認鮮度）は条件に依らず全機関で評価できるため常に含める。
+ */
+export function calcMaxScore(input: AffinityInput): number {
+  const hasField =
+    !!input.targetField && (TOKUTEI_FIELDS as readonly string[]).includes(input.targetField);
+  return (
+    (hasField ? AFFINITY_WEIGHTS.field : 0) +
+    (input.targetPrefecture ? AFFINITY_WEIGHTS.prefSame : 0) +
+    (input.targetLanguage ? AFFINITY_WEIGHTS.language : 0) +
+    AFFINITY_WEIGHTS.noPenalty +
+    AFFINITY_WEIGHTS.freshness
+  );
 }
 
 /**
@@ -178,10 +207,11 @@ export function calcAffinity(input: AffinityInput, org: AffinityOrgData, now: Da
       score += other;
       reasons.push({ label: `他分野中心（${estimatedFields[0]}等）と推定`, points: other, estimated: true });
     }
-  } else {
-    // 分野指定なし：分野配点は中立の半分を全機関に付与（順位に影響させない）
-    score += AFFINITY_WEIGHTS.field / 2;
   }
+  // 分野が指定されていない場合は分野の配点そのものを評価対象から外す（満点からも落とす）。
+  // 以前は全機関に一律20点を付けていたが、順位には影響しない一方で、条件を何も
+  // 指定していない状態でも「親和性25点」のような点数が出てしまい、根拠のない
+  // スコアを見せることになっていた。
 
   // --- 地域一致（0-30） ---
   if (input.targetPrefecture) {
@@ -223,7 +253,13 @@ export function calcAffinity(input: AffinityInput, org: AffinityOrgData, now: Da
   }
 
   // スコアは小数第1位まで保持（鮮度の連続値により同点並びが自然に分解される）
-  return { score: Math.min(100, Math.round(score * 10) / 10), reasons, estimatedFields };
+  const maxScore = calcMaxScore(input);
+  return {
+    score: Math.min(maxScore, Math.round(score * 10) / 10),
+    maxScore,
+    reasons,
+    estimatedFields,
+  };
 }
 
 /**
@@ -231,4 +267,4 @@ export function calcAffinity(input: AffinityInput, org: AffinityOrgData, now: Da
  * AEO観点：引用可能な明確なメソドロジーとして一貫した文言を全ページで使う。
  */
 export const AFFINITY_METHODOLOGY =
-  "親和性スコアはヤトエル独自の指標です（満点100）。配点：分野一致40点（登録情報で確認済みの対応分野・希望する相談条件のほか、機関名等からの推定を含みます。推定の場合はその旨を表示）／地域一致30点（同一都道府県・確認済み対応地域30・隣接都道府県15）／言語一致20点／信頼性10点（処分歴なし5点＋実確認鮮度最大5点）。運営による実確認済みの情報には、情報の確からしさとして最大5点を加点しています（確認日から時間経過で減衰）。有料掲載の有無はスコアに影響しません。情報の確認・修正は全ての機関が無料で行えます。同点の機関は登録年月日の古い順に表示します。支援の質を保証するものではなく、比較検討の参考値としてご利用ください。";
+  "親和性スコアはヤトエル独自の指標です。分野・地域・言語のうち、指定された条件だけを評価します（条件を指定していない項目は配点に含めないため、満点は条件に応じて変わります。スコアは「得点／満点」で表示します）。条件を1つも指定していない一覧では、算定の根拠が無いためスコアを表示しません。分野一致40点（登録情報で確認済みの対応分野・希望する相談条件のほか、機関名等からの推定を含みます。推定の場合はその旨を表示）／地域一致30点（同一都道府県・確認済み対応地域30・隣接都道府県15）／言語一致20点／信頼性10点（処分歴なし5点＋実確認鮮度最大5点、条件指定に関わらず常に評価）。運営による実確認済みの情報には、情報の確からしさとして最大5点を加点しています（確認日から時間経過で減衰）。有料掲載の有無はスコアに影響しません。情報の確認・修正は全ての機関が無料で行えます。同点の機関は登録年月日の古い順に表示します。支援の質を保証するものではなく、比較検討の参考値としてご利用ください。";

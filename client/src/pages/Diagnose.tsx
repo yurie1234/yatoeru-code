@@ -778,6 +778,7 @@ export default function Diagnose() {
                             {org.affinity && (
                               <Badge variant="outline" className="font-bold border-brand/40 text-brand bg-brand/5">
                                 親和性 {org.affinity.score}
+                                <span className="font-normal opacity-70">/{org.affinity.maxScore}</span>
                               </Badge>
                             )}
                             <span className="text-xs text-muted-foreground">{org.regNo}</span>
