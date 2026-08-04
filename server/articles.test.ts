@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { DB_SUFFIX, itWithDb } from "./testDb";
 import { z } from "zod";
 
 /**
@@ -125,7 +126,8 @@ describe("articlesルーターの公開仕様", () => {
 });
 
 describe("articles.related（関連記事）", () => {
-  it("タグ一致記事を優先し、自分自身を除外して返す", async () => {
+  // 記事テーブルへの読み書きが必要（DBが無い環境ではスキップ）
+  itWithDb(`タグ一致記事を優先し、自分自身を除外して返す${DB_SUFFIX}`, async () => {
     const { appRouter } = await import("./routers");
     const caller = appRouter.createCaller({
       req: {} as never,

@@ -10,7 +10,10 @@
     "check": "tsc --noEmit",
     "format": "prettier --write .",
     "test": "vitest run",
-    "db:push": "drizzle-kit generate && drizzle-kit migrate"
+    "db:push": "drizzle-kit generate && drizzle-kit migrate",
+    "test:db": "DATABASE_URL=${TEST_DATABASE_URL:-mysql://root:test@127.0.0.1:13306/yatoeru} vitest run",
+    "test:db:up": "docker run -d --name yatoeru-test-db -e MYSQL_ROOT_PASSWORD=test -e MYSQL_DATABASE=yatoeru -p 13306:3306 mysql:8 && sleep 25 && DATABASE_URL=mysql://root:test@127.0.0.1:13306/yatoeru drizzle-kit migrate",
+    "test:db:down": "docker rm -f yatoeru-test-db"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.115.0",

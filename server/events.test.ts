@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { DB_SUFFIX, itWithDb } from "./testDb";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
 
@@ -32,7 +33,8 @@ function adminCtx(): TrpcContext {
 }
 
 describe("events.track", () => {
-  it("記録に成功するとok:trueを返す（サイト全体イベント）", async () => {
+  // イベントをDBへ記録して結果を確かめる（DBが無い環境ではスキップ）
+  itWithDb(`記録に成功するとok:trueを返す（サイト全体イベント）${DB_SUFFIX}`, async () => {
     const caller = appRouter.createCaller(publicCtx());
     const res = await caller.events.track({
       eventType: "diagnose_start",
@@ -44,7 +46,7 @@ describe("events.track", () => {
     expect(res.ok).toBe(true);
   });
 
-  it("機関別イベント（org_detail_view）も記録できる", async () => {
+  itWithDb(`機関別イベント（org_detail_view）も記録できる${DB_SUFFIX}`, async () => {
     const caller = appRouter.createCaller(publicCtx());
     const res = await caller.events.track({
       eventType: "org_detail_view",
@@ -94,7 +96,8 @@ describe("events.monthlyReport", () => {
     await expect(caller.events.monthlyReport({ year: 2026, month: 7 })).rejects.toThrow();
   });
 
-  it("管理者は月次集計を取得できる（vitest記録分が含まれる）", async () => {
+  // 直前のitで記録した行を集計して読み返すため、DBが必要
+  itWithDb(`管理者は月次集計を取得できる（vitest記録分が含まれる）${DB_SUFFIX}`, async () => {
     const caller = appRouter.createCaller(adminCtx());
     const now = new Date();
     const res = await caller.events.monthlyReport({
