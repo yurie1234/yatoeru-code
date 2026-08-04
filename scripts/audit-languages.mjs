@@ -14,7 +14,23 @@
  * 一切触らないので、正規化を直せば何度でもやり直せる。
  */
 import mysql from "mysql2/promise";
-import { normalizeLanguages } from "../shared/languageNormalize.ts";
+
+// 正規化の本体はTypeScript（shared/languageNormalize.ts）にある。二重管理して
+// 実装がずれるのを避けるため、こちらから読み込む。
+// TypeScriptをそのまま読めるのは Node 22.18 以降（型除去が既定で有効）。
+// それより古いNodeでは読めないため、原因と回避方法を出して止まる。
+let normalizeLanguages;
+try {
+  ({ normalizeLanguages } = await import("../shared/languageNormalize.ts"));
+} catch (e) {
+  console.error("正規化モジュールを読み込めませんでした。");
+  console.error(`  Node のバージョン: ${process.version}（22.18 以降が必要です）`);
+  console.error("  次のどちらかで実行してください:");
+  console.error("    node --experimental-strip-types scripts/audit-languages.mjs");
+  console.error("    npx tsx scripts/audit-languages.mjs");
+  console.error(`  元のエラー: ${e?.message ?? e}`);
+  process.exit(1);
+}
 
 const APPLY = process.argv.includes("--apply");
 const url = process.env.DATABASE_URL;
