@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { desc, eq, gte, sql } from "drizzle-orm";
+import { z } from "zod";
 import {
   consultations,
   diagnoses,
@@ -8,6 +9,7 @@ import {
 } from "../../drizzle/schema";
 import { getDb } from "../db";
 import { protectedProcedure, router } from "../_core/trpc";
+import { PREFECTURES, TOKUTEI_FIELDS } from "../../shared/tokutei";
 
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
@@ -126,4 +128,155 @@ export const adminRouter = router({
       .orderBy(desc(planApplications.createdAt))
       .limit(100);
   }),
+
+  /**
+   * 掲載確認の反映用: 登録番号で1機関の編集対象フィールドを引く。
+   * これまで掲載確認メールの回答を反映するにはRailway Consoleで直接SQLを流す
+   * しかなく、履歴も残らなかったため、管理画面から反映できるようにした。
+   */
+  orgByRegNo: adminProcedure.input(z.object({ regNo: z.string().min(1).max(32) })).query(
+    async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const rows = await db
+        .select({
+          id: supportOrgs.id,
+          regNo: supportOrgs.regNo,
+          name: supportOrgs.name,
+          prefecture: supportOrgs.prefecture,
+          address: supportOrgs.address,
+          phone: supportOrgs.phone,
+          languages: supportOrgs.languages,
+          languagesRaw: supportOrgs.languagesRaw,
+          fields: supportOrgs.fields,
+          preferredFields: supportOrgs.preferredFields,
+          preferredRegions: supportOrgs.preferredRegions,
+          preferredNote: supportOrgs.preferredNote,
+          consultStatus: supportOrgs.consultStatus,
+          websiteUrl: supportOrgs.websiteUrl,
+          monthlyFeeMin: supportOrgs.monthlyFeeMin,
+          monthlyFeeMax: supportOrgs.monthlyFeeMax,
+          verifiedAt: supportOrgs.verifiedAt,
+          verifiedNote: supportOrgs.verifiedNote,
+          internalMemo: supportOrgs.internalMemo,
+        })
+        .from(supportOrgs)
+        .where(eq(supportOrgs.regNo, input.regNo.trim()))
+        .limit(2);
+      if (rows.length === 0) throw new TRPCError({ code: "NOT_FOUND", message: "登録番号が見つかりません" });
+      if (rows.length > 1) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "同一登録番号が複数件あります。手動確認が必要です",
+        });
+      }
+      return rows[0];
+    }
+  ),
+
+  /**
+   * 掲載確認の反映: 事業者本人の回答に基づく申告情報を更新する。
+   * 未指定（undefined）のキーは触らない。null を明示すれば消去できる。
+   * 公的名簿由来の項目（name/address/prefecture/phone/regDate）はここでは変更しない
+   * ＝登録簿の転記を管理画面から書き換えられないようにするため。
+   */
+  updateOrgListing: adminProcedure
+    .input(
+      z.object({
+        regNo: z.string().min(1).max(32),
+        /** 対応可能言語（正規化済みの言語名） */
+        languages: z.array(z.string().min(1).max(32)).max(40).optional(),
+        /** 対応分野（TOKUTEI_FIELDSの正式名称のみ） */
+        fields: z.array(z.enum(TOKUTEI_FIELDS)).max(TOKUTEI_FIELDS.length).optional(),
+        /** 希望分野（"全分野" または TOKUTEI_FIELDS の正式名称） */
+        preferredFields: z
+          .array(z.union([z.literal("全分野"), z.enum(TOKUTEI_FIELDS)]))
+          .max(TOKUTEI_FIELDS.length + 1)
+          .optional(),
+        /** 希望エリア（"全国" / 都道府県名 / 地方名） */
+        preferredRegions: z.array(z.string().min(1).max(32)).max(60).optional(),
+        preferredNote: z.string().max(2000).nullable().optional(),
+        consultStatus: z.enum(["unknown", "open", "open_active", "paused"]).optional(),
+        websiteUrl: z.string().url().max(512).nullable().optional(),
+        /** 支援料の目安（円／人・月） */
+        monthlyFeeMin: z.number().int().min(0).max(10_000_000).nullable().optional(),
+        monthlyFeeMax: z.number().int().min(0).max(10_000_000).nullable().optional(),
+        /** 運営確認日（YYYY-MM-DD）。null で確認済み表示を取り下げる */
+        verifiedAt: z
+          .string()
+          .regex(/^\d{4}-\d{2}-\d{2}$/)
+          .nullable()
+          .optional(),
+        verifiedNote: z.string().max(4000).nullable().optional(),
+        /** 非公開の社内メモ（公開ページ・API・構造化データには出力しない） */
+        internalMemo: z.string().max(4000).nullable().optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+
+      const { regNo, ...rest } = input;
+
+      if (
+        rest.monthlyFeeMin != null &&
+        rest.monthlyFeeMax != null &&
+        rest.monthlyFeeMin > rest.monthlyFeeMax
+      ) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "支援料の下限が上限を超えています" });
+      }
+
+      const KNOWN_REGIONS = new Set<string>([
+        "全国",
+        ...PREFECTURES,
+        "北海道・東北",
+        "関東",
+        "甲信越",
+        "北陸",
+        "東海",
+        "近畿",
+        "中四国",
+        "中国",
+        "四国",
+        "九州",
+        "九州・沖縄",
+        "沖縄",
+      ]);
+      const unknownRegions = (rest.preferredRegions ?? []).filter((r) => !KNOWN_REGIONS.has(r));
+      if (unknownRegions.length > 0) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `未知の地域名: ${unknownRegions.join(", ")}`,
+        });
+      }
+
+      const existing = await db
+        .select({ id: supportOrgs.id })
+        .from(supportOrgs)
+        .where(eq(supportOrgs.regNo, regNo.trim()))
+        .limit(2);
+      if (existing.length === 0) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "登録番号が見つかりません" });
+      }
+      if (existing.length > 1) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "同一登録番号が複数件あります。手動確認が必要です",
+        });
+      }
+
+      // undefinedのキーは送らない（既存値を保持する）
+      const patch: Record<string, unknown> = {};
+      for (const [key, value] of Object.entries(rest)) {
+        if (value === undefined) continue;
+        patch[key] = key === "verifiedAt" && typeof value === "string" ? new Date(value) : value;
+      }
+      if (Object.keys(patch).length === 0) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "更新する項目がありません" });
+      }
+
+      await db.update(supportOrgs).set(patch).where(eq(supportOrgs.id, existing[0].id));
+
+      return { ok: true as const, id: existing[0].id, updated: Object.keys(patch) };
+    }),
 });

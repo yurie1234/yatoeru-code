@@ -1,4 +1,5 @@
 import { useAuth } from "@/_core/hooks/useAuth";
+import AdminOrgListingEditor from "@/components/AdminOrgListingEditor";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -326,7 +327,11 @@ export default function Admin() {
                 <TabsTrigger value="consultations">相談リード</TabsTrigger>
                 <TabsTrigger value="plans">有料プラン申込</TabsTrigger>
                 <TabsTrigger value="report">月次レポート</TabsTrigger>
+                <TabsTrigger value="listing">掲載確認の反映</TabsTrigger>
               </TabsList>
+              <TabsContent value="listing">
+                <AdminOrgListingEditor />
+              </TabsContent>
               <TabsContent value="consultations">
                 <Card>
                   <CardContent className="p-0">
