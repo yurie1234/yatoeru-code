@@ -8,6 +8,7 @@ import {
   type InsertSupportOrg,
 } from "../drizzle/schema";
 import { getDb } from "./db";
+import { respondServerError } from "./_core/sanitizeError";
 import { sdk } from "./_core/sdk";
 import { PREFECTURES } from "../shared/tokutei";
 
@@ -202,12 +203,7 @@ export async function registrySyncHandler(req: Request, res: Response) {
       total: allRegNos.length,
     });
   } catch (error) {
-    const err = error as Error;
-    return res.status(500).json({
-      error: err.message,
-      stack: err.stack,
-      context: { url: req.originalUrl },
-      timestamp: new Date().toISOString(),
-    });
+    // スタックトレースはクライアントに返さない（ファイルパスと内部構造が漏れる）
+    return respondServerError(res, error, { url: req.originalUrl });
   }
 }

@@ -106,7 +106,6 @@ export async function articleListHandler(req: Request, res: Response) {
   } catch (e) {
     res.status(500).json({
       error: e instanceof Error ? e.message : String(e),
-      stack: e instanceof Error ? e.stack : undefined,
       context: { url: req.originalUrl },
       timestamp: new Date().toISOString(),
     });
@@ -194,7 +193,6 @@ export async function articleUpdateHandler(req: Request, res: Response) {
   } catch (e) {
     res.status(500).json({
       error: e instanceof Error ? e.message : String(e),
-      stack: e instanceof Error ? e.stack : undefined,
       context: { url: req.originalUrl },
       timestamp: new Date().toISOString(),
     });
@@ -252,7 +250,6 @@ export async function articlePublishHandler(req: Request, res: Response) {
   } catch (e) {
     res.status(500).json({
       error: e instanceof Error ? e.message : String(e),
-      stack: e instanceof Error ? e.stack : undefined,
       context: { url: req.originalUrl },
       timestamp: new Date().toISOString(),
     });

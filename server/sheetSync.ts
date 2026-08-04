@@ -9,6 +9,7 @@ import {
   type InsertSupportOrg,
 } from "../drizzle/schema";
 import { getDb } from "./db";
+import { respondServerError } from "./_core/sanitizeError";
 import { sdk } from "./_core/sdk";
 import { PREFECTURES } from "../shared/tokutei";
 import { normalizeFieldNames } from "../shared/fieldNormalize";
@@ -232,13 +233,8 @@ export async function sheetSyncHandler(req: Request, res: Response) {
     });
     return res.json({ ok: true, type: "management", total: payload.rows.length, ...result });
   } catch (error) {
-    const err = error as Error;
-    return res.status(500).json({
-      error: err.message,
-      stack: err.stack,
-      context: { url: req.originalUrl },
-      timestamp: new Date().toISOString(),
-    });
+    // スタックトレースはクライアントに返さない（ファイルパスと内部構造が漏れる）
+    return respondServerError(res, error, { url: req.originalUrl });
   }
 }
 

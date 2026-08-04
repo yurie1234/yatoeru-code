@@ -1202,7 +1202,7 @@ export default function Diagnose() {
           <div className="grid md:grid-cols-3 gap-6">
             {[
               { icon: Globe2, title: "1. 会社名かURLを入力", desc: "会社名またはWebサイトURLを入力するだけ。会員登録は不要です。" },
-              { icon: Sparkles, title: "2. 1問ずつ簡単回答", desc: "AIが読み取った分野・地域を確認しながら、人数・時期など6問に答えるだけ。" },
+              { icon: Sparkles, title: "2. 1問ずつ簡単回答", desc: "AIが読み取った分野・地域を1画面で確認し、人数・時期などに答えるだけ（最短4問）。" },
               { icon: Building2, title: "3. 費用・助成金・機関を提示", desc: "概算費用と助成金候補、条件に合う支援機関をまとめてご案内します。" },
             ].map((item, i) => (
               <Card key={item.title} className={`fade-up-${i + 1} fade-up`}>
