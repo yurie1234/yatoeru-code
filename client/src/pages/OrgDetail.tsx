@@ -1,4 +1,5 @@
 import SiteLayout from "@/components/SiteLayout";
+import VerifiedInfoPanel from "@/components/VerifiedInfoPanel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -140,61 +141,16 @@ export default function OrgDetail() {
 
                 {/* 運営による実確認情報（登録簿由来の情報と視覚的に区別：緑系の強調ブロック） */}
                 {data.org.verifiedAt && (
-                  <div className="mb-5 rounded-lg border-2 border-emerald-500/40 bg-emerald-50 dark:bg-emerald-950/30 p-4">
-                    <div className="flex items-center gap-1.5 text-sm font-bold text-emerald-800 dark:text-emerald-300">
-                      <CheckCircle2 className="h-4 w-4" />
-                      掲載情報 運営確認済み：
-                      {formatDateJa(data.org.verifiedAt)}
-                    </div>
-                    <p className="text-xs text-emerald-800/80 dark:text-emerald-300/80 mt-1">
-                      以下の項目は、運営が事業者に直接確認した情報です（登録簿由来の情報とは区別して表示しています）。
-                    </p>
-                    <div className="mt-3 space-y-2 text-sm text-emerald-900 dark:text-emerald-200">
-                      {data.org.verifiedNote && (
-                        <div className="mb-3 pb-3 border-b border-emerald-500/30">
-                          <p className="text-xs whitespace-pre-wrap">{data.org.verifiedNote}</p>
-                        </div>
-                      )}
-                      {data.org.consultStatus !== "unknown" && (
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-xs font-medium w-40 shrink-0">新規受入企業の相談</span>
-                          <Badge className="bg-emerald-600 text-white hover:bg-emerald-600">
-                            {data.org.consultStatus === "open_active"
-                              ? "受付中（積極受入）"
-                              : data.org.consultStatus === "open"
-                                ? "受付中"
-                                : "一時停止中"}
-                          </Badge>
-                        </div>
-                      )}
-                      {data.org.preferredFields && data.org.preferredFields.length > 0 && (
-                        <div className="flex flex-wrap items-start gap-2">
-                          <span className="text-xs font-medium w-40 shrink-0 mt-0.5">希望する相談条件（業種）</span>
-                          <div className="flex flex-wrap gap-1">
-                            {data.org.preferredFields.map((f) => (
-                              <Badge key={f} variant="outline" className="font-normal border-emerald-500/50">{f}</Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      {data.org.preferredRegions && data.org.preferredRegions.length > 0 && (
-                        <div className="flex flex-wrap items-start gap-2">
-                          <span className="text-xs font-medium w-40 shrink-0 mt-0.5">希望する相談条件（地域）</span>
-                          <div className="flex flex-wrap gap-1">
-                            {data.org.preferredRegions.map((r) => (
-                              <Badge key={r} variant="outline" className="font-normal border-emerald-500/50">{r}</Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      {data.org.preferredNote && (
-                        <div className="flex flex-wrap items-start gap-2">
-                          <span className="text-xs font-medium w-40 shrink-0 mt-0.5">備考</span>
-                          <span className="text-xs">{data.org.preferredNote}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                  <VerifiedInfoPanel
+                    orgId={data.org.id}
+                    verifiedAt={data.org.verifiedAt}
+                    verifiedNote={data.org.verifiedNote}
+                    consultStatus={data.org.consultStatus}
+                    preferredFields={data.org.preferredFields}
+                    preferredRegions={data.org.preferredRegions}
+                    preferredNote={data.org.preferredNote}
+                    websiteUrl={data.org.websiteUrl}
+                  />
                 )}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
