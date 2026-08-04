@@ -77,6 +77,7 @@ export default function Home() {
             <Link href="/diagnose" className="text-muted-foreground hover:text-foreground transition-colors">支援機関マッチ診断</Link>
             <Link href="/columns" className="text-muted-foreground hover:text-foreground transition-colors">コラム</Link>
             <Link href="/updates" className="text-muted-foreground hover:text-foreground transition-colors">登録簿更新情報</Link>
+            <Link href="/ikusei-shuro/kanri-shien-kikan/list" className="text-muted-foreground hover:text-foreground transition-colors">監理団体トラッカー</Link>
             <Link href="/about" className="text-muted-foreground hover:text-foreground transition-colors">ヤトエルとは</Link>
           </nav>
           <div className="flex items-center gap-3">
@@ -103,6 +104,7 @@ export default function Home() {
               <Link href="/diagnose" onClick={() => setMobileOpen(false)} className="py-2.5">支援機関マッチ診断</Link>
               <Link href="/columns" onClick={() => setMobileOpen(false)} className="py-2.5">コラム</Link>
               <Link href="/updates" onClick={() => setMobileOpen(false)} className="py-2.5">登録簿更新情報</Link>
+              <Link href="/ikusei-shuro/kanri-shien-kikan/list" onClick={() => setMobileOpen(false)} className="py-2.5">監理団体トラッカー</Link>
               <Link href="/about" onClick={() => setMobileOpen(false)} className="py-2.5">ヤトエルとは</Link>
             </nav>
           </div>
@@ -376,6 +378,7 @@ export default function Home() {
                 <li><Link href="/columns" className="hover:text-amber-accent transition-colors">コラム（実務解説）</Link></li>
                 <li><Link href="/updates" className="hover:text-amber-accent transition-colors">登録簿更新情報</Link></li>
                 <li><Link href="/guide/ikusei-shuro" className="hover:text-amber-accent transition-colors">育成就労制度ガイド</Link></li>
+                <li><Link href="/ikusei-shuro/kanri-shien-kikan/list" className="hover:text-amber-accent transition-colors">監理団体の移行状況トラッカー</Link></li>
               </ul>
             </div>
             <div>
