@@ -30,10 +30,35 @@ export type ReferralInfo = {
 
 type Db = NonNullable<Awaited<ReturnType<typeof getDb>>>;
 
-/** MySQLの「列が存在しない」エラーだけを未適用として扱う（他のエラーは投げ直す） */
-function isUnknownColumnError(e: unknown): boolean {
-  const msg = e instanceof Error ? e.message : String(e);
-  return /Unknown column|doesn't exist in table|1054/i.test(msg);
+/**
+ * 列の有無を information_schema で判定する。
+ *
+ * 当初は「Unknown column」というエラーメッセージで判定していたが、drizzleが例外を
+ * `Failed query: SELECT ...` で包むため元のメッセージが message に現れず、判定を
+ * すり抜けて管理画面にエラーが出た。文言に依存しない方法に変える。
+ *
+ * 適用済み（true）だけキャッシュする。未適用のうちは毎回問い合わせるが、
+ * 管理者操作時のみ呼ばれるうえ information_schema の1行取得なので負荷は無視できる。
+ */
+let referralColumnsApplied = false;
+
+async function hasReferralColumns(db: Db): Promise<boolean> {
+  if (referralColumnsApplied) return true;
+  const res = await db.execute(
+    sql`SELECT COUNT(*) AS c FROM information_schema.columns
+        WHERE table_schema = DATABASE()
+          AND table_name = 'support_orgs'
+          AND column_name IN ('referralIntent', 'referralNote', 'referralUpdatedAt')`
+  );
+  const row = unwrapRows(res)[0];
+  const applied = Number(row?.c ?? 0) >= 3;
+  if (applied) referralColumnsApplied = true;
+  return applied;
+}
+
+/** テスト用：キャッシュを戻す */
+export function resetReferralColumnCache() {
+  referralColumnsApplied = false;
 }
 
 function unwrapRows(result: unknown): Array<Record<string, unknown>> {
@@ -47,27 +72,23 @@ function unwrapRows(result: unknown): Array<Record<string, unknown>> {
 }
 
 export async function readReferralInfo(db: Db, orgId: number): Promise<ReferralInfo> {
-  try {
-    const res = await db.execute(
-      sql`SELECT referralIntent, referralNote, referralUpdatedAt FROM support_orgs WHERE id = ${orgId} LIMIT 1`
-    );
-    const row = unwrapRows(res)[0];
-    if (!row) return { applied: true, intent: "unknown", note: null, updatedAt: null };
-    const intent = String(row.referralIntent ?? "unknown");
-    return {
-      applied: true,
-      intent: (REFERRAL_INTENTS as readonly string[]).includes(intent)
-        ? (intent as ReferralIntent)
-        : "unknown",
-      note: row.referralNote == null ? null : String(row.referralNote),
-      updatedAt: row.referralUpdatedAt == null ? null : String(row.referralUpdatedAt),
-    };
-  } catch (e) {
-    if (isUnknownColumnError(e)) {
-      return { applied: false, intent: "unknown", note: null, updatedAt: null };
-    }
-    throw e;
+  if (!(await hasReferralColumns(db))) {
+    return { applied: false, intent: "unknown", note: null, updatedAt: null };
   }
+  const res = await db.execute(
+    sql`SELECT referralIntent, referralNote, referralUpdatedAt FROM support_orgs WHERE id = ${orgId} LIMIT 1`
+  );
+  const row = unwrapRows(res)[0];
+  if (!row) return { applied: true, intent: "unknown", note: null, updatedAt: null };
+  const intent = String(row.referralIntent ?? "unknown");
+  return {
+    applied: true,
+    intent: (REFERRAL_INTENTS as readonly string[]).includes(intent)
+      ? (intent as ReferralIntent)
+      : "unknown",
+    note: row.referralNote == null ? null : String(row.referralNote),
+    updatedAt: row.referralUpdatedAt == null ? null : String(row.referralUpdatedAt),
+  };
 }
 
 /**
@@ -80,25 +101,22 @@ export async function writeReferralInfo(
   input: { intent?: ReferralIntent; note?: string | null }
 ): Promise<boolean> {
   if (input.intent === undefined && input.note === undefined) return true;
-  try {
-    if (input.intent !== undefined && input.note !== undefined) {
-      await db.execute(
-        sql`UPDATE support_orgs SET referralIntent = ${input.intent}, referralNote = ${input.note}, referralUpdatedAt = CURRENT_TIMESTAMP WHERE id = ${orgId}`
-      );
-    } else if (input.intent !== undefined) {
-      await db.execute(
-        sql`UPDATE support_orgs SET referralIntent = ${input.intent}, referralUpdatedAt = CURRENT_TIMESTAMP WHERE id = ${orgId}`
-      );
-    } else {
-      await db.execute(
-        sql`UPDATE support_orgs SET referralNote = ${input.note ?? null}, referralUpdatedAt = CURRENT_TIMESTAMP WHERE id = ${orgId}`
-      );
-    }
-    return true;
-  } catch (e) {
-    if (isUnknownColumnError(e)) return false;
-    throw e;
+  if (!(await hasReferralColumns(db))) return false;
+
+  if (input.intent !== undefined && input.note !== undefined) {
+    await db.execute(
+      sql`UPDATE support_orgs SET referralIntent = ${input.intent}, referralNote = ${input.note}, referralUpdatedAt = CURRENT_TIMESTAMP WHERE id = ${orgId}`
+    );
+  } else if (input.intent !== undefined) {
+    await db.execute(
+      sql`UPDATE support_orgs SET referralIntent = ${input.intent}, referralUpdatedAt = CURRENT_TIMESTAMP WHERE id = ${orgId}`
+    );
+  } else {
+    await db.execute(
+      sql`UPDATE support_orgs SET referralNote = ${input.note ?? null}, referralUpdatedAt = CURRENT_TIMESTAMP WHERE id = ${orgId}`
+    );
   }
+  return true;
 }
 
 /** 送客先の候補一覧（意向ありの機関）。運用画面でのみ使う */
@@ -106,28 +124,25 @@ export async function listReferralTargets(db: Db): Promise<{
   applied: boolean;
   rows: Array<{ id: number; regNo: string; name: string; prefecture: string | null; intent: ReferralIntent; consultStatus: string; note: string | null }>;
 }> {
-  try {
-    const res = await db.execute(
-      sql`SELECT id, regNo, name, prefecture, referralIntent, consultStatus, referralNote
-          FROM support_orgs
-          WHERE referralIntent IN ('interested','negotiating','agreed')
-          ORDER BY FIELD(referralIntent,'agreed','negotiating','interested'), name
-          LIMIT 200`
-    );
-    return {
-      applied: true,
-      rows: unwrapRows(res).map((r) => ({
-        id: Number(r.id),
-        regNo: String(r.regNo),
-        name: String(r.name),
-        prefecture: r.prefecture == null ? null : String(r.prefecture),
-        intent: String(r.referralIntent) as ReferralIntent,
-        consultStatus: String(r.consultStatus ?? "unknown"),
-        note: r.referralNote == null ? null : String(r.referralNote),
-      })),
-    };
-  } catch (e) {
-    if (isUnknownColumnError(e)) return { applied: false, rows: [] };
-    throw e;
-  }
+  if (!(await hasReferralColumns(db))) return { applied: false, rows: [] };
+
+  const res = await db.execute(
+    sql`SELECT id, regNo, name, prefecture, referralIntent, consultStatus, referralNote
+        FROM support_orgs
+        WHERE referralIntent IN ('interested','negotiating','agreed')
+        ORDER BY FIELD(referralIntent,'agreed','negotiating','interested'), name
+        LIMIT 200`
+  );
+  return {
+    applied: true,
+    rows: unwrapRows(res).map((r) => ({
+      id: Number(r.id),
+      regNo: String(r.regNo),
+      name: String(r.name),
+      prefecture: r.prefecture == null ? null : String(r.prefecture),
+      intent: String(r.referralIntent) as ReferralIntent,
+      consultStatus: String(r.consultStatus ?? "unknown"),
+      note: r.referralNote == null ? null : String(r.referralNote),
+    })),
+  };
 }

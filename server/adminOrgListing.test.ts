@@ -16,11 +16,9 @@ const dbMock = {
       })),
     })),
   })),
-  // orgByRegNo は送客優先度（非公開・生SQL）も読む。列が無い環境を模して
-  // Unknown column を投げ、applied=false にフォールバックすることを確認する。
-  execute: vi.fn(async () => {
-    throw new Error("Unknown column 'referralIntent' in 'field list'");
-  }),
+  // orgByRegNo は送客優先度（非公開・生SQL）も読む。列の有無は
+  // information_schema で判定するため、未適用環境として 0件 を返す。
+  execute: vi.fn(async () => [[{ c: 0 }]]),
   update: vi.fn(() => ({
     set: vi.fn((patch: Record<string, unknown>) => {
       state.updatePatch = patch;
