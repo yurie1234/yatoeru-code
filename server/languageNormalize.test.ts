@@ -168,3 +168,60 @@ describe("配列の正規化（管理画面での手入力）", () => {
     expect(normalizeLanguageList(["英語", "", "  "])).toEqual(["英語"]);
   });
 });
+
+// 棚卸しスクリプト（scripts/audit-languages.mjs）が守る不変条件。
+//
+// 事業者本人の回答を管理画面から反映した言語は、法務省の登録簿の原文には
+// 載っていない。原文で単純に上書きすると本人申告が消える。
+// 実際にトリニティウイング協同組合（24登-009849）で起きかけた:
+//   原文  : インドネシア語・ネパール語・ベトナム語・ミャンマー語
+//   DB    : ＋英語・ベンガル語・シンハラ語（本人が追加を依頼したもの）
+// 置き換えではなく「足す」ことを固定する。
+describe("原文からの復元は既存の値を消さない", () => {
+  /** scripts/audit-languages.mjs と同じ合成規則 */
+  function mergeForAudit(raw: string | null, current: string[]): string[] {
+    const { languages: derived, negated } = normalizeLanguages(raw);
+    const negatedLangs = new Set(negated.flatMap((n) => normalizeLanguages(n).languages));
+    const next = [...derived];
+    for (const l of current) {
+      if (next.includes(l) || negatedLangs.has(l)) continue;
+      next.push(l);
+    }
+    return next;
+  }
+
+  it("原文に無い本人申告の言語を保持する", () => {
+    const raw = "インドネシア語・ネパール語・ベトナム語・ミャンマー語";
+    const current = [
+      "ベトナム語", "インドネシア語", "ミャンマー語", "ネパール語",
+      "英語", "ベンガル語", "シンハラ語",
+    ];
+    const next = mergeForAudit(raw, current);
+    for (const l of current) expect(next, `${l} が消えた`).toContain(l);
+  });
+
+
+  it("原文にしか無い言語も足される", () => {
+    // 旧正規化が落としていた「ウズベキスタン語」が復活する
+    const next = mergeForAudit("英語・ウズベキスタン語", ["英語"]);
+    expect(next).toContain("ウズベク語");
+    expect(next).toContain("英語");
+  });
+
+  it("「未対応」と明記された言語は、既存に入っていても足し戻さない", () => {
+    const raw = "英語・クメール語（中国語・ネパール語は現在未対応）";
+    // 既存に誤って入っていた場合でも戻さない
+    const next = mergeForAudit(raw, ["英語", "クメール語", "中国語"]);
+    expect(next).toContain("英語");
+    expect(next).toContain("クメール語");
+    expect(next).not.toContain("中国語");
+    expect(next).not.toContain("ネパール語");
+  });
+
+  it("2回合成しても結果が変わらない（冪等）", () => {
+    const raw = "インドネシア語・ネパール語";
+    const once = mergeForAudit(raw, ["英語"]);
+    const twice = mergeForAudit(raw, once);
+    expect(twice).toEqual(once);
+  });
+});

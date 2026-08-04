@@ -59,6 +59,7 @@ const removedFreq = new Map();   // 消える言語 → 機関数
 const unrecognizedFreq = new Map(); // 言語名として読めなかったトークン → 機関数
 const emptyToFilled = [];        // 空だったのが埋まる機関
 const negatedNotes = [];         // 「未対応」と明記されていて除外した記載
+const keptNotInRaw = [];         // 原文に無いが既存にある言語（事業者申告として保持）
 let changed = 0;
 const updates = [];
 
@@ -71,9 +72,31 @@ for (const r of rows) {
   }
   if (!Array.isArray(current)) current = [];
 
-  const { languages: next, unrecognized, negated } = normalizeLanguages(r.languagesRaw);
+  const { languages: derived, unrecognized, negated } = normalizeLanguages(r.languagesRaw);
   for (const u of unrecognized) unrecognizedFreq.set(u, (unrecognizedFreq.get(u) ?? 0) + 1);
   if (negated.length > 0) negatedNotes.push(`${r.regNo} ${r.name}: ${negated.join(" / ")}`);
+
+  // 「未対応」と明記された言語は、既存に入っていても足し戻さない
+  const negatedLangs = new Set(negated.flatMap((n) => normalizeLanguages(n).languages));
+
+  // 原文から作り直した結果に、既存の値を**足す**（置き換えない）。
+  //
+  // 既存にあって原文に無い言語は、事業者本人の回答を管理画面から反映したもの。
+  // 例: トリニティウイング協同組合（24登-009849）の英語・ベンガル語・シンハラ語は
+  // 「対応言語に追加してほしい」という本人回答に基づく申告で、法務省の登録簿の
+  // 原文には載っていない。原文で単純に上書きすると、本人が申告した対応言語を
+  // 消してしまい、その言語が必要な企業に届かなくなる。
+  const next = [...derived];
+  const manual = [];
+  for (const l of current) {
+    if (next.includes(l)) continue;
+    if (negatedLangs.has(l)) continue; // 未対応と明記された言語は戻さない
+    next.push(l);
+    manual.push(l);
+  }
+  if (manual.length > 0) {
+    keptNotInRaw.push(`${r.regNo} ${r.name}: ${manual.join("・")}`);
+  }
 
   if (sameSet(current, next)) continue;
   changed++;
@@ -95,8 +118,13 @@ function report(title, map, limit = 40) {
 
 console.log(`languages列が変わる機関: ${changed}件\n`);
 report("追加される言語", addedFreq);
-report("消える言語（正規化で別名に寄ったものを含む）", removedFreq);
+report("消える言語（0であるべき。1つでもあれば反映せず原因を調べる）", removedFreq);
 report("言語名として読めなかったトークン（要確認・languagesには入れない）", unrecognizedFreq);
+
+console.log(`=== 登録簿の原文に無いが保持する言語（事業者本人の申告）: ${keptNotInRaw.length}件 ===`);
+for (const line of keptNotInRaw.slice(0, 30)) console.log("  " + line);
+if (keptNotInRaw.length > 30) console.log(`  … 他${keptNotInRaw.length - 30}件`);
+console.log("");
 
 console.log(`=== 「未対応」と明記されていて除外した記載: ${negatedNotes.length}件 ===`);
 for (const line of negatedNotes) console.log("  " + line);
