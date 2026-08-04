@@ -22,8 +22,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Link, useLocation, useSearch } from "wouter";
 import { formatDateJa } from "@/lib/utils";
+import type { inferRouterOutputs } from "@trpc/server";
+import type { AppRouter } from "../../../server/routers";
 
 const ALL = "__all__";
+
+/** 診断APIが返す推奨支援機関の型（リロード復元の保存内容にも使う） */
+type RecommendedOrgs = inferRouterOutputs<AppRouter>["orgs"]["diagnoseUrl"]["recommendedOrgs"];
 
 /** 受入れ時期の選択肢 */
 const TIMING_OPTIONS = ["できるだけ早く", "3ヶ月以内", "半年以内", "1年以内", "情報収集中"] as const;
@@ -95,6 +100,14 @@ export default function Diagnose() {
   const [answers, setAnswers] = useState<WizardAnswers>({ field: null, prefecture: null, headcount: null, timing: null, jisshuExperience: null });
   const [contactCompany, setContactCompany] = useState("");
   const [contactEmail, setContactEmail] = useState("");
+  /** 前回の続きから復元した場合に案内を出す */
+  const [restoredNotice, setRestoredNotice] = useState(false);
+  /** リロード復元用に保存しておいた結果一式（APIの結果が無い間のフォールバック） */
+  const [savedSnapshot, setSavedSnapshot] = useState<{
+    result: DiagnosisResult | null;
+    recommendedOrgs: RecommendedOrgs | null;
+    diagnosisId: number | null;
+  } | null>(null);
   const QUESTION_COUNT = 6;
 
   const diagnose = trpc.orgs.diagnoseUrl.useMutation({
@@ -115,10 +128,19 @@ export default function Diagnose() {
       if (r.companyName && r.companyName !== "不明") {
         setContactCompany((prev) => prev || r.companyName);
       }
-      setPhase((p) => {
-        if (p !== "analyzing") trackEvent("diagnose_complete");
-        return p === "analyzing" ? "questions" : "done";
-      });
+      // diagnoseUrl は初回解析でのみ呼ぶ（回答の反映は applyDiagnosisAnswers）
+      setPhase("questions");
+    },
+  });
+
+  const applyAnswers = trpc.orgs.applyDiagnosisAnswers.useMutation({
+    onError: (err) => {
+      // 反映に失敗しても初回解析の結果は表示できるため、結果画面は出したまま知らせる
+      toast.error("回答の反映に失敗しました。表示中の内容はAI解析時点のものです。");
+      console.error(err);
+    },
+    onSuccess: () => {
+      trackEvent("diagnose_complete");
     },
   });
 
@@ -133,6 +155,52 @@ export default function Diagnose() {
   }, [diagnose.isPending]);
 
   const isDemo = params.get("demo") === "1";
+
+  // ===== 途中状態の保存・復元 =====
+  // これまでは phase・回答・結果をすべてメモリだけで持っていたため、リロードや
+  // 戻る操作で入力が消え、URLの入力と6問の回答をやり直す必要があった。
+  const SESSION_KEY = "yatoeru_diagnose_session";
+  const restored = useRef(false);
+
+  useEffect(() => {
+    if (restored.current || isDemo) return;
+    restored.current = true;
+    // ?q= / ?url= 付きで来た場合は自動解析が走るので復元しない
+    if (params.get("q") || params.get("url")) return;
+    try {
+      const raw = sessionStorage.getItem(SESSION_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw) as {
+        url?: string;
+        phase?: typeof phase;
+        qStep?: number;
+        answers?: WizardAnswers;
+        contactCompany?: string;
+        contactEmail?: string;
+        diagnosisId?: number | null;
+        result?: DiagnosisResult | null;
+        recommendedOrgs?: RecommendedOrgs | null;
+      };
+      if (!saved.phase || saved.phase === "idle" || saved.phase === "analyzing") return;
+      setUrl(saved.url ?? "");
+      setAnswers(saved.answers ?? { field: null, prefecture: null, headcount: null, timing: null, jisshuExperience: null });
+      setQStep(saved.qStep ?? 0);
+      setContactCompany(saved.contactCompany ?? "");
+      setContactEmail(saved.contactEmail ?? "");
+      setPhase(saved.phase);
+      setSavedSnapshot({
+        result: saved.result ?? null,
+        recommendedOrgs: (saved.recommendedOrgs as RecommendedOrgs) ?? null,
+        diagnosisId: saved.diagnosisId ?? null,
+      });
+      setRestoredNotice(true);
+    } catch {
+      // 壊れた保存内容は無視して通常の入口を出す
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+
 
   // URL/会社名パラメータ付きで遷移してきた場合は自動で解析開始（?url=は旧リンク互換、?q=は会社名/URL自動判定）
   useEffect(() => {
@@ -173,7 +241,26 @@ export default function Diagnose() {
     }
   };
 
-  // 質問完了：回答を反映した最終診断を再実行（answers付きで再診断し、機関候補も回答条件で取得）
+  /** 最初からやり直す（保存内容を捨てて入口へ戻す） */
+  const restart = () => {
+    try {
+      sessionStorage.removeItem(SESSION_KEY);
+    } catch { /* 削除失敗は無視 */ }
+    setSavedSnapshot(null);
+    setRestoredNotice(false);
+    setAnswers({ field: null, prefecture: null, headcount: null, timing: null, jisshuExperience: null });
+    setQStep(0);
+    setUrl("");
+    setPhase("idle");
+    diagnose.reset();
+    applyAnswers.reset();
+    setLocation("/diagnose");
+  };
+
+  // 質問完了：回答を反映する。
+  // AIの再実行はしない（分野・都道府県・人数の上書きと候補機関の再検索だけで足りる）。
+  // 以前はここで diagnoseUrl を呼び直していたため、同じローディングを2度待たされ、
+  // 2回目のAI出力が1回目と変わって推定業種やスコアが結果画面で別の値になっていた。
   const finishQuestions = () => {
     // 連絡先は任意。入力があれば/consultプリフィル用にsessionStorageに保存
     if (contactCompany || contactEmail) {
@@ -182,15 +269,54 @@ export default function Diagnose() {
       } catch { /* 保存失敗は無視 */ }
     }
     setPhase("done");
-    const base = looksLikeUrl(url)
-      ? { url: /^https?:\/\//.test(url.trim()) ? url.trim() : `https://${url.trim()}` }
-      : { companyName: url.trim() || (diagnose.data?.result as DiagnosisResult | undefined)?.companyName || "不明" };
-    diagnose.mutate({ ...base, answers });
+    const id = diagnose.data?.diagnosisId ?? savedSnapshot?.diagnosisId;
+    if (id) {
+      applyAnswers.mutate({ diagnosisId: Number(id), answers });
+    }
   };
 
-  const result = isDemo ? DEMO_RESULT : (diagnose.data?.result as DiagnosisResult | undefined);
-  const recommendedOrgs = isDemo ? undefined : diagnose.data?.recommendedOrgs;
-  const diagnosisId = isDemo ? undefined : diagnose.data?.diagnosisId;
+  // 表示に使う結果の優先順位：回答反映後 → 初回解析 → リロード復元用の保存内容
+  const liveResult = (applyAnswers.data?.result ??
+    diagnose.data?.result ??
+    savedSnapshot?.result ??
+    undefined) as DiagnosisResult | undefined;
+  const liveOrgs =
+    applyAnswers.data?.recommendedOrgs ??
+    diagnose.data?.recommendedOrgs ??
+    savedSnapshot?.recommendedOrgs ??
+    undefined;
+  const liveDiagnosisId =
+    diagnose.data?.diagnosisId ?? savedSnapshot?.diagnosisId ?? undefined;
+
+  const result = isDemo ? DEMO_RESULT : liveResult;
+  const recommendedOrgs = isDemo ? undefined : liveOrgs;
+  const diagnosisId = isDemo ? undefined : liveDiagnosisId;
+
+  // 回答途中・結果表示中の状態を保存する（AI解析結果そのものは保存せず、復元時は
+  // 保存済みの診断IDから作り直す。結果の再取得は下の復元用クエリが担う）
+  useEffect(() => {
+    if (isDemo) return;
+    if (phase === "idle" || phase === "analyzing") return;
+    try {
+      sessionStorage.setItem(
+        SESSION_KEY,
+        JSON.stringify({
+          url,
+          phase,
+          qStep,
+          answers,
+          contactCompany,
+          contactEmail,
+          diagnosisId: liveDiagnosisId ?? null,
+          result: liveResult ?? null,
+          recommendedOrgs: liveOrgs ?? null,
+        })
+      );
+    } catch {
+      // 保存失敗は無視（プライベートブラウズ等）
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDemo, url, phase, qStep, answers, contactCompany, contactEmail, liveResult, liveOrgs, liveDiagnosisId]);
 
   // 助成金候補（クライアント側で共有ロジックを実行）
   const joseikinCandidates = useMemo(() => {
@@ -251,7 +377,7 @@ export default function Diagnose() {
   );
 
   const displayOrgs = filterTouched ? filteredQuery.data?.items : recommendedOrgs;
-  const orgsLoading = filterTouched && filteredQuery.isLoading;
+  const orgsLoading = (filterTouched && filteredQuery.isLoading) || applyAnswers.isPending;
   const touch = () => setFilterTouched(true);
 
   return (
@@ -288,6 +414,18 @@ export default function Diagnose() {
       </div>
 
       <div className="container max-w-3xl py-12">
+        {restoredNotice && phase !== "idle" && (
+          <div className="mb-6 flex flex-wrap items-center gap-3 rounded-lg border bg-muted/40 px-4 py-3 text-sm">
+            <CheckCircle2 className="h-4 w-4 text-brand shrink-0" />
+            <span className="flex-1">
+              前回の続きから表示しています（{url || "入力内容"}）。
+            </span>
+            <Button variant="outline" size="sm" onClick={restart}>
+              最初からやり直す
+            </Button>
+          </div>
+        )}
+
         {/* 質問ウィザード（1問1ページ） */}
         {phase === "questions" && !diagnose.isPending && (
           <Card className="border-2 border-brand/20">

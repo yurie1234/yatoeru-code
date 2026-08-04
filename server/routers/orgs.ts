@@ -65,6 +65,163 @@ function fieldBoostCondition(field: string) {
   );
 }
 
+type DiagnosisDb = NonNullable<Awaited<ReturnType<typeof getDb>>>;
+
+/**
+ * 診断結果に適合する支援機関の上位5件を返す。
+ * diagnoseUrl（初回のAI解析）と applyDiagnosisAnswers（ウィザード回答の反映）の
+ * 両方から使う。回答の反映でAIを呼び直さないための共通化。
+ */
+async function findRecommendedOrgs(
+  db: DiagnosisDb,
+  { field, prefecture }: { field: string | null; prefecture: string | null }
+) {
+  // 適合する支援機関を検索し、親和性スコア順（分野40・地域30・言語20・信頼性10；検索ページと同一ロジック）に上位5件を返す
+  const conditions = [];
+  if (field) {
+    // fields未登録（NULL）の機関も候補に含める（登録簿に分野情報がないため）
+    conditions.push(
+      sql`(${supportOrgs.fields} IS NULL OR JSON_CONTAINS(${supportOrgs.fields}, ${JSON.stringify(field)}))`
+    );
+  }
+
+  // 候補取得順はレビュー数→登録日の古い順（検索と同様、Capバイアス防止）
+  const candidates = await db
+    .select()
+    .from(supportOrgs)
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(supportOrgs.reviewCount), supportOrgs.regDate, supportOrgs.id)
+    .limit(500);
+
+  // 候補Cap外の「確認済み分野一致」「機関名推定一致」機関をマージ（推奨精度向上）。
+  // DB側で分野キーワード条件により絞り込む（全件転送はタイムアウトの原因となるため行わない）。
+  if (field) {
+    const boosted = await db
+      .select()
+      .from(supportOrgs)
+      .where(
+        and(
+          conditions.length > 0 ? and(...conditions) : undefined,
+          fieldBoostCondition(field)
+        )
+      )
+      .orderBy(desc(supportOrgs.reviewCount), supportOrgs.regDate, supportOrgs.id)
+      .limit(1000)
+      .then((rows) =>
+        rows.filter(
+          (o) =>
+            (o.fields as string[] | null)?.includes(field) ||
+            estimateOrgFields(o.name).includes(field as never)
+        )
+      );
+    const seen = new Set(candidates.map((c) => c.id));
+    for (const b of boosted) {
+      if (!seen.has(b.id)) {
+        candidates.push(b);
+        seen.add(b.id);
+      }
+    }
+  }
+
+  // 地域適合候補のマージ：支援業務は定期面談・訪問を伴うため、企業所在県・隣接県の機関を
+  // 候補Cap（500件）の外からも必ず取り込む。
+  // （これがないと、京都の企業に千葉・福岡の機関ばかり提示される――地域スコア30点が死ぬ）
+  if (prefecture) {
+    const nearbyPrefs = [prefecture, ...(ADJACENT_PREFECTURES[prefecture] ?? [])];
+    const nearby = await db
+      .select()
+      .from(supportOrgs)
+      .where(
+        and(
+          conditions.length > 0 ? and(...conditions) : undefined,
+          or(
+            inArray(supportOrgs.prefecture, nearbyPrefs),
+            // 希望する相談条件（受けたい地域：都道府県粒度・"全国"）に企業所在県が含まれる機関も取り込む
+            sql`JSON_CONTAINS(${supportOrgs.preferredRegions}, ${JSON.stringify(prefecture)})`,
+            sql`JSON_CONTAINS(${supportOrgs.preferredRegions}, ${JSON.stringify("全国")})`
+          )
+        )
+      )
+      .orderBy(desc(supportOrgs.reviewCount), supportOrgs.regDate, supportOrgs.id)
+      .limit(500);
+    const seen = new Set(candidates.map((c) => c.id));
+    for (const n of nearby) {
+      if (!seen.has(n.id)) {
+        candidates.push(n);
+        seen.add(n.id);
+      }
+    }
+  }
+
+  return candidates
+    .map((org) => ({
+      ...sanitizeOrg(org),
+      affinity: calcAffinity(
+        { targetField: field, targetPrefecture: prefecture, targetLanguage: null },
+        {
+          name: org.name,
+          prefecture: org.prefecture,
+          fields: org.fields as string[] | null,
+          languages: org.languages as string[] | null,
+          hasPenalty: org.hasPenalty,
+          registeredDate: org.regDate ? String(org.regDate) : null,
+          verifiedAt: org.verifiedAt,
+          preferredFields: org.preferredFields as string[] | null,
+          preferredRegions: org.preferredRegions as string[] | null,
+          consultStatus: org.consultStatus,
+        }
+      ),
+    }))
+    // 同点時の最終タイブレークは登録年月日の古い順
+    .sort(
+      (a, b) =>
+        b.affinity.score - a.affinity.score ||
+        compareRegDateAsc(a, b)
+    )
+    .slice(0, 5);
+
+}
+
+/** 診断結果のうち、保存・表示・機関推奨で参照する項目 */
+type DiagnosisResultData = Record<string, unknown> & {
+  companyName: string;
+  industry: string;
+  field: string | null;
+  prefecture: string | null;
+  score: number;
+};
+
+/**
+ * ウィザード回答を診断結果へ反映する（分野・都道府県・人数は回答をAI推測より優先）。
+ * AIの再実行を伴わない純粋な上書き処理。
+ */
+function applyAnswersToResult(
+  result: Record<string, unknown>,
+  answers: {
+    field?: string | null;
+    prefecture?: string | null;
+    headcount?: string | null;
+    timing?: string | null;
+    jisshuExperience?: boolean | null;
+  } | null | undefined
+): DiagnosisResultData {
+  const answeredField =
+    typeof answers?.field === "string" && (TOKUTEI_FIELDS as readonly string[]).includes(answers.field)
+      ? answers.field
+      : null;
+  const answeredPref =
+    typeof answers?.prefecture === "string" && (PREFECTURES as readonly string[]).includes(answers.prefecture)
+      ? answers.prefecture
+      : null;
+  return {
+    ...result,
+    ...(answeredField ? { field: answeredField } : {}),
+    ...(answeredPref ? { prefecture: answeredPref } : {}),
+    ...(answers?.headcount ? { headcount: answers.headcount } : {}),
+    answers: answers ?? null,
+  } as unknown as DiagnosisResultData;
+}
+
 export const orgsRouter = router({
   // 1. 登録支援機関 検索・比較機能
   search: publicProcedure
@@ -391,25 +548,19 @@ ${pageText ? `\n【実際に取得したページ内容】\n${pageText}\n` : noP
         (typeof parsed.prefecture === "string" && (PREFECTURES as readonly string[]).includes(parsed.prefecture)
           ? parsed.prefecture
           : null);
-      // 分野も同様に回答優先（"該当なし"はnull扱い）
-      const answeredField =
-        typeof input.answers?.field === "string" &&
-        (TOKUTEI_FIELDS as readonly string[]).includes(input.answers.field)
-          ? input.answers.field
-          : null;
-      if (answeredField) parsed.field = answeredField;
-      if (input.answers?.headcount) parsed.headcount = input.answers.headcount;
-      const resultData = {
-        ...parsed,
-        prefecture: companyPrefecture,
-        cost: normalizedCost,
-        score: totalScore,
-        scoreBreakdown: { field: scoreField, labor: scoreLabor, info: scoreInfo },
-        // ウィザード回答を診断結果に同梱（助成金マッチング・相談プリフィルで使用）
-        answers: input.answers ?? null,
-        // 採点内訳を含むコメントはサーバー側で生成（内訳と合計の整合を保証）
-        reason: `a)分野該当性${scoreField}点、b)人手不足度${scoreLabor}点、c)情報の確からしさ${scoreInfo}点、合計${totalScore}点。${String(parsed.reason ?? "")}`,
-      };
+      // 分野・人数もウィザード回答を優先（applyAnswersToResult に集約）
+      const resultData = applyAnswersToResult(
+        {
+          ...parsed,
+          prefecture: companyPrefecture,
+          cost: normalizedCost,
+          score: totalScore,
+          scoreBreakdown: { field: scoreField, labor: scoreLabor, info: scoreInfo },
+          // 採点内訳を含むコメントはサーバー側で生成（内訳と合計の整合を保証）
+          reason: `a)分野該当性${scoreField}点、b)人手不足度${scoreLabor}点、c)情報の確からしさ${scoreInfo}点、合計${totalScore}点。${String(parsed.reason ?? "")}`,
+        },
+        input.answers
+      );
 
       // 診断履歴を保存（会社名のみの場合は company: プレフィックスで記録）
       const [insertResult] = await db.insert(diagnoses).values({
@@ -421,115 +572,70 @@ ${pageText ? `\n【実際に取得したページ内容】\n${pageText}\n` : noP
         userId: ctx.user?.id,
       });
 
-      // 適合する支援機関を検索し、親和性スコア順（分野40・地域30・言語20・信頼性10；検索ページと同一ロジック）に上位5件を返す
-      const conditions = [];
-      if (resultData.field) {
-        // fields未登録（NULL）の機関も候補に含める（登録簿に分野情報がないため）
-        conditions.push(
-          sql`(${supportOrgs.fields} IS NULL OR JSON_CONTAINS(${supportOrgs.fields}, ${JSON.stringify(resultData.field)}))`
-        );
-      }
-
-      // 候補取得順はレビュー数→登録日の古い順（検索と同様、Capバイアス防止）
-      const candidates = await db
-        .select()
-        .from(supportOrgs)
-        .where(conditions.length > 0 ? and(...conditions) : undefined)
-        .orderBy(desc(supportOrgs.reviewCount), supportOrgs.regDate, supportOrgs.id)
-        .limit(500);
-
-      // 候補Cap外の「確認済み分野一致」「機関名推定一致」機関をマージ（推奨精度向上）。
-      // DB側で分野キーワード条件により絞り込む（全件転送はタイムアウトの原因となるため行わない）。
-      if (resultData.field) {
-        const boosted = await db
-          .select()
-          .from(supportOrgs)
-          .where(
-            and(
-              conditions.length > 0 ? and(...conditions) : undefined,
-              fieldBoostCondition(resultData.field)
-            )
-          )
-          .orderBy(desc(supportOrgs.reviewCount), supportOrgs.regDate, supportOrgs.id)
-          .limit(1000)
-          .then((rows) =>
-            rows.filter(
-              (o) =>
-                (o.fields as string[] | null)?.includes(resultData.field) ||
-                estimateOrgFields(o.name).includes(resultData.field as never)
-            )
-          );
-        const seen = new Set(candidates.map((c) => c.id));
-        for (const b of boosted) {
-          if (!seen.has(b.id)) {
-            candidates.push(b);
-            seen.add(b.id);
-          }
-        }
-      }
-
-      // 地域適合候補のマージ：支援業務は定期面談・訪問を伴うため、企業所在県・隣接県の機関を
-      // 候補Cap（500件）の外からも必ず取り込む。
-      // （これがないと、京都の企業に千葉・福岡の機関ばかり提示される――地域スコア30点が死ぬ）
-      if (companyPrefecture) {
-        const nearbyPrefs = [companyPrefecture, ...(ADJACENT_PREFECTURES[companyPrefecture] ?? [])];
-        const nearby = await db
-          .select()
-          .from(supportOrgs)
-          .where(
-            and(
-              conditions.length > 0 ? and(...conditions) : undefined,
-              or(
-                inArray(supportOrgs.prefecture, nearbyPrefs),
-                // 希望する相談条件（受けたい地域：都道府県粒度・"全国"）に企業所在県が含まれる機関も取り込む
-                sql`JSON_CONTAINS(${supportOrgs.preferredRegions}, ${JSON.stringify(companyPrefecture)})`,
-                sql`JSON_CONTAINS(${supportOrgs.preferredRegions}, ${JSON.stringify("全国")})`
-              )
-            )
-          )
-          .orderBy(desc(supportOrgs.reviewCount), supportOrgs.regDate, supportOrgs.id)
-          .limit(500);
-        const seen = new Set(candidates.map((c) => c.id));
-        for (const n of nearby) {
-          if (!seen.has(n.id)) {
-            candidates.push(n);
-            seen.add(n.id);
-          }
-        }
-      }
-
-      const recommendedOrgs = candidates
-        .map((org) => ({
-          ...sanitizeOrg(org),
-          affinity: calcAffinity(
-            { targetField: resultData.field, targetPrefecture: companyPrefecture, targetLanguage: null },
-            {
-              name: org.name,
-              prefecture: org.prefecture,
-              fields: org.fields as string[] | null,
-              languages: org.languages as string[] | null,
-              hasPenalty: org.hasPenalty,
-              registeredDate: org.regDate ? String(org.regDate) : null,
-              verifiedAt: org.verifiedAt,
-              preferredFields: org.preferredFields as string[] | null,
-              preferredRegions: org.preferredRegions as string[] | null,
-              consultStatus: org.consultStatus,
-            }
-          ),
-        }))
-        // 同点時の最終タイブレークは登録年月日の古い順
-        .sort(
-          (a, b) =>
-            b.affinity.score - a.affinity.score ||
-            compareRegDateAsc(a, b)
-        )
-        .slice(0, 5);
+      const recommendedOrgs = await findRecommendedOrgs(db, {
+        field: resultData.field,
+        prefecture: resultData.prefecture,
+      });
 
       return {
         diagnosisId: insertResult.insertId,
         result: resultData,
         recommendedOrgs,
       };
+    }),
+
+  /**
+   * 3-2. ウィザード回答の反映（AIを呼び直さない）
+   *
+   * 以前はウィザードの回答後に diagnoseUrl をもう一度呼んでいたため、1回の診断で
+   * LLM呼び出し2回・企業サイト取得2回・diagnoses行2件が発生し、利用者は同じ
+   * 5段階のローディングを2度待たされていた。さらに2回目のAI出力が1回目と変わり、
+   * 質問中に見えていた推定業種・スコアが結果画面で別の値になることがあった。
+   *
+   * 回答の反映に必要な処理は「分野・都道府県・人数の上書き」と「候補機関の再検索」
+   * だけでAIを必要としないため、保存済みの診断結果を読み出して上書きし、同じ行を
+   * 更新する（新しい行は作らない＝診断件数の二重計上も止まる）。
+   */
+  applyDiagnosisAnswers: publicProcedure
+    .input(
+      z.object({
+        diagnosisId: z.number().int().positive(),
+        answers: z.object({
+          field: z.string().nullable().optional(),
+          prefecture: z.string().nullable().optional(),
+          headcount: z.string().nullable().optional(),
+          timing: z.string().nullable().optional(),
+          jisshuExperience: z.boolean().nullable().optional(),
+        }),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+
+      const rows = await db
+        .select({ id: diagnoses.id, result: diagnoses.result })
+        .from(diagnoses)
+        .where(eq(diagnoses.id, input.diagnosisId))
+        .limit(1);
+      if (rows.length === 0 || !rows[0].result) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "診断結果が見つかりません" });
+      }
+
+      const stored = rows[0].result as Record<string, unknown>;
+      const resultData = applyAnswersToResult(stored, input.answers);
+
+      await db
+        .update(diagnoses)
+        .set({ result: resultData })
+        .where(eq(diagnoses.id, input.diagnosisId));
+
+      const recommendedOrgs = await findRecommendedOrgs(db, {
+        field: resultData.field,
+        prefecture: resultData.prefecture,
+      });
+
+      return { diagnosisId: input.diagnosisId, result: resultData, recommendedOrgs };
     }),
 
   // 4. 一括相談送信
