@@ -281,8 +281,12 @@ const STATIC_HEADS: Record<string, { title: string; description: string }> = {
       "ヤトエルに掲載中の自社情報の確認・修正は無料です。受付状況や対応言語などの実態情報を確認日つきで表示し、掲載の確からしさを高められます。",
   },
   "/about": {
-    title: "運営者情報 - ヤトエル",
+    title: "ヤトエルについて - ヤトエル",
     description: "ヤトエルの運営者情報・お問い合わせ先のご案内です。",
+  },
+  "/operator": {
+    title: "運営者情報（特定商取引法に基づく表記） - ヤトエル",
+    description: "ヤトエルの運営者・連絡先に関する表示です。",
   },
   "/terms": {
     title: "利用規約 - ヤトエル",

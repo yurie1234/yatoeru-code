@@ -386,12 +386,13 @@ export default function Home() {
               <ul className="space-y-2 text-brand-foreground/70">
                 <li><Link href="/about" className="hover:text-amber-accent transition-colors">ヤトエルについて</Link></li>
                 <li>
-                  <a href="https://tenbouworks.jp/" target="_blank" rel="noopener noreferrer" className="hover:text-amber-accent transition-colors">
-                    運営会社（Tenbou Works）
+                  <a href="https://ubusunaworks.jp/" target="_blank" rel="noopener noreferrer" className="hover:text-amber-accent transition-colors">
+                    運営会社（ubusuna works）
                   </a>
                 </li>
                 <li><Link href="/terms" className="hover:text-amber-accent transition-colors">利用規約</Link></li>
                 <li><Link href="/privacy" className="hover:text-amber-accent transition-colors">プライバシーポリシー</Link></li>
+                <li><Link href="/operator" className="hover:text-amber-accent transition-colors">運営者情報</Link></li>
               </ul>
             </div>
           </div>

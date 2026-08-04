@@ -108,19 +108,20 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
               <ul className="space-y-2 text-brand-foreground/70">
                 <li><Link href="/about" className="hover:text-amber-accent transition-colors">ヤトエルについて</Link></li>
                 <li>
-                  <a href="https://tenbouworks.jp/" target="_blank" rel="noopener noreferrer" className="hover:text-amber-accent transition-colors">
-                    運営会社（Tenbou Works）
+                  <a href="https://ubusunaworks.jp/" target="_blank" rel="noopener noreferrer" className="hover:text-amber-accent transition-colors">
+                    運営会社（ubusuna works）
                   </a>
                 </li>
                 <li><Link href="/for-organizations" className="hover:text-amber-accent transition-colors">支援機関の方へ</Link></li>
                 <li><Link href="/neutrality-policy" className="hover:text-amber-accent transition-colors">中立性ポリシー</Link></li>
                 <li><Link href="/terms" className="hover:text-amber-accent transition-colors">利用規約</Link></li>
                 <li><Link href="/privacy" className="hover:text-amber-accent transition-colors">プライバシーポリシー</Link></li>
+                <li><Link href="/operator" className="hover:text-amber-accent transition-colors">運営者情報</Link></li>
               </ul>
             </div>
           </div>
           <div className="border-t border-brand-foreground/20 pt-8 text-center text-brand-foreground/50 text-sm">
-            &copy; {new Date().getFullYear()} ヤトエル / 運営：<a href="https://tenbouworks.jp/" target="_blank" rel="noopener noreferrer" className="hover:text-amber-accent transition-colors underline underline-offset-2">Tenbou Works</a> All rights reserved.
+            &copy; {new Date().getFullYear()} ヤトエル / 運営：<a href="https://ubusunaworks.jp/" target="_blank" rel="noopener noreferrer" className="hover:text-amber-accent transition-colors underline underline-offset-2">ubusuna works</a> All rights reserved.
           </div>
         </div>
       </footer>

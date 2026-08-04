@@ -50,7 +50,7 @@ export function About() {
       </p>
       <h2>運営会社</h2>
       <p>
-        ヤトエルは、<a href="https://tenbouworks.jp/" target="_blank" rel="noopener noreferrer">Tenbou Works（tenbouworks.jp）</a>が企画・運営しています。運営会社の詳細は公式サイトをご覧ください。
+        ヤトエルは、<a href="https://ubusunaworks.jp/" target="_blank" rel="noopener noreferrer">ubusuna works（ubusunaworks.jp）</a>が企画・運営しています。運営者の詳細は<a href="/operator">運営者情報</a>をご覧ください。
       </p>
     </StaticShell>
   );
@@ -114,6 +114,30 @@ export function Privacy() {
       <h2>6. 開示・訂正・削除</h2>
       <p>
         利用者本人からの個人情報の開示・訂正・削除のご請求には、本人確認のうえ速やかに対応します。
+      </p>
+    </StaticShell>
+  );
+}
+
+export function Operator() {
+  return (
+    <StaticShell title="運営者情報">
+      <p>
+        本サービス（ヤトエル／yatoeru.jp）の運営者情報を、特定商取引法に関する消費者庁ガイドラインに基づき表示します。
+      </p>
+      <h2>運営者</h2>
+      <p>ubusuna works</p>
+      <h2>氏名（名称）・住所・電話番号</h2>
+      <p>
+        氏名（名称）、住所及び電話番号については、ご請求をいただいた場合、遅滞なく電子メールにてご提供いたします。開示をご希望の方は下記メールアドレスまでご連絡ください。
+      </p>
+      <h2>連絡先</h2>
+      <p>
+        メールアドレス：<a href="mailto:info@ubusunaworks.jp">info@ubusunaworks.jp</a>
+      </p>
+      <h2>運営会社</h2>
+      <p>
+        <a href="https://ubusunaworks.jp/" target="_blank" rel="noopener noreferrer">ubusunaworks.jp</a>
       </p>
     </StaticShell>
   );

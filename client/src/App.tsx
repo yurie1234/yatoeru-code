@@ -48,7 +48,7 @@ import SearchPage from "./pages/Search";
 import Stats from "./pages/Stats";
 import UpdateDetail from "./pages/UpdateDetail";
 import Updates from "./pages/Updates";
-import { About, NeutralityPolicy, Privacy, Terms } from "./pages/StaticPages";
+import { About, NeutralityPolicy, Operator, Privacy, Terms } from "./pages/StaticPages";
 
 /** GA4: SPAページ遷移ごとにpage_viewを送信（index.html側はsend_page_view: false） */
 function useGaPageView() {
@@ -111,6 +111,7 @@ function Router() {
       <Route path={"/terms"} component={Terms} />
       <Route path={"/privacy"} component={Privacy} />
       <Route path={"/neutrality-policy"} component={NeutralityPolicy} />
+      <Route path={"/operator"} component={Operator} />
       <Route path={"/admin/login"} component={AdminLogin} />
       <Route path={"/admin"} component={Admin} />
       <Route path={"/404"} component={NotFound} />
