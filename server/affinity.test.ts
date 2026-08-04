@@ -80,13 +80,13 @@ describe("calcAffinity（親和性スコア）", () => {
     expect(r.reasons.some((x) => x.label.includes("運営実確認"))).toBe(false);
   });
 
-  it("機関名からの推定一致は40点加点され、推定である旨がreasonに付く", () => {
+  it("機関名からの推定一致は25点加点され、推定である旨がreasonに付く（確認済み40点より低い）", () => {
     const r = calcAffinity(
       { targetField: "鉄道", targetPrefecture: null, targetLanguage: null },
       { ...baseOrg, name: "上信電鉄株式会社", prefecture: "群馬県" }
     );
     const fieldReason = r.reasons.find((x) => x.label.includes("鉄道"));
-    expect(fieldReason?.points).toBe(40);
+    expect(fieldReason?.points).toBe(25);
     expect(fieldReason?.estimated).toBe(true);
     expect(fieldReason?.label).toContain("機関名から推定");
   });
@@ -386,5 +386,63 @@ describe("受入状況（新規相談の受付ステータス）の配点", () =
     });
     const unknownWithField = calcAffinity(input, { ...org, consultStatus: "unknown" });
     expect(unknownWithField.score).toBeGreaterThan(activeNoField.score);
+  });
+});
+
+describe("分野一致の配点は確認済み > 推定 > 分野非限定 > 他分野の順になる", () => {
+  const base = {
+    prefecture: null,
+    languages: null,
+    hasPenalty: null,
+    registeredDate: "2019-04-01",
+  };
+  const input = { targetField: "介護" };
+
+  function fieldPoints(org: Parameters<typeof calcAffinity>[1]) {
+    const r = calcAffinity(input, org);
+    return r.reasons.find((x) => x.label.includes("分野") || x.label.includes("介護"))?.points ?? 0;
+  }
+
+  it("確認済み40 > 推定25 > 分野非限定20 > 他分野10", () => {
+    const confirmed = fieldPoints({ ...base, name: "株式会社テスト", fields: ["介護"] });
+    // 「ケア」が介護のキーワードに一致するため推定マッチになる
+    const estimated = fieldPoints({ ...base, name: "株式会社ケアサポート", fields: null });
+    const neutral = fieldPoints({ ...base, name: "株式会社テスト", fields: null });
+    const otherField = fieldPoints({ ...base, name: "株式会社上信電鉄", fields: null });
+
+    expect(confirmed).toBe(40);
+    expect(estimated).toBe(25);
+    expect(neutral).toBe(20);
+    expect(otherField).toBe(10);
+    expect(confirmed).toBeGreaterThan(estimated);
+    expect(estimated).toBeGreaterThan(neutral);
+    expect(neutral).toBeGreaterThan(otherField);
+  });
+
+  it("推定一致は、本人確認済みの機関を追い越せない", () => {
+    // 推定一致＋積極受入 でも、確認済み分野の機関（受入未確認）を超えない
+    const estimatedActive = calcAffinity(input, {
+      ...base,
+      name: "株式会社ケアサポート",
+      fields: null,
+      consultStatus: "open_active",
+    });
+    const confirmedUnknown = calcAffinity(input, {
+      ...base,
+      name: "株式会社テスト",
+      fields: ["介護"],
+      consultStatus: "unknown",
+    });
+    expect(confirmedUnknown.score).toBeGreaterThan(estimatedActive.score);
+  });
+
+  it("推定である旨のフラグが立つ（UIで「推定」と表示するため）", () => {
+    const r = calcAffinity(input, { ...base, name: "株式会社ケアサポート", fields: null });
+    expect(r.reasons.find((x) => x.label.includes("介護"))?.estimated).toBe(true);
+  });
+
+  it("算定説明文に推定の配点を明記している", () => {
+    expect(AFFINITY_METHODOLOGY).toContain("推定による一致は25点");
+    expect(AFFINITY_METHODOLOGY).toContain("分野非限定として20点");
   });
 });

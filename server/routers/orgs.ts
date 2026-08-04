@@ -27,13 +27,26 @@ import type { TokuteiField } from "../../shared/tokutei";
  * DB側で絞り込む（機関名LIKEは FIELD_NAME_KEYWORDS と同一のキーワード群を使用）。
  */
 /**
- * 公開レスポンス用サニタイズ：内部メモ（internalMemo）は送客窓口・担当者名・価格反応等の
- * 完全非公開情報であり、公開ページ・API・構造化データのいずれにも絶対に出力しない。
+ * 公開レスポンス用サニタイズ：内部メモ（internalMemo）と送客優先度（referral*）は
+ * 送客窓口・担当者名・価格反応・紹介料の意向等の完全非公開情報であり、
+ * 公開ページ・API・構造化データのいずれにも絶対に出力しない。
  * すべてのpublicレスポンスは必ずこの関数を経由させること。
+ *
+ * referral* は現時点では drizzle/schema.ts に載せていないため公開クエリの結果には
+ * 現れないが、将来スキーマへ取り込んだ瞬間に漏れるのを防ぐため先に除去しておく。
  */
-function sanitizeOrg<T extends { internalMemo?: unknown }>(org: T): Omit<T, "internalMemo"> {
-  const { internalMemo: _internalMemo, ...publicOrg } = org;
-  return publicOrg;
+function sanitizeOrg<T extends Record<string, unknown>>(org: T) {
+  const {
+    internalMemo: _internalMemo,
+    referralIntent: _referralIntent,
+    referralNote: _referralNote,
+    referralUpdatedAt: _referralUpdatedAt,
+    ...publicOrg
+  } = org;
+  return publicOrg as Omit<
+    T,
+    "internalMemo" | "referralIntent" | "referralNote" | "referralUpdatedAt"
+  >;
 }
 
 /** regDateの古い順比較（同点時の最終タイブレーク：登録年月日の古い順。nullは最後尾） */

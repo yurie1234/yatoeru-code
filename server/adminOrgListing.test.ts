@@ -16,6 +16,11 @@ const dbMock = {
       })),
     })),
   })),
+  // orgByRegNo は送客優先度（非公開・生SQL）も読む。列が無い環境を模して
+  // Unknown column を投げ、applied=false にフォールバックすることを確認する。
+  execute: vi.fn(async () => {
+    throw new Error("Unknown column 'referralIntent' in 'field list'");
+  }),
   update: vi.fn(() => ({
     set: vi.fn((patch: Record<string, unknown>) => {
       state.updatePatch = patch;
@@ -202,6 +207,13 @@ describe("admin.orgByRegNo", () => {
     state.selectRows = [{ id: 30018, regNo: "19登-000020", name: "株式会社インバウンドジャパン" }];
     const row = await createCaller("admin").admin.orgByRegNo({ regNo: "19登-000020" });
     expect(row.id).toBe(30018);
+  });
+
+  it("送客優先度の列が未適用でも取得できる（applied=false で返る）", async () => {
+    state.selectRows = [{ id: 30018, regNo: "19登-000020", name: "株式会社インバウンドジャパン" }];
+    const row = await createCaller("admin").admin.orgByRegNo({ regNo: "19登-000020" });
+    expect(row.referral.applied).toBe(false);
+    expect(row.referral.intent).toBe("unknown");
   });
 
   it("見つからない場合はNOT_FOUND", async () => {

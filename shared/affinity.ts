@@ -172,7 +172,7 @@ export function calcMaxScore(input: AffinityInput): number {
 
 /**
  * 親和性スコア算出（指定条件で評価できる満点は calcMaxScore を参照。全条件指定時は110）
- * - 分野一致: 40（確認済み分野・希望相談条件一致=40 / 機関名からの推定一致=40 / シグナルなし=中立20 / 他分野特化とみられる=10）
+ * - 分野一致: 40（確認済み分野・希望相談条件一致=40 / 機関名からの推定一致=25 / シグナルなし=中立20 / 他分野特化とみられる=10）
  * - 地域一致: 30（同一都道府県または希望相談地域一致=30 / 隣接都道府県=15）
  * - 言語一致: 20
  * - 受入状況: 10（新規相談 受付中（積極受入）=10 / 受付中=7 / 未確認・一時停止=0）
@@ -201,18 +201,29 @@ export function calcAffinity(input: AffinityInput, org: AffinityOrgData, now: Da
       score += AFFINITY_WEIGHTS.field;
       reasons.push({ label: `${target}対応（確認済み）`, points: AFFINITY_WEIGHTS.field });
     } else if (estimatedFields.includes(target)) {
-      score += AFFINITY_WEIGHTS.field;
-      reasons.push({ label: `${target}に強み（機関名から推定）`, points: AFFINITY_WEIGHTS.field, estimated: true });
+      // 推定は機関名のキーワード一致だけが根拠のため、確認済み（40点）より低く配点する
+      score += AFFINITY_WEIGHTS.fieldEstimated;
+      reasons.push({
+        label: `${target}に強み（機関名から推定）`,
+        points: AFFINITY_WEIGHTS.fieldEstimated,
+        estimated: true,
+      });
     } else if (estimatedFields.length === 0) {
       // シグナルなし=分野中立（幅広い分野に対応する可能性）
-      const neutral = 20;
-      score += neutral;
-      reasons.push({ label: "分野非限定（対応可能性あり）", points: neutral, estimated: true });
+      score += AFFINITY_WEIGHTS.fieldNeutral;
+      reasons.push({
+        label: "分野非限定（対応可能性あり）",
+        points: AFFINITY_WEIGHTS.fieldNeutral,
+        estimated: true,
+      });
     } else {
       // 他分野に特化しているとみられる
-      const other = 10;
-      score += other;
-      reasons.push({ label: `他分野中心（${estimatedFields[0]}等）と推定`, points: other, estimated: true });
+      score += AFFINITY_WEIGHTS.fieldOtherField;
+      reasons.push({
+        label: `他分野中心（${estimatedFields[0]}等）と推定`,
+        points: AFFINITY_WEIGHTS.fieldOtherField,
+        estimated: true,
+      });
     }
   }
   // 分野が指定されていない場合は分野の配点そのものを評価対象から外す（満点からも落とす）。
@@ -285,4 +296,4 @@ export function calcAffinity(input: AffinityInput, org: AffinityOrgData, now: Da
  * AEO観点：引用可能な明確なメソドロジーとして一貫した文言を全ページで使う。
  */
 export const AFFINITY_METHODOLOGY =
-  "親和性スコアはヤトエル独自の指標です。分野・地域・言語のうち、指定された条件だけを評価します（条件を指定していない項目は配点に含めないため、満点は条件に応じて変わります。スコアは「得点／満点」で表示します）。条件を1つも指定していない一覧では、算定の根拠が無いためスコアを表示しません。分野一致40点（登録情報で確認済みの対応分野・希望する相談条件のほか、機関名等からの推定を含みます。推定の場合はその旨を表示）／地域一致30点（同一都道府県・確認済み対応地域30・隣接都道府県15）／言語一致20点／受入状況10点（新規相談の受付状況が本人確認済みの場合。積極受入10点・受付中7点・未確認および一時停止0点。相談を受け付けていない機関を上位に出しても比較の役に立たないため評価軸に含めています）／信頼性10点（処分歴なし5点＋実確認鮮度最大5点）。受入状況と信頼性は条件指定に関わらず常に評価します。運営による実確認済みの情報には、情報の確からしさとして最大5点を加点しています（確認日から時間経過で減衰）。有料掲載の有無・当サイトへの紹介料の有無はスコアに影響しません。情報の確認・修正および受入状況の登録は、全ての機関が無料で行えます。同点の機関は登録年月日の古い順に表示します。支援の質を保証するものではなく、比較検討の参考値としてご利用ください。";
+  "親和性スコアはヤトエル独自の指標です。分野・地域・言語のうち、指定された条件だけを評価します（条件を指定していない項目は配点に含めないため、満点は条件に応じて変わります。スコアは「得点／満点」で表示します）。条件を1つも指定していない一覧では、算定の根拠が無いためスコアを表示しません。分野一致40点（登録情報で確認済みの対応分野・希望する相談条件が一致した場合に40点。機関名等からの推定による一致は25点、分野情報が未登録の機関は分野非限定として20点、機関名から他分野中心とみられる場合は10点。推定に基づく加点はその旨を表示します）／地域一致30点（同一都道府県・確認済み対応地域30・隣接都道府県15）／言語一致20点／受入状況10点（新規相談の受付状況が本人確認済みの場合。積極受入10点・受付中7点・未確認および一時停止0点。相談を受け付けていない機関を上位に出しても比較の役に立たないため評価軸に含めています）／信頼性10点（処分歴なし5点＋実確認鮮度最大5点）。受入状況と信頼性は条件指定に関わらず常に評価します。運営による実確認済みの情報には、情報の確からしさとして最大5点を加点しています（確認日から時間経過で減衰）。有料掲載の有無・当サイトへの紹介料の有無はスコアに影響しません。情報の確認・修正および受入状況の登録は、全ての機関が無料で行えます。同点の機関は登録年月日の古い順に表示します。支援の質を保証するものではなく、比較検討の参考値としてご利用ください。";

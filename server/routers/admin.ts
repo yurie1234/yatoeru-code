@@ -11,6 +11,12 @@ import { getDb } from "../db";
 import { protectedProcedure, router } from "../_core/trpc";
 import { PREFECTURES, TOKUTEI_FIELDS } from "../../shared/tokutei";
 import { PENDING_LISTING_UPDATES } from "../pendingListingUpdates";
+import {
+  listReferralTargets,
+  readReferralInfo,
+  REFERRAL_INTENTS,
+  writeReferralInfo,
+} from "../referralIntent";
 
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
@@ -179,9 +185,63 @@ export const adminRouter = router({
           message: "同一登録番号が複数件あります。手動確認が必要です",
         });
       }
-      return rows[0];
+      // 送客優先度（紹介料の意向）は完全非公開の運用情報。この管理者向け
+      // クエリでのみ返す（公開APIは sanitizeOrg で除去済み）。
+      const referral = await readReferralInfo(db, rows[0].id);
+      return { ...rows[0], referral };
     }
   ),
+
+  /**
+   * 送客先の候補一覧（紹介料の意向がある機関）。**運用画面専用**。
+   * 相談リードの手動振り分けと営業の優先順位づけに使う。
+   * 親和性スコア・並び順・公開ページには一切反映しない。
+   */
+  referralTargets: adminProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+    return listReferralTargets(db);
+  }),
+
+  /** 送客優先度（紹介料の意向）の更新。非公開情報のみを扱う */
+  updateReferralIntent: adminProcedure
+    .input(
+      z.object({
+        regNo: z.string().min(1).max(32),
+        intent: z.enum(REFERRAL_INTENTS).optional(),
+        note: z.string().max(4000).nullable().optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const rows = await db
+        .select({ id: supportOrgs.id })
+        .from(supportOrgs)
+        .where(eq(supportOrgs.regNo, input.regNo.trim()))
+        .limit(2);
+      if (rows.length === 0) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "登録番号が見つかりません" });
+      }
+      if (rows.length > 1) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "同一登録番号が複数件あります。手動確認が必要です",
+        });
+      }
+      const applied = await writeReferralInfo(db, rows[0].id, {
+        intent: input.intent,
+        note: input.note,
+      });
+      if (!applied) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message:
+            "送客優先度の列が未適用です。drizzle/manual/2026-08-04-referral-intent.sql をRailway Consoleで実行してください",
+        });
+      }
+      return { ok: true as const };
+    }),
 
   /**
    * 掲載確認の反映: 事業者本人の回答に基づく申告情報を更新する。

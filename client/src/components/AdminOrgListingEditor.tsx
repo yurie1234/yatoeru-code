@@ -13,6 +13,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
 import { TOKUTEI_FIELDS } from "@shared/tokutei";
+import { REFERRAL_INTENT_LABELS, REFERRAL_INTENTS } from "@shared/referralIntent";
 import { Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -61,6 +62,9 @@ export default function AdminOrgListingEditor() {
   const [draft, setDraft] = useState<Draft | null>(null);
   /** 反映待ちの下書きを読み込んだ場合、DB値ではなくその内容でフォームを埋める */
   const [pendingOverride, setPendingOverride] = useState<Partial<Draft> | null>(null);
+  // 送客優先度（非公開）は掲載内容とは別に保存するため、下書きとは別のstateで持つ
+  const [referralIntent, setReferralIntent] = useState("unknown");
+  const [referralNote, setReferralNote] = useState("");
 
   const pendingQuery = trpc.admin.pendingListingUpdates.useQuery();
 
@@ -90,6 +94,8 @@ export default function AdminOrgListingEditor() {
       verifiedNote: org.verifiedNote ?? "",
       internalMemo: org.internalMemo ?? "",
     };
+    setReferralIntent(org.referral?.intent ?? "unknown");
+    setReferralNote(org.referral?.note ?? "");
     // 反映待ちの下書きを読み込んだ場合はそちらを重ねる（指定の無い項目はDB値のまま）
     setDraft(pendingOverride ? { ...fromDb, ...pendingOverride } : fromDb);
     // dataUpdatedAt を見ることで、再読込のたびに下書きを取得値へ戻す
@@ -102,6 +108,15 @@ export default function AdminOrgListingEditor() {
   }, [orgQuery.error]);
 
   const utils = trpc.useUtils();
+  const saveReferral = trpc.admin.updateReferralIntent.useMutation({
+    onSuccess: () => {
+      toast.success("送客優先度を保存しました（非公開・スコアには影響しません）");
+      utils.admin.orgByRegNo.invalidate();
+      utils.admin.referralTargets.invalidate();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
   const save = trpc.admin.updateOrgListing.useMutation({
     onSuccess: (res) => {
       toast.success(`反映しました（${res.updated.length}項目）`);
@@ -454,6 +469,64 @@ export default function AdminOrgListingEditor() {
               <p className="text-xs text-muted-foreground">
                 公開ページ・API・構造化データには出力されません。
               </p>
+            </div>
+
+            {/* 送客優先度：完全非公開。掲載内容とは別ブロックにして誤って公開欄に
+                書かないようにする。スコア・並び順には一切影響しない。 */}
+            <div className="rounded-md border border-dashed bg-muted/30 p-3 space-y-3">
+              <div className="space-y-1">
+                <Label className="text-sm font-semibold">送客優先度（非公開・営業用）</Label>
+                <p className="text-xs text-muted-foreground">
+                  相談リードの振り分けと営業の優先順位づけに使います。掲載ページ・API・
+                  親和性スコア・並び順には一切出しません。紹介料で検索順位を動かす場合は、
+                  景品表示法（ステマ規制）対応としてPR表示のある別枠が必要です。
+                </p>
+                {org.referral?.applied === false && (
+                  <p className="text-xs font-medium text-amber-700">
+                    ※この項目のDB列がまだ未適用です。
+                    drizzle/manual/2026-08-04-referral-intent.sql をRailway Consoleで実行してください。
+                  </p>
+                )}
+              </div>
+              <div className="grid gap-3 sm:grid-cols-[16rem_1fr]">
+                <div className="space-y-1.5">
+                  <Label>紹介料の意向</Label>
+                  <Select value={referralIntent} onValueChange={setReferralIntent}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {REFERRAL_INTENTS.map((v) => (
+                        <SelectItem key={v} value={v}>
+                          {REFERRAL_INTENT_LABELS[v]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>非公開メモ（提示条件・反応・次アクション）</Label>
+                  <Textarea
+                    rows={2}
+                    value={referralNote}
+                    onChange={(e) => setReferralNote(e.target.value)}
+                  />
+                </div>
+              </div>
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={saveReferral.isPending || org.referral?.applied === false}
+                onClick={() =>
+                  saveReferral.mutate({
+                    regNo: org.regNo,
+                    intent: referralIntent as never,
+                    note: referralNote.trim() || null,
+                  })
+                }
+              >
+                {saveReferral.isPending ? "保存中…" : "送客優先度だけを保存"}
+              </Button>
             </div>
 
             <div className="flex gap-2">

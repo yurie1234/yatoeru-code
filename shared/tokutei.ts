@@ -121,7 +121,12 @@ export const ADJACENT_PREFECTURES: Record<string, string[]> = {
 
 /** 親和性スコアの配点（算定方法の説明UIでも使用） */
 export const AFFINITY_WEIGHTS = {
-  field: 40, // 分野一致（対応分野に該当 or 分野情報未登録は部分点）
+  field: 40, // 分野一致（確認済み：登録情報の対応分野・希望する相談条件に該当）
+  // 分野一致（推定）：機関名のキーワード一致だけが根拠。確認済みと同点にすると、
+  // 「メディナケア」が介護で満点を取るなど、実際に本人確認した機関と区別が付かない。
+  fieldEstimated: 25,
+  fieldNeutral: 20, // 分野一致（分野情報が未登録＝分野非限定として扱う）
+  fieldOtherField: 10, // 分野一致（機関名から他分野中心とみられる）
   prefSame: 30, // 同一都道府県
   prefAdjacent: 15, // 隣接都道府県
   language: 20, // 希望言語対応
