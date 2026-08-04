@@ -18,7 +18,7 @@ async function main() {
 
   console.log("=== トリニティウイング協同組合 (support_orgs id=37685) 反映前 ===");
   const [before1] = await conn.query(
-    "SELECT id, regNo, name, prefecture, address, phone, preferredFields, preferredRegions, consultStatus, isVerified, verifiedAt, verifiedNote FROM support_orgs WHERE id = 37685"
+    "SELECT id, regNo, name, prefecture, address, phone, preferredFields, preferredRegions, consultStatus, verifiedAt, verifiedNote FROM support_orgs WHERE id = 37685"
   );
   console.log(JSON.stringify(before1, null, 1));
 
@@ -28,12 +28,13 @@ async function main() {
         preferredFields = ?,
         preferredRegions = ?,
         consultStatus = 'open',
-        isVerified = true,
         verifiedAt = ?,
         verifiedNote = ?
       WHERE id = 37685`,
       [
-        JSON.stringify(["介護", "病院福祉施設給食製造", "ビルクリーニング", "外食", "リネンサプライ", "グランドハンドリング"]),
+        // TOKUTEI_FIELDS(19分野)の正式名称に対応させたもの。原文の「病院福祉施設給食製造」は
+        // 飲食料品製造業、「グランドハンドリング」は航空分野に相当するため変換。
+        JSON.stringify(["介護", "飲食料品製造業", "ビルクリーニング", "外食業", "リネンサプライ", "航空"]),
         JSON.stringify(["中四国", "東京都", "愛知県", "大阪府"]),
         "2026-08-03",
         "実務拠点: 〒702-8038 岡山県岡山市南区松浜町7-15-201（086-239-7743）※組合許可住所とは別。対応言語に英語・ベンガル語・シンハラ語を追加。監理支援機関としての育成就労移行状況: B(申請準備中)。",
@@ -58,13 +59,13 @@ async function main() {
           preferredFields = ?,
           preferredRegions = ?,
           consultStatus = 'open',
-          isVerified = true,
           verifiedAt = ?,
           verifiedNote = ?
         WHERE id = ?`,
         [
           "〒418-0066 静岡県富士宮市大宮町10-15 アーバンABCハイツ１階D号室",
-          JSON.stringify(["食品加工業", "建設業", "自動車整備", "介護"]),
+          // 原文「食品加工業」「建設業」をTOKUTEI_FIELDSの正式名称（飲食料品製造業／建設）に変換
+          JSON.stringify(["飲食料品製造業", "建設", "自動車整備", "介護"]),
           JSON.stringify(["東京都", "千葉県", "埼玉県", "静岡県"]),
           "2026-08-03",
           "許可番号: 許2006000360。以前別組合と情報が混同されていたため訂正済み。",
