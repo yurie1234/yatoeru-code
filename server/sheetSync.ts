@@ -11,6 +11,7 @@ import {
 import { getDb } from "./db";
 import { sdk } from "./_core/sdk";
 import { PREFECTURES } from "../shared/tokutei";
+import { normalizeFieldNames } from "../shared/fieldNormalize";
 
 /**
  * マスターDB同期エンドポイント /api/scheduled/sheet-sync
@@ -272,7 +273,9 @@ async function syncShien(db: Db, rows: z.infer<typeof shienRowSchema>[]) {
         phone: r.phone ?? null,
         representative: r.representative ?? null,
         preferredRegions: r.preferredRegions ?? null,
-        fields: r.fields ?? null,
+        // スラッグ・旧分野名が混ざって保存されると、掲載ページの分野タグと
+        // title・meta descriptionにローマ字が出る。正式名称へ寄せてから入れる。
+        fields: r.fields ? normalizeFieldNames(r.fields) : null,
         regDate: r.regDate ?? null,
       });
     } else if (
