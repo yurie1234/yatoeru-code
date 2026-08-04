@@ -484,7 +484,7 @@ export default function AdminOrgListingEditor() {
                 {org.referral?.applied === false && (
                   <p className="text-xs font-medium text-amber-700">
                     ※この項目のDB列がまだ未適用です。
-                    drizzle/manual/2026-08-04-referral-intent.sql をRailway Consoleで実行してください。
+                    Railway Consoleで node scripts/apply-referral-intent-columns.mjs を実行してください。
                   </p>
                 )}
               </div>

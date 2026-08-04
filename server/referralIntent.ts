@@ -13,7 +13,8 @@ export { REFERRAL_INTENTS, type ReferralIntent };
  * 景品表示法（ステマ規制）に触れる。表示に反映するときは必ずPR表示を伴う
  * 別枠として実装する。
  *
- * 列は drizzle/manual/2026-08-04-referral-intent.sql で追加する。
+ * 列は scripts/apply-referral-intent-columns.mjs で追加する
+ * （内容の記録は drizzle/manual/2026-08-04-referral-intent.sql）。
  * drizzle/schema.ts には載せていない（載せると公開クエリが列を要求するため、
  * 列追加前にコードがデプロイされた瞬間にサイト全体が落ちる）。そのため
  * ここでは生SQLで読み書きし、列が無い場合は applied=false を返して

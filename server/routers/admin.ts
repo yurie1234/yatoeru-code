@@ -237,7 +237,7 @@ export const adminRouter = router({
         throw new TRPCError({
           code: "PRECONDITION_FAILED",
           message:
-            "送客優先度の列が未適用です。drizzle/manual/2026-08-04-referral-intent.sql をRailway Consoleで実行してください",
+            "送客優先度の列が未適用です。Railway Consoleで node scripts/apply-referral-intent-columns.mjs を実行してください",
         });
       }
       return { ok: true as const };

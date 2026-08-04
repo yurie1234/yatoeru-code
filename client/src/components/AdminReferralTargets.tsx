@@ -51,8 +51,7 @@ export default function AdminReferralTargets() {
 
         {data?.applied === false && (
           <p className="text-xs font-medium text-amber-700">
-            DB列が未適用です。drizzle/manual/2026-08-04-referral-intent.sql を
-            Railway Console で実行すると使えるようになります。
+            DB列が未適用です。Railway Console で node scripts/apply-referral-intent-columns.mjs を実行すると使えるようになります。
           </p>
         )}
 

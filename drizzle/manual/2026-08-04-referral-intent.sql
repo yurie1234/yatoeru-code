@@ -7,8 +7,11 @@
 -- 表示・順位に反映する場合は必ずPR表示を伴う別枠として実装すること。
 --
 -- 適用手順（Railwayのairy-prosperityサービス「Console」タブ）:
---   mysql "$DATABASE_URL" < drizzle/manual/2026-08-04-referral-intent.sql
--- もしくは Console で以下のSQLをそのまま実行する。
+--   node scripts/apply-referral-intent-columns.mjs
+--
+-- コンテナに mysql クライアントは入っていないため、このSQLファイルを直接流し込む
+-- （mysql "$DATABASE_URL" < ...）ことはできない。上のスクリプトが mysql2 経由で
+-- 同じ内容を冪等に適用する。このファイルは適用内容の記録として残す。
 --
 -- drizzle-kitのマイグレーションに載せていないのは、列の追加より先にコードが
 -- デプロイされると公開クエリが「Unknown column」で落ちてサイト全体が停止するため。
