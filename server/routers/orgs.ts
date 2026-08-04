@@ -10,7 +10,7 @@ import {
   supportOrgs,
 } from "../../drizzle/schema";
 import { getDb } from "../db";
-import { invokeLLM } from "../_core/llm";
+import { invokeLLM, LlmInvokeError } from "../_core/llm";
 import { publicProcedure, router } from "../_core/trpc";
 import { ADJACENT_PREFECTURES, PREFECTURES, TOKUTEI_FIELDS, UPCOMING_FIELDS } from "../../shared/tokutei";
 import {
@@ -491,33 +491,49 @@ ${pageText ? `\n【実際に取得したページ内容】\n${pageText}\n` : noP
 - reason: 診断理由（採点内訳 a/b/c の点数に触れながら150文字程度。合計点には触れないこと）
 `;
 
-      const llmResult = await invokeLLM({
-        messages: [{ role: "user", content: prompt }],
-        response_format: {
-          type: "json_schema",
-          json_schema: {
-            name: "diagnosis_result",
-            strict: true,
-            schema: {
-              type: "object",
-              properties: {
-                companyName: { type: "string" },
-                industry: { type: "string" },
-                field: { type: ["string", "null"] },
-                headcount: { type: "string" },
-                cost: { type: "string" },
-                scoreField: { type: "integer" },
-                scoreLabor: { type: "integer" },
-                scoreInfo: { type: "integer" },
-                prefecture: { type: ["string", "null"] },
-                reason: { type: "string" },
+      let llmResult;
+      try {
+        llmResult = await invokeLLM({
+          messages: [{ role: "user", content: prompt }],
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: "diagnosis_result",
+              strict: true,
+              schema: {
+                type: "object",
+                properties: {
+                  companyName: { type: "string" },
+                  industry: { type: "string" },
+                  field: { type: ["string", "null"] },
+                  headcount: { type: "string" },
+                  cost: { type: "string" },
+                  scoreField: { type: "integer" },
+                  scoreLabor: { type: "integer" },
+                  scoreInfo: { type: "integer" },
+                  prefecture: { type: ["string", "null"] },
+                  reason: { type: "string" },
+                },
+                required: ["companyName", "industry", "field", "headcount", "cost", "scoreField", "scoreLabor", "scoreInfo", "prefecture", "reason"],
+                additionalProperties: false,
               },
-              required: ["companyName", "industry", "field", "headcount", "cost", "scoreField", "scoreLabor", "scoreInfo", "prefecture", "reason"],
-              additionalProperties: false,
             },
           },
-        },
-      });
+        });
+      } catch (e) {
+        // 失敗理由だけを利用者に伝える（キー等の値は含めない。原因は下位でログ済み）
+        const reason = e instanceof LlmInvokeError ? e.reason : "unknown";
+        console.error("[diagnose] LLM invoke failed", { reason, error: e });
+        throw new TRPCError({
+          code: "SERVICE_UNAVAILABLE",
+          message:
+            reason === "rate-limited"
+              ? "AIの利用が混み合っています。少し時間をおいて再度お試しください。"
+              : reason === "network" || reason === "upstream-error"
+                ? "AI解析に一時的に接続できませんでした。時間をおいて再度お試しください。"
+                : `AI解析を実行できませんでした（${reason}）。運営にお問い合わせください。`,
+        });
+      }
 
       const rawContent = llmResult.choices[0].message.content;
       const contentStr = typeof rawContent === "string" ? rawContent : "{}";

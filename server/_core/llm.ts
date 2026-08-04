@@ -120,13 +120,67 @@ export type ResponseFormat =
 
 const DEFAULT_MAX_TOKENS = 4096;
 
+/** AI呼び出しの失敗理由。運用者が次に何をすべきか分かる粒度で分類する */
+export type LlmFailureReason =
+  | "api-key-missing"
+  | "api-key-invalid-format"
+  | "auth-failed"
+  | "rate-limited"
+  | "model-not-found"
+  | "bad-request"
+  | "upstream-error"
+  | "network"
+  | "unknown";
+
+const LLM_FAILURE_HINTS: Record<LlmFailureReason, string> = {
+  "api-key-missing": "ANTHROPIC_API_KEY が未設定です",
+  "api-key-invalid-format":
+    "ANTHROPIC_API_KEY の値に改行や空白が含まれている可能性があります（環境変数を貼り直してください）",
+  "auth-failed": "ANTHROPIC_API_KEY が無効か失効しています（再発行して差し替えてください）",
+  "rate-limited": "AIプロバイダのレート上限に達しました",
+  "model-not-found": "ANTHROPIC_MODEL の指定が不正です",
+  "bad-request": "AIへのリクエスト内容が不正です",
+  "upstream-error": "AIプロバイダ側で一時的なエラーが発生しました",
+  network: "AIプロバイダへ接続できませんでした",
+  unknown: "AI呼び出しが失敗しました",
+};
+
+/**
+ * AI呼び出しの失敗を、秘密を含まない形で表す例外。
+ * 元の例外は cause に持つ（サーバーログにのみ出力する）。
+ */
+export class LlmInvokeError extends Error {
+  readonly reason: LlmFailureReason;
+  constructor(reason: LlmFailureReason, cause?: unknown) {
+    super(`LLM invoke failed (${reason}): ${LLM_FAILURE_HINTS[reason]}`);
+    this.name = "LlmInvokeError";
+    this.reason = reason;
+    if (cause !== undefined) this.cause = cause;
+  }
+}
+
+/** 例外から失敗理由を推定する（メッセージ本文は外へ出さない） */
+export function classifyLlmError(e: unknown): LlmFailureReason {
+  const status = (e as { status?: number; statusCode?: number })?.status ??
+    (e as { statusCode?: number })?.statusCode;
+  const raw = e instanceof Error ? e.message : String(e);
+
+  // HTTPヘッダに載せられない値＝改行・制御文字の混入
+  if (/invalid header value|Headers\.append/i.test(raw)) return "api-key-invalid-format";
+  if (status === 401 || status === 403) return "auth-failed";
+  if (status === 404) return "model-not-found";
+  if (status === 429) return "rate-limited";
+  if (typeof status === "number" && status >= 500) return "upstream-error";
+  if (status === 400 || status === 422) return "bad-request";
+  if (/ENOTFOUND|ECONNREFUSED|ETIMEDOUT|fetch failed|socket hang up/i.test(raw)) return "network";
+  return "unknown";
+}
+
 let cachedClient: Anthropic | null = null;
 function getClient(): Anthropic {
   if (cachedClient) return cachedClient;
   if (!ENV.anthropicApiKey) {
-    throw new Error(
-      "ANTHROPIC_API_KEY is not configured (server/_core/env.ts: anthropicApiKey)"
-    );
+    throw new LlmInvokeError("api-key-missing");
   }
   cachedClient = new Anthropic({ apiKey: ENV.anthropicApiKey });
   return cachedClient;
@@ -266,15 +320,22 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
   const outputConfig = toOutputConfig(params);
   const maxTokens = params.max_tokens ?? params.maxTokens ?? DEFAULT_MAX_TOKENS;
 
-  const response = await client.messages.create({
-    model: ENV.anthropicModel,
-    max_tokens: maxTokens,
-    ...(system ? { system } : {}),
-    messages,
-    ...(tools ? { tools } : {}),
-    ...(toolChoice ? { tool_choice: toolChoice } : {}),
-    ...(outputConfig ? { output_config: outputConfig } : {}),
-  });
+  let response: Anthropic.Message;
+  try {
+    response = await client.messages.create({
+      model: ENV.anthropicModel,
+      max_tokens: maxTokens,
+      ...(system ? { system } : {}),
+      messages,
+      ...(tools ? { tools } : {}),
+      ...(toolChoice ? { tool_choice: toolChoice } : {}),
+      ...(outputConfig ? { output_config: outputConfig } : {}),
+    });
+  } catch (e) {
+    // SDK・Node由来の例外メッセージには渡した値（APIキー等）が埋め込まれることがあり、
+    // そのまま上位へ流すと公開APIの応答に載る。原因の分類だけを持つ例外に置き換える。
+    throw new LlmInvokeError(classifyLlmError(e), e);
+  }
 
   if (response.stop_reason === "refusal") {
     throw new Error(
