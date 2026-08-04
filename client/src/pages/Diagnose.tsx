@@ -17,6 +17,14 @@ import { captureSource, trackEvent } from "@/lib/track";
 import { FILTER_ACCENT_CLASS } from "@/pages/Proposal";
 import { JOSEIKIN_DISCLAIMER, matchJoseikin } from "@shared/joseikin";
 import { HEADCOUNT_OPTIONS, MAJOR_LANGUAGES, PREFECTURES, TOKUTEI_FIELDS } from "@shared/tokutei";
+import {
+  buildQuestionSteps,
+  loadingPercent as calcLoadingPercent,
+  loadingStepIndex,
+  loadingStepSeconds,
+  stripScoreIntro,
+  type QuestionStep,
+} from "@shared/diagnoseWizard";
 import { AlertTriangle, ArrowLeft, ArrowRight, Building2, CheckCircle2, Coins, ExternalLink, FileText, Globe2, Languages, Loader2, MapPin, Search as SearchIcon, Sparkles } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -90,7 +98,6 @@ export default function Diagnose() {
   const params = useMemo(() => new URLSearchParams(searchString), [searchString]);
 
   const [url, setUrl] = useState(params.get("url") ?? "");
-  const [stepIndex, setStepIndex] = useState(0);
   const autoStarted = useRef(false);
 
   // ===== ウィザード（1問1ページ） =====
@@ -108,7 +115,18 @@ export default function Diagnose() {
     recommendedOrgs: RecommendedOrgs | null;
     diagnosisId: number | null;
   } | null>(null);
-  const QUESTION_COUNT = 6;
+  /** 確認画面で個別の選び直しを開いているか */
+  const [editingField, setEditingField] = useState(false);
+  const [editingPrefecture, setEditingPrefecture] = useState(false);
+  /** 質問の並び。AIが読み取れた項目は個別に聞かず1画面の確認にまとめる */
+  const [questionSteps, setQuestionSteps] = useState<QuestionStep[]>([
+    "field",
+    "prefecture",
+    "headcount",
+    "timing",
+    "experience",
+  ]);
+  const currentStep = questionSteps[qStep] ?? questionSteps[questionSteps.length - 1];
 
   const diagnose = trpc.orgs.diagnoseUrl.useMutation({
     onError: (err) => {
@@ -124,10 +142,18 @@ export default function Diagnose() {
         field: prev.field ?? (r.field && (TOKUTEI_FIELDS as readonly string[]).includes(r.field) ? r.field : null),
         prefecture: prev.prefecture ?? (r.prefecture && (PREFECTURES as readonly string[]).includes(r.prefecture) ? r.prefecture : null),
       }));
-      // URL/会社名解析で読み取った会社名を連絡先欄（質問6/6）に自動プリフィル（ユーザーが既に入力済みなら上書きしない）
+      // 解析で読み取った会社名は、結果表示後の連絡先欄にプリフィルする
       if (r.companyName && r.companyName !== "不明") {
         setContactCompany((prev) => prev || r.companyName);
       }
+
+      // AIが分野・都道府県の両方を読み取れた場合は、個別に2問聞く代わりに
+      // 1画面の確認にまとめる（質問数 5問 → 4問）。
+      const readField = Boolean(r.field && (TOKUTEI_FIELDS as readonly string[]).includes(r.field));
+      const readPref = Boolean(r.prefecture && (PREFECTURES as readonly string[]).includes(r.prefecture));
+      setQuestionSteps(buildQuestionSteps(readField, readPref));
+      setQStep(0);
+
       // diagnoseUrl は初回解析でのみ呼ぶ（回答の反映は applyDiagnosisAnswers）
       setPhase("questions");
     },
@@ -144,15 +170,29 @@ export default function Diagnose() {
     },
   });
 
-  // ローディング演出のステップ進行
+  // ローディング表示は実際の経過時間で進める。
+  // 以前は1.8秒×5ステップの固定進行だったため、APIが速く返ればステップが飛び、
+  // 遅ければ最後のステップで止まったまま「動いていない」ように見えていた。
+  const [elapsedMs, setElapsedMs] = useState(0);
   useEffect(() => {
-    if (!diagnose.isPending) return;
-    setStepIndex(0);
-    const timer = setInterval(() => {
-      setStepIndex((prev) => Math.min(prev + 1, LOADING_STEPS.length - 1));
-    }, 1800);
+    if (!diagnose.isPending) {
+      setElapsedMs(0);
+      return;
+    }
+    const startedAt = Date.now();
+    const timer = setInterval(() => setElapsedMs(Date.now() - startedAt), 200);
     return () => clearInterval(timer);
   }, [diagnose.isPending]);
+
+  const STEP_SECONDS = useMemo(() => loadingStepSeconds(Boolean(url && looksLikeUrl(url))), [url]);
+  const totalExpectedMs = useMemo(
+    () => STEP_SECONDS.reduce((a, b) => a + b, 0) * 1000,
+    [STEP_SECONDS]
+  );
+  const stepIndex = useMemo(() => loadingStepIndex(elapsedMs, STEP_SECONDS), [elapsedMs, STEP_SECONDS]);
+  const loadingPercent = calcLoadingPercent(elapsedMs, STEP_SECONDS);
+  /** 想定より時間がかかっている（利用者に理由を伝える） */
+  const takingLong = elapsedMs > totalExpectedMs;
 
   const isDemo = params.get("demo") === "1";
 
@@ -174,6 +214,7 @@ export default function Diagnose() {
         url?: string;
         phase?: typeof phase;
         qStep?: number;
+        questionSteps?: QuestionStep[];
         answers?: WizardAnswers;
         contactCompany?: string;
         contactEmail?: string;
@@ -184,6 +225,7 @@ export default function Diagnose() {
       if (!saved.phase || saved.phase === "idle" || saved.phase === "analyzing") return;
       setUrl(saved.url ?? "");
       setAnswers(saved.answers ?? { field: null, prefecture: null, headcount: null, timing: null, jisshuExperience: null });
+      if (saved.questionSteps?.length) setQuestionSteps(saved.questionSteps);
       setQStep(saved.qStep ?? 0);
       setContactCompany(saved.contactCompany ?? "");
       setContactEmail(saved.contactEmail ?? "");
@@ -238,6 +280,17 @@ export default function Diagnose() {
       diagnose.mutate({ url: normalized });
     } else {
       diagnose.mutate({ companyName: url.trim() });
+    }
+  };
+
+  /** 次の質問へ。最後の質問なら結果表示へ進む */
+  const goNext = () => {
+    setEditingField(false);
+    setEditingPrefecture(false);
+    if (qStep + 1 < questionSteps.length) {
+      setQStep((v) => v + 1);
+    } else {
+      finishQuestions();
     }
   };
 
@@ -304,6 +357,7 @@ export default function Diagnose() {
           url,
           phase,
           qStep,
+          questionSteps,
           answers,
           contactCompany,
           contactEmail,
@@ -316,7 +370,40 @@ export default function Diagnose() {
       // 保存失敗は無視（プライベートブラウズ等）
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDemo, url, phase, qStep, answers, contactCompany, contactEmail, liveResult, liveOrgs, liveDiagnosisId]);
+  }, [isDemo, url, phase, qStep, questionSteps, answers, contactCompany, contactEmail, liveResult, liveOrgs, liveDiagnosisId]);
+
+  // 適合スコアの内訳（サーバーが scoreBreakdown を返す。旧データには無いのでその場合は非表示）
+  const scoreBreakdown = useMemo(() => {
+    const b = (result as unknown as { scoreBreakdown?: { field?: number; labor?: number; info?: number } })
+      ?.scoreBreakdown;
+    if (!b || typeof b.field !== "number") return null;
+    return [
+      {
+        label: "分野の該当性",
+        value: b.field ?? 0,
+        max: 40,
+        help: "分野の該当性は、事業内容が特定技能19分野にどれだけ当てはまるかです。",
+      },
+      {
+        label: "人手不足の深刻度",
+        value: b.labor ?? 0,
+        max: 30,
+        help: "人手不足の深刻度は、業界の状況と現場職の比重から見た採用ニーズの大きさです。",
+      },
+      {
+        label: "情報の確からしさ",
+        value: b.info ?? 0,
+        max: 30,
+        help: "情報の確からしさは、Webサイトから事業内容をどこまで具体的に確認できたかです（URLのみからの推測だと低くなります）。",
+      },
+    ];
+  }, [result]);
+
+  /** チェックコメントから、内訳を並べた導入部分（「a)…合計N点。」）を外した本文 */
+  const reasonNarrative = useMemo(
+    () => (scoreBreakdown ? stripScoreIntro(result?.reason) : result?.reason ?? ""),
+    [result, scoreBreakdown]
+  );
 
   // 助成金候補（クライアント側で共有ロジックを実行）
   const joseikinCandidates = useMemo(() => {
@@ -426,21 +513,97 @@ export default function Diagnose() {
           </div>
         )}
 
-        {/* 質問ウィザード（1問1ページ） */}
+        {/* 質問ウィザード（1問1画面）。
+            AIが読み取れた分野・都道府県は個別に聞き直さず、1画面の確認にまとめる。
+            連絡先は結果を見せた後に任意で聞く（ウィザードからは外した）。 */}
         {phase === "questions" && !diagnose.isPending && (
           <Card className="border-2 border-brand/20">
             <CardContent className="p-6 md:p-8">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-muted-foreground">質問 {qStep + 1} / {QUESTION_COUNT}</span>
+                <span className="text-sm font-medium text-muted-foreground">
+                  質問 {qStep + 1} / {questionSteps.length}
+                </span>
                 {qStep > 0 && (
                   <Button variant="ghost" size="sm" onClick={() => setQStep((s) => s - 1)}>
                     <ArrowLeft className="h-4 w-4 mr-1" />戻る
                   </Button>
                 )}
               </div>
-              <Progress value={((qStep + 1) / QUESTION_COUNT) * 100} className="mb-6" />
+              <Progress value={((qStep + 1) / questionSteps.length) * 100} className="mb-6" />
 
-              {qStep === 0 && (
+              {currentStep === "confirm" && (
+                <div className="fade-up">
+                  <h2 className="text-xl font-bold mb-1">この内容で合っていますか？</h2>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    <Sparkles className="inline h-3.5 w-3.5 text-amber-accent mr-1" />
+                    AIが御社の情報から読み取りました。違っていれば「変更する」から選び直せます。
+                  </p>
+                  <dl className="rounded-lg border divide-y">
+                    <div className="flex items-center gap-3 p-3">
+                      <dt className="w-32 shrink-0 text-sm text-muted-foreground">受け入れ分野</dt>
+                      <dd className="flex-1 font-medium">{answers.field}</dd>
+                      <Button variant="outline" size="sm" onClick={() => setEditingField(true)}>
+                        変更する
+                      </Button>
+                    </div>
+                    <div className="flex items-center gap-3 p-3">
+                      <dt className="w-32 shrink-0 text-sm text-muted-foreground">勤務地</dt>
+                      <dd className="flex-1 font-medium">{answers.prefecture}</dd>
+                      <Button variant="outline" size="sm" onClick={() => setEditingPrefecture(true)}>
+                        変更する
+                      </Button>
+                    </div>
+                  </dl>
+
+                  {editingField && (
+                    <div className="mt-4">
+                      <p className="text-sm font-medium mb-2">受け入れ分野を選び直す</p>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {TOKUTEI_FIELDS.map((f) => (
+                          <Button
+                            key={f}
+                            variant={answers.field === f ? "default" : "outline"}
+                            className={answers.field === f ? "bg-brand text-brand-foreground" : "hover:border-brand/50"}
+                            onClick={() => { setAnswers((a) => ({ ...a, field: f })); setEditingField(false); }}
+                          >
+                            {f}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {editingPrefecture && (
+                    <div className="mt-4 max-w-sm">
+                      <p className="text-sm font-medium mb-2">勤務地を選び直す</p>
+                      <Select
+                        value={answers.prefecture ?? ""}
+                        onValueChange={(v) => { setAnswers((a) => ({ ...a, prefecture: v })); setEditingPrefecture(false); }}
+                      >
+                        <SelectTrigger className={FILTER_ACCENT_CLASS}>
+                          <MapPin className="h-4 w-4 mr-1 text-brand" />
+                          <SelectValue placeholder="都道府県を選択" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {PREFECTURES.map((pref) => (
+                            <SelectItem key={pref} value={pref}>{pref}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  <Button
+                    className="mt-5 bg-brand text-brand-foreground hover:bg-brand/90"
+                    onClick={goNext}
+                  >
+                    この内容で次へ
+                    <ArrowRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </div>
+              )}
+
+              {currentStep === "field" && (
                 <div className="fade-up">
                   <h2 className="text-xl font-bold mb-1">受け入れを検討している分野はどれですか？</h2>
                   {answers.field && (
@@ -455,7 +618,7 @@ export default function Diagnose() {
                         key={f}
                         variant={answers.field === f ? "default" : "outline"}
                         className={answers.field === f ? "bg-brand text-brand-foreground" : "hover:border-brand/50"}
-                        onClick={() => { setAnswers((a) => ({ ...a, field: f })); setQStep(1); }}
+                        onClick={() => { setAnswers((a) => ({ ...a, field: f })); goNext(); }}
                       >
                         {f}
                       </Button>
@@ -463,7 +626,7 @@ export default function Diagnose() {
                     <Button
                       variant={answers.field === null ? "secondary" : "outline"}
                       className="col-span-2 sm:col-span-3"
-                      onClick={() => { setAnswers((a) => ({ ...a, field: null })); setQStep(1); }}
+                      onClick={() => { setAnswers((a) => ({ ...a, field: null })); goNext(); }}
                     >
                       該当なし・わからない（あとで相談で確認）
                     </Button>
@@ -471,7 +634,7 @@ export default function Diagnose() {
                 </div>
               )}
 
-              {qStep === 1 && (
+              {currentStep === "prefecture" && (
                 <div className="fade-up">
                   <h2 className="text-xl font-bold mb-1">受け入れ予定の勤務地（都道府県）は？</h2>
                   {answers.prefecture && (
@@ -483,26 +646,26 @@ export default function Diagnose() {
                   <div className="mt-4 max-w-sm">
                     <Select
                       value={answers.prefecture ?? ""}
-                      onValueChange={(v) => { setAnswers((a) => ({ ...a, prefecture: v })); setQStep(2); }}
+                      onValueChange={(v) => { setAnswers((a) => ({ ...a, prefecture: v })); goNext(); }}
                     >
                       <SelectTrigger className={FILTER_ACCENT_CLASS}>
                         <MapPin className="h-4 w-4 mr-1 text-brand" />
                         <SelectValue placeholder="都道府県を選択" />
                       </SelectTrigger>
                       <SelectContent>
-                        {PREFECTURES.map((p) => (
-                          <SelectItem key={p} value={p}>{p}</SelectItem>
+                        {PREFECTURES.map((pref) => (
+                          <SelectItem key={pref} value={pref}>{pref}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                     <div className="flex items-center gap-2 mt-3">
                       {answers.prefecture && (
-                        <Button size="sm" className="bg-brand text-brand-foreground hover:bg-brand/90" onClick={() => setQStep(2)}>
+                        <Button size="sm" className="bg-brand text-brand-foreground hover:bg-brand/90" onClick={goNext}>
                           {answers.prefecture}で次へ
                           <ArrowRight className="h-4 w-4 ml-1" />
                         </Button>
                       )}
-                      <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => { setAnswers((a) => ({ ...a, prefecture: null })); setQStep(2); }}>
+                      <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => { setAnswers((a) => ({ ...a, prefecture: null })); goNext(); }}>
                         未定・スキップする
                       </Button>
                     </div>
@@ -510,7 +673,7 @@ export default function Diagnose() {
                 </div>
               )}
 
-              {qStep === 2 && (
+              {currentStep === "headcount" && (
                 <div className="fade-up">
                   <h2 className="text-xl font-bold mb-4">受け入れ予定人数は？</h2>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -519,7 +682,7 @@ export default function Diagnose() {
                         key={h}
                         variant={answers.headcount === h ? "default" : "outline"}
                         className={answers.headcount === h ? "bg-brand text-brand-foreground" : "hover:border-brand/50"}
-                        onClick={() => { setAnswers((a) => ({ ...a, headcount: h })); setQStep(3); }}
+                        onClick={() => { setAnswers((a) => ({ ...a, headcount: h })); goNext(); }}
                       >
                         {h}
                       </Button>
@@ -529,7 +692,7 @@ export default function Diagnose() {
                 </div>
               )}
 
-              {qStep === 3 && (
+              {currentStep === "timing" && (
                 <div className="fade-up">
                   <h2 className="text-xl font-bold mb-4">受け入れ希望時期は？</h2>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -538,7 +701,7 @@ export default function Diagnose() {
                         key={t}
                         variant={answers.timing === t ? "default" : "outline"}
                         className={answers.timing === t ? "bg-brand text-brand-foreground" : "hover:border-brand/50"}
-                        onClick={() => { setAnswers((a) => ({ ...a, timing: t })); setQStep(4); }}
+                        onClick={() => { setAnswers((a) => ({ ...a, timing: t })); goNext(); }}
                       >
                         {t}
                       </Button>
@@ -547,7 +710,7 @@ export default function Diagnose() {
                 </div>
               )}
 
-              {qStep === 4 && (
+              {currentStep === "experience" && (
                 <div className="fade-up">
                   <h2 className="text-xl font-bold mb-1">技能実習生・外国人雇用の受け入れ経験はありますか？</h2>
                   <p className="text-sm text-muted-foreground mb-4">経験の有無で活用できる助成金候補が変わる場合があります。</p>
@@ -555,46 +718,17 @@ export default function Diagnose() {
                     <Button
                       variant={answers.jisshuExperience === true ? "default" : "outline"}
                       className={answers.jisshuExperience === true ? "bg-brand text-brand-foreground" : "hover:border-brand/50"}
-                      onClick={() => { setAnswers((a) => ({ ...a, jisshuExperience: true })); setQStep(5); }}
+                      onClick={() => { setAnswers((a) => ({ ...a, jisshuExperience: true })); goNext(); }}
                     >
                       ある
                     </Button>
                     <Button
                       variant={answers.jisshuExperience === false ? "default" : "outline"}
                       className={answers.jisshuExperience === false ? "bg-brand text-brand-foreground" : "hover:border-brand/50"}
-                      onClick={() => { setAnswers((a) => ({ ...a, jisshuExperience: false })); setQStep(5); }}
+                      onClick={() => { setAnswers((a) => ({ ...a, jisshuExperience: false })); goNext(); }}
                     >
                       ない（初めて）
                     </Button>
-                  </div>
-                </div>
-              )}
-
-              {qStep === 5 && (
-                <div className="fade-up">
-                  <h2 className="text-xl font-bold mb-1">ご連絡先（任意）</h2>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    入力しておくと、診断後の支援機関への相談フォームに自動で反映されます。スキップしても診断結果はご覧いただけます。
-                  </p>
-                  <div className="space-y-3 max-w-md">
-                    <Input
-                      placeholder="会社名（任意）"
-                      value={contactCompany}
-                      onChange={(e) => setContactCompany(e.target.value)}
-                    />
-                    <Input
-                      type="email"
-                      placeholder="メールアドレス（任意）"
-                      value={contactEmail}
-                      onChange={(e) => setContactEmail(e.target.value)}
-                    />
-                    <div className="flex gap-2 pt-2">
-                      <Button className="bg-amber-accent text-brand font-bold hover:bg-amber-accent/90 flex-1" onClick={finishQuestions}>
-                        診断結果を見る
-                        <ArrowRight className="h-4 w-4 ml-1" />
-                      </Button>
-                      <Button variant="outline" onClick={finishQuestions}>スキップして結果を見る</Button>
-                    </div>
                   </div>
                 </div>
               )}
@@ -612,7 +746,10 @@ export default function Diagnose() {
                     <Sparkles className="h-8 w-8 text-brand animate-pulse" />
                   </div>
                 </div>
-                <Progress value={((stepIndex + 1) / LOADING_STEPS.length) * 100} className="max-w-sm mb-6" />
+                <Progress value={loadingPercent} className="max-w-sm mb-2" />
+                <p className="text-xs text-muted-foreground mb-6">
+                  経過 {Math.floor(elapsedMs / 1000)} 秒
+                </p>
                 <div className="space-y-2">
                   {LOADING_STEPS.map((step, i) => (
                     <div
@@ -632,6 +769,12 @@ export default function Diagnose() {
                     </div>
                   ))}
                 </div>
+                {takingLong && (
+                  <p className="mt-6 max-w-sm text-xs text-muted-foreground leading-relaxed">
+                    通常より時間がかかっています。サイトの読み込みに時間がかかる場合があり、
+                    最長で20秒ほどかかることがあります。そのままお待ちください。
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -695,15 +838,88 @@ export default function Diagnose() {
                     </div>
                   </div>
                 </div>
+                {/* 適合スコアの内訳。これまでは a)b)c) の点数が reason の文章に
+                    埋まっていて、なぜその点数なのかが読み取れなかった。 */}
+                {scoreBreakdown && (
+                  <div className="rounded-lg border bg-background p-4 mb-3">
+                    <p className="text-sm font-bold text-brand mb-3">適合スコアの内訳</p>
+                    <dl className="space-y-2.5">
+                      {scoreBreakdown.map((b) => (
+                        <div key={b.label} className="grid grid-cols-[9rem_1fr_4rem] items-center gap-3">
+                          <dt className="text-sm">{b.label}</dt>
+                          <dd>
+                            <div className="h-2 rounded-full bg-muted overflow-hidden">
+                              <div
+                                className="h-full rounded-full bg-brand"
+                                style={{ width: `${(b.value / b.max) * 100}%` }}
+                              />
+                            </div>
+                          </dd>
+                          <dd className="text-sm text-right tabular-nums">
+                            <span className="font-bold">{b.value}</span>
+                            <span className="text-muted-foreground text-xs"> / {b.max}</span>
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
+                    <p className="text-xs text-muted-foreground mt-3 leading-relaxed">
+                      {scoreBreakdown.map((b) => b.help).join(" ")}
+                    </p>
+                  </div>
+                )}
                 <div className="rounded-lg border bg-background p-4 text-sm leading-relaxed">
                   <span className="font-bold text-brand">チェックコメント：</span>
-                  {result.reason}
+                  {reasonNarrative}
                 </div>
                 <div className="rounded-lg border border-amber-accent/40 bg-amber-accent/5 p-4 text-xs text-muted-foreground mt-3 leading-relaxed">
                   <span className="font-bold text-foreground">本診断は情報整理を目的としたもので、在留資格の可否判断ではありません。個別の要件は行政書士または出入国在留管理庁にご確認ください。</span>
                 </div>
               </CardContent>
             </Card>
+
+            {/* 連絡先（任意）。以前は質問6/6としてウィザードの最後に置いていたが、
+                結果を見る前に個人情報を求める形になっていた。結果を見たあとに
+                「相談フォームへの自動入力」という具体的な用途とともに聞く。 */}
+            {!isDemo && (
+              <Card>
+                <CardContent className="p-5">
+                  <p className="font-bold mb-1">相談フォームへの自動入力（任意）</p>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    入力しておくと、支援機関への相談フォームに会社名とメールアドレスが自動で入ります。
+                    入力しなくても診断結果はこのまま閲覧できます。当サイトから営業のご連絡はしません。
+                  </p>
+                  <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+                    <Input
+                      placeholder="会社名"
+                      value={contactCompany}
+                      onChange={(e) => setContactCompany(e.target.value)}
+                    />
+                    <Input
+                      type="email"
+                      placeholder="メールアドレス"
+                      value={contactEmail}
+                      onChange={(e) => setContactEmail(e.target.value)}
+                    />
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        try {
+                          sessionStorage.setItem(
+                            "yatoeru_contact",
+                            JSON.stringify({ company: contactCompany, email: contactEmail })
+                          );
+                          toast.success("相談フォームに自動入力されます");
+                        } catch {
+                          toast.error("この環境では保存できませんでした");
+                        }
+                      }}
+                    >
+                      保存する
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* 人数連動の概算費用レンジ */}
             {costRange && (
