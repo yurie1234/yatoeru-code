@@ -53,11 +53,22 @@ const dbMock = {
 };
 
 vi.mock("./db", () => ({ getDb: vi.fn(async () => dbMock) }));
+// vi.mock のファクトリはファイル先頭へホイストされるため、クラス定義も
+// ファクトリの内側で行う（外の変数を参照すると初期化前アクセスになる）
 vi.mock("./_core/llm", () => ({
   invokeLLM: vi.fn(async () => {
     state.llmCalled++;
     return { choices: [{ message: { content: "{}" } }] };
   }),
+  LlmInvokeError: class extends Error {
+    readonly reason: string;
+    constructor(reason: string, cause?: unknown) {
+      super(`LLM invoke failed (${reason})`);
+      this.name = "LlmInvokeError";
+      this.reason = reason;
+      if (cause !== undefined) this.cause = cause;
+    }
+  },
 }));
 
 import { appRouter } from "./routers";
@@ -177,5 +188,62 @@ describe("orgs.applyDiagnosisAnswers", () => {
       answers: { field: "介護", prefecture: "熊本県" },
     });
     expect(Array.isArray(r.recommendedOrgs)).toBe(true);
+  });
+});
+
+// AIが使えないときに診断ごと失敗させると、ページが完全に使えなくなる。
+// 業種推定とスコアはAI依存だが、支援機関の候補・費用目安・助成金候補は
+// 利用者の回答だけで出せるため、AI由来の項目を欠いた形で続行する。
+describe("AI解析が使えないときの縮退動作", () => {
+  it("診断は成功として返り、AI不在の理由コードが含まれる", async () => {
+    const { invokeLLM, LlmInvokeError } = await import("./_core/llm");
+    vi.mocked(invokeLLM).mockRejectedValueOnce(new LlmInvokeError("auth-failed" as never));
+
+    const r = await createCaller().orgs.diagnoseUrl({ companyName: "テスト用架空商事" });
+    expect(r.result.aiUnavailable).toBe("auth-failed");
+    expect(r.diagnosisId).toBeTruthy();
+  });
+
+  it("スコアはnullで返る（0点と誤読させない）", async () => {
+    const { invokeLLM, LlmInvokeError } = await import("./_core/llm");
+    vi.mocked(invokeLLM).mockRejectedValueOnce(new LlmInvokeError("network" as never));
+
+    const r = await createCaller().orgs.diagnoseUrl({ companyName: "テスト用架空商事" });
+    expect(r.result.score).toBeNull();
+    expect(r.result.scoreBreakdown).toBeNull();
+  });
+
+  it("回答済みの分野・都道府県は縮退時でも反映される", async () => {
+    const { invokeLLM, LlmInvokeError } = await import("./_core/llm");
+    vi.mocked(invokeLLM).mockRejectedValueOnce(new LlmInvokeError("auth-failed" as never));
+
+    const r = await createCaller().orgs.diagnoseUrl({
+      companyName: "テスト用架空商事",
+      answers: { field: "介護", prefecture: "熊本県", headcount: "3〜5名" },
+    });
+    expect(r.result.field).toBe("介護");
+    expect(r.result.prefecture).toBe("熊本県");
+    expect(r.result.headcount).toBe("3〜5名");
+  });
+
+  it("支援機関の候補は返す（回答だけで出せる部分は止めない）", async () => {
+    const { invokeLLM, LlmInvokeError } = await import("./_core/llm");
+    vi.mocked(invokeLLM).mockRejectedValueOnce(new LlmInvokeError("auth-failed" as never));
+
+    const r = await createCaller().orgs.diagnoseUrl({ companyName: "テスト用架空商事" });
+    expect(Array.isArray(r.recommendedOrgs)).toBe(true);
+  });
+
+  it("縮退時の応答にAPIキーらしき文字列が含まれない", async () => {
+    const { invokeLLM, LlmInvokeError } = await import("./_core/llm");
+    vi.mocked(invokeLLM).mockRejectedValueOnce(
+      new LlmInvokeError(
+        "api-key-invalid-format" as never,
+        new Error('Headers.append: "sk-ant-api03-leakedsecretvalue" is an invalid header value.')
+      )
+    );
+
+    const r = await createCaller().orgs.diagnoseUrl({ companyName: "テスト用架空商事" });
+    expect(JSON.stringify(r)).not.toContain("sk-ant");
   });
 });

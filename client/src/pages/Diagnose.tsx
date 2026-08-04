@@ -64,9 +64,12 @@ type DiagnosisResult = {
   field: string | null;
   headcount: string;
   cost: string;
-  score: number;
+  /** AIの採点結果。AIが使えなかった診断では null */
+  score: number | null;
   reason: string;
   prefecture?: string | null;
+  /** AIが使えなかった場合の理由コード（正常時は未設定） */
+  aiUnavailable?: string;
 };
 
 /**
@@ -342,6 +345,8 @@ export default function Diagnose() {
     diagnose.data?.diagnosisId ?? savedSnapshot?.diagnosisId ?? undefined;
 
   const result = isDemo ? DEMO_RESULT : liveResult;
+  /** AI解析が使えなかった診断（業種推定とスコアが無い状態） */
+  const aiUnavailable = Boolean(result?.aiUnavailable);
   const recommendedOrgs = isDemo ? undefined : liveOrgs;
   const diagnosisId = isDemo ? undefined : liveDiagnosisId;
 
@@ -789,6 +794,19 @@ export default function Diagnose() {
                 実際の診断ではご自社のWebサイトURLを入力してください。
               </div>
             )}
+            {aiUnavailable && (
+              <div className="rounded-lg border-2 border-amber-accent/50 bg-amber-accent/10 p-4 text-sm leading-relaxed">
+                <p className="font-bold flex items-center gap-1.5 mb-1">
+                  <AlertTriangle className="h-4 w-4 text-amber-accent" />
+                  AI解析が一時的に利用できません
+                </p>
+                <p className="text-muted-foreground">
+                  業種の推定と適合スコアは表示できませんが、ご回答いただいた分野・地域・人数から
+                  <strong className="text-foreground">支援機関の候補・費用の目安・助成金の候補</strong>
+                  はそのままご案内できます。業種の推定が必要な場合は、時間をおいて再度お試しください。
+                </p>
+              </div>
+            )}
             <Card className="border-2 border-brand/20 overflow-hidden">
               <div className="bg-brand text-brand-foreground px-6 py-4 flex items-center justify-between">
                 <h2 className="font-bold text-lg">診断結果</h2>
@@ -796,6 +814,7 @@ export default function Diagnose() {
               </div>
               <CardContent className="p-6">
                 <div className="flex flex-col md:flex-row gap-8 items-center mb-8">
+                  {typeof result.score === "number" && (
                   <div className="relative flex items-center justify-center h-36 w-36 shrink-0">
                     <svg viewBox="0 0 120 120" className="h-36 w-36 -rotate-90">
                       <circle cx="60" cy="60" r="52" fill="none" stroke="var(--muted)" strokeWidth="12" />
@@ -812,11 +831,12 @@ export default function Diagnose() {
                       <span className="text-xs text-muted-foreground">適合スコア</span>
                     </div>
                   </div>
+                  )}
                   <div className="flex-1 w-full">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="rounded-lg bg-muted/50 p-4">
                         <div className="text-xs text-muted-foreground mb-1">推定業種</div>
-                        <div className="font-bold">{result.industry}</div>
+                        <div className="font-bold">{result.industry || "未解析"}</div>
                         {result.prefecture && (
                           <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                             <MapPin className="h-3 w-3" />所在地（推定）：{result.prefecture}
@@ -867,10 +887,12 @@ export default function Diagnose() {
                     </p>
                   </div>
                 )}
-                <div className="rounded-lg border bg-background p-4 text-sm leading-relaxed">
-                  <span className="font-bold text-brand">チェックコメント：</span>
-                  {reasonNarrative}
-                </div>
+                {reasonNarrative && (
+                  <div className="rounded-lg border bg-background p-4 text-sm leading-relaxed">
+                    <span className="font-bold text-brand">チェックコメント：</span>
+                    {reasonNarrative}
+                  </div>
+                )}
                 <div className="rounded-lg border border-amber-accent/40 bg-amber-accent/5 p-4 text-xs text-muted-foreground mt-3 leading-relaxed">
                   <span className="font-bold text-foreground">本診断は情報整理を目的としたもので、在留資格の可否判断ではありません。個別の要件は行政書士または出入国在留管理庁にご確認ください。</span>
                 </div>

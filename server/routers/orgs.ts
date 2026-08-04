@@ -188,7 +188,10 @@ type DiagnosisResultData = Record<string, unknown> & {
   industry: string;
   field: string | null;
   prefecture: string | null;
-  score: number;
+  /** AIの採点結果。AIが使えなかった診断では null（0点と誤読させないため） */
+  score: number | null;
+  /** AIが使えなかった場合の理由コード（正常時は未設定） */
+  aiUnavailable?: string;
 };
 
 /**
@@ -521,18 +524,47 @@ ${pageText ? `\n【実際に取得したページ内容】\n${pageText}\n` : noP
           },
         });
       } catch (e) {
-        // 失敗理由だけを利用者に伝える（キー等の値は含めない。原因は下位でログ済み）
+        // AIが使えないときに診断ごと失敗させると、ページが完全に使えなくなる。
+        // 業種の推定とスコアはAIに依存するが、支援機関の候補・費用目安・助成金候補は
+        // 利用者の回答だけで出せるため、AI由来の項目を欠いた状態で診断を続行する。
+        // 失敗理由はキー等の値を含めない分類コードのみを返す（原因は下位でログ済み）。
         const reason = e instanceof LlmInvokeError ? e.reason : "unknown";
         console.error("[diagnose] LLM invoke failed", { reason, error: e });
-        throw new TRPCError({
-          code: "SERVICE_UNAVAILABLE",
-          message:
-            reason === "rate-limited"
-              ? "AIの利用が混み合っています。少し時間をおいて再度お試しください。"
-              : reason === "network" || reason === "upstream-error"
-                ? "AI解析に一時的に接続できませんでした。時間をおいて再度お試しください。"
-                : `AI解析を実行できませんでした（${reason}）。運営にお問い合わせください。`,
+
+        const fallback = applyAnswersToResult(
+          {
+            companyName: input.companyName?.trim() || input.url || "ご入力の企業",
+            industry: "",
+            field: null,
+            headcount: "",
+            cost: "",
+            // スコアはAIの採点結果なので、AI不在では出さない（0点と誤読されないようnull）
+            score: null,
+            scoreBreakdown: null,
+            reason: "",
+            prefecture: null,
+            aiUnavailable: reason,
+          },
+          input.answers
+        );
+
+        const [fallbackInsert] = await db.insert(diagnoses).values({
+          inputUrl: input.url ?? `company:${input.companyName}`,
+          companyName: fallback.companyName,
+          industry: null,
+          result: fallback,
+          matchScore: null,
+          userId: ctx.user?.id,
         });
+
+        return {
+          diagnosisId: fallbackInsert.insertId,
+          result: fallback,
+          recommendedOrgs: await findRecommendedOrgs(db, {
+            field: fallback.field,
+            prefecture: fallback.prefecture,
+          }),
+        };
       }
 
       const rawContent = llmResult.choices[0].message.content;
