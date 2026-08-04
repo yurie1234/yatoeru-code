@@ -55,7 +55,9 @@ async function main() {
     for (const org of magokoro) {
       await conn.query(
         `UPDATE support_orgs SET
+          prefecture = ?,
           address = ?,
+          phone = ?,
           preferredFields = ?,
           preferredRegions = ?,
           consultStatus = 'open',
@@ -63,7 +65,10 @@ async function main() {
           verifiedNote = ?
         WHERE id = ?`,
         [
+          // 反映前は埼玉県の別団体の情報と混同されていたため、都道府県・電話番号も訂正
+          "静岡県",
           "〒418-0066 静岡県富士宮市大宮町10-15 アーバンABCハイツ１階D号室",
+          "0544225151",
           // 原文「食品加工業」「建設業」をTOKUTEI_FIELDSの正式名称（飲食料品製造業／建設）に変換
           JSON.stringify(["飲食料品製造業", "建設", "自動車整備", "介護"]),
           JSON.stringify(["東京都", "千葉県", "埼玉県", "静岡県"]),
