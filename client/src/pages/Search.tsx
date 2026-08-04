@@ -16,7 +16,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { trpc } from "@/lib/trpc";
 import { FILTER_ACCENT_CLASS } from "@/pages/Proposal";
 import { AFFINITY_METHODOLOGY, normalizedScore } from "@shared/affinity";
-import { MAJOR_LANGUAGES, PREFECTURES, TOKUTEI_FIELDS } from "@shared/tokutei";
+import { PREFECTURES, TOKUTEI_FIELDS } from "@shared/tokutei";
+import { languageOptionLabel, useLanguageOptions } from "@/hooks/useLanguageOptions";
 import { AlertTriangle, ArrowDownWideNarrow, Building2, CheckSquare, ChevronLeft, ChevronRight, Info, Languages, MapPin, Search as SearchIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useSearch } from "wouter";
@@ -88,6 +89,8 @@ export default function Search() {
   );
 
   const { data, isLoading } = trpc.orgs.search.useQuery(queryInput);
+  // 対応言語の選択肢は実データから作る（決め打ちの13言語では大半が絞り込めなかった）
+  const { options: languageOptions } = useLanguageOptions();
 
   const toggleSelect = (id: number) => {
     setSelectedIds((prev) =>
@@ -145,8 +148,10 @@ export default function Search() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={ALL}>すべての言語</SelectItem>
-                  {MAJOR_LANGUAGES.map((l) => (
-                    <SelectItem key={l} value={l}>{l}</SelectItem>
+                  {languageOptions.map((o) => (
+                    <SelectItem key={o.language} value={o.language}>
+                      {languageOptionLabel(o)}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>

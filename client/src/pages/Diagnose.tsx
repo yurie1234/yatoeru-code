@@ -22,7 +22,8 @@ import { captureSource, trackEvent } from "@/lib/track";
 import { FILTER_ACCENT_CLASS } from "@/pages/Proposal";
 import { JOSEIKIN_DISCLAIMER, matchJoseikin } from "@shared/joseikin";
 import { normalizedScore } from "@shared/affinity";
-import { HEADCOUNT_OPTIONS, MAJOR_LANGUAGES, PREFECTURES, TOKUTEI_FIELDS } from "@shared/tokutei";
+import { HEADCOUNT_OPTIONS, PREFECTURES, TOKUTEI_FIELDS } from "@shared/tokutei";
+import { languageOptionLabel, useLanguageOptions } from "@/hooks/useLanguageOptions";
 import {
   buildQuestionSteps,
   loadingPercent as calcLoadingPercent,
@@ -450,6 +451,8 @@ export default function Diagnose() {
   const [orgLanguage, setOrgLanguage] = useState<string>("英語");
   const [orgField, setOrgField] = useState<string>(ALL);
   const [filterTouched, setFilterTouched] = useState(false);
+  // 対応言語の選択肢は実データから作る（決め打ちの13言語では大半が絞り込めなかった）
+  const { options: languageOptions } = useLanguageOptions();
 
   // 診断完了時にフィルター初期値を診断結果から設定
   const resultKey = result ? `${result.companyName}|${result.field}|${result.prefecture}` : null;
@@ -942,8 +945,10 @@ export default function Diagnose() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value={ALL}>すべての言語</SelectItem>
-                          {MAJOR_LANGUAGES.map((l) => (
-                            <SelectItem key={l} value={l}>{l}</SelectItem>
+                          {languageOptions.map((o) => (
+                            <SelectItem key={o.language} value={o.language}>
+                              {languageOptionLabel(o)}
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>

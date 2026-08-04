@@ -49,6 +49,19 @@ function sanitizeOrg<T extends Record<string, unknown>>(org: T) {
   >;
 }
 
+/**
+ * 対応言語の選択肢のキャッシュ。
+ * 登録簿の同期は週次、管理画面からの更新も低頻度なので、10分で十分に新しい。
+ */
+const LANGUAGE_FACETS_TTL = 10 * 60 * 1000;
+let languageFacetsCache: { at: number; data: Array<{ language: string; count: number }> } | null =
+  null;
+
+/** テスト用：選択肢のキャッシュを空にする */
+export function resetLanguageFacetsCache() {
+  languageFacetsCache = null;
+}
+
 /** regDateの古い順比較（同点時の最終タイブレーク：登録年月日の古い順。nullは最後尾） */
 function compareRegDateAsc(a: { regDate: unknown }, b: { regDate: unknown }): number {
   const ta = a.regDate ? new Date(String(a.regDate)).getTime() : Number.POSITIVE_INFINITY;
@@ -387,6 +400,46 @@ export const orgsRouter = router({
         totalPages: Math.ceil(Number(totalResult.count) / input.limit),
       };
     }),
+
+  /**
+   * 対応言語の選択肢を、実際のデータから機関数つきで返す。
+   *
+   * 以前は shared/tokutei.ts の MAJOR_LANGUAGES（13言語の決め打ち）を
+   * 検索と診断の絞り込みに使っていた。実データには60種類以上あるため、
+   * シンハラ語702機関・ベンガル語417機関・ヒンディー語406機関などが
+   * **DBには入っているのに選択肢に無く、誰も絞り込めない**状態だった。
+   * 正規化のホワイトリストと同じ「決め打ちが実態から取り残される」問題なので、
+   * 選択肢そのものをデータから作る。
+   */
+  languageFacets: publicProcedure.query(async () => {
+    const cached = languageFacetsCache;
+    if (cached && Date.now() - cached.at < LANGUAGE_FACETS_TTL) {
+      return { languages: cached.data };
+    }
+
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+
+    // JSON配列の各要素を行に展開して集計する（MySQL 8のJSON_TABLE）。
+    // 全件をアプリ側へ転送して数えるとDB転送量が大きいためDB側で集計する
+    const res = await db.execute(sql`
+      SELECT jt.lang AS lang, COUNT(*) AS c
+      FROM ${supportOrgs},
+           JSON_TABLE(${supportOrgs.languages}, '$[*]' COLUMNS (lang VARCHAR(64) PATH '$')) jt
+      WHERE ${supportOrgs.isDeleted} = 0 AND jt.lang IS NOT NULL AND jt.lang <> ''
+      GROUP BY jt.lang
+      ORDER BY c DESC, jt.lang ASC
+    `);
+    const rows = Array.isArray(res) && Array.isArray(res[0]) ? res[0] : [];
+    const languages = (rows as Array<{ lang: unknown; c: unknown }>)
+      .map((r) => ({ language: String(r.lang), count: Number(r.c) }))
+      // 1機関だけの言語も残す。「その言語ができる機関が1つある」ことは
+      // 探している企業にとっては十分な情報で、隠す理由がない
+      .filter((r) => r.language && r.count > 0);
+
+    languageFacetsCache = { at: Date.now(), data: languages };
+    return { languages };
+  }),
 
   // 2. 登録支援機関 詳細取得
   getById: publicProcedure.input(z.number()).query(async ({ input }) => {
