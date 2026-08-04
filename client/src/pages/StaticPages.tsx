@@ -126,7 +126,9 @@ export function Operator() {
         本サービス（ヤトエル／yatoeru.jp）の運営者情報を、特定商取引法に関する消費者庁ガイドラインに基づき表示します。
       </p>
       <h2>運営者</h2>
-      <p>ubusuna works</p>
+      <p>
+        <a href="https://ubusunaworks.jp/" target="_blank" rel="noopener noreferrer">ubusuna works</a>
+      </p>
       <h2>氏名（名称）・住所・電話番号</h2>
       <p>
         氏名（名称）、住所及び電話番号については、ご請求をいただいた場合、遅滞なく電子メールにてご提供いたします。開示をご希望の方は下記メールアドレスまでご連絡ください。
@@ -134,10 +136,6 @@ export function Operator() {
       <h2>連絡先</h2>
       <p>
         メールアドレス：<a href="mailto:info@ubusunaworks.jp">info@ubusunaworks.jp</a>
-      </p>
-      <h2>運営会社</h2>
-      <p>
-        <a href="https://ubusunaworks.jp/" target="_blank" rel="noopener noreferrer">ubusunaworks.jp</a>
       </p>
     </StaticShell>
   );
