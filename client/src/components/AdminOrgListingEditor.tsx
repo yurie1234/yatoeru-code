@@ -59,6 +59,10 @@ export default function AdminOrgListingEditor() {
   const [regNoInput, setRegNoInput] = useState("");
   const [loadedRegNo, setLoadedRegNo] = useState<string | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
+  /** 反映待ちの下書きを読み込んだ場合、DB値ではなくその内容でフォームを埋める */
+  const [pendingOverride, setPendingOverride] = useState<Partial<Draft> | null>(null);
+
+  const pendingQuery = trpc.admin.pendingListingUpdates.useQuery();
 
   const orgQuery = trpc.admin.orgByRegNo.useQuery(
     { regNo: loadedRegNo ?? "" },
@@ -71,7 +75,7 @@ export default function AdminOrgListingEditor() {
   useEffect(() => {
     const org = orgQuery.data;
     if (!org) return;
-    setDraft({
+    const fromDb: Draft = {
       languages: (org.languages ?? []).join("、"),
       fields: (org.fields ?? []) as string[],
       preferredAllFields: ((org.preferredFields ?? []) as string[]).includes("全分野"),
@@ -85,9 +89,11 @@ export default function AdminOrgListingEditor() {
       verifiedAt: org.verifiedAt ? new Date(org.verifiedAt).toISOString().slice(0, 10) : "",
       verifiedNote: org.verifiedNote ?? "",
       internalMemo: org.internalMemo ?? "",
-    });
+    };
+    // 反映待ちの下書きを読み込んだ場合はそちらを重ねる（指定の無い項目はDB値のまま）
+    setDraft(pendingOverride ? { ...fromDb, ...pendingOverride } : fromDb);
     // dataUpdatedAt を見ることで、再読込のたびに下書きを取得値へ戻す
-  }, [loadedAt]);
+  }, [loadedAt, pendingOverride]);
 
   useEffect(() => {
     if (!orgQuery.error) return;
@@ -110,7 +116,36 @@ export default function AdminOrgListingEditor() {
     const v = regNoInput.trim();
     if (!v) return;
     setDraft(null);
+    setPendingOverride(null);
     setLoadedRegNo(v);
+  }
+
+  /** 反映待ちの下書きをフォームに読み込む（この時点では本番は変わらない） */
+  function loadPending(entry: NonNullable<typeof pendingQuery.data>[number]) {
+    const p = entry.payload;
+    const override: Partial<Draft> = {};
+    if (p.languages) override.languages = p.languages.join("、");
+    if (p.fields) override.fields = [...p.fields];
+    if (p.preferredFields) {
+      override.preferredAllFields = p.preferredFields.includes("全分野");
+      override.preferredFields = p.preferredFields.filter((f) => f !== "全分野");
+    }
+    if (p.preferredRegions) override.preferredRegions = p.preferredRegions.join("、");
+    if (p.preferredNote !== undefined) override.preferredNote = p.preferredNote ?? "";
+    if (p.consultStatus) override.consultStatus = p.consultStatus;
+    if (p.websiteUrl !== undefined) override.websiteUrl = p.websiteUrl ?? "";
+    if (p.monthlyFeeMin !== undefined)
+      override.monthlyFeeMin = p.monthlyFeeMin != null ? String(p.monthlyFeeMin) : "";
+    if (p.monthlyFeeMax !== undefined)
+      override.monthlyFeeMax = p.monthlyFeeMax != null ? String(p.monthlyFeeMax) : "";
+    if (p.verifiedAt !== undefined) override.verifiedAt = p.verifiedAt ?? "";
+    if (p.verifiedNote !== undefined) override.verifiedNote = p.verifiedNote ?? "";
+    if (p.internalMemo !== undefined) override.internalMemo = p.internalMemo ?? "";
+
+    setDraft(null);
+    setRegNoInput(entry.regNo);
+    setPendingOverride(override);
+    setLoadedRegNo(entry.regNo);
   }
 
   function toggle(list: string[], value: string): string[] {
@@ -143,8 +178,46 @@ export default function AdminOrgListingEditor() {
     });
   }
 
+  const pending = pendingQuery.data ?? [];
+
   return (
     <div className="space-y-4">
+      {pending.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">
+              反映待ちの下書き
+              <Badge variant="secondary" className="ml-2">
+                {pending.length}件
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-xs text-muted-foreground">
+              返信内容から用意された下書きです。読み込んでも本番は変わりません。内容を確認して
+              「本番に反映する」を押したときだけ更新されます。
+            </p>
+            {pending.map((entry) => (
+              <div key={entry.regNo} className="rounded-md border p-3 space-y-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-medium text-sm">{entry.orgName}</span>
+                  <Badge variant="secondary">{entry.regNo}</Badge>
+                  <span className="text-xs text-muted-foreground">
+                    回答受領 {entry.receivedAt}
+                  </span>
+                  <Button size="sm" className="ml-auto" onClick={() => loadPending(entry)}>
+                    フォームに読み込む
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                  {entry.sourceNote}
+                </p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle className="text-base">掲載確認の反映</CardTitle>
@@ -184,6 +257,7 @@ export default function AdminOrgListingEditor() {
               {org.name}
               <Badge variant="secondary">{org.regNo}</Badge>
               {org.verifiedAt && <Badge>確認済み</Badge>}
+              {pendingOverride && <Badge variant="outline">下書き読込中（未反映）</Badge>}
               <a
                 href={`/org/${org.id}`}
                 target="_blank"

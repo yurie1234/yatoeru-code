@@ -10,6 +10,7 @@ import {
 import { getDb } from "../db";
 import { protectedProcedure, router } from "../_core/trpc";
 import { PREFECTURES, TOKUTEI_FIELDS } from "../../shared/tokutei";
+import { PENDING_LISTING_UPDATES } from "../pendingListingUpdates";
 
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
@@ -127,6 +128,14 @@ export const adminRouter = router({
       .from(planApplications)
       .orderBy(desc(planApplications.createdAt))
       .limit(100);
+  }),
+
+  /**
+   * 反映待ちの下書き一覧（server/pendingListingUpdates.ts にコミットしたもの）。
+   * 表示するだけで本番は変わらない。管理画面で内容を確認してから反映する。
+   */
+  pendingListingUpdates: adminProcedure.query(async () => {
+    return PENDING_LISTING_UPDATES;
   }),
 
   /**

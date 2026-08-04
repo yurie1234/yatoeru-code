@@ -33,6 +33,7 @@ vi.mock("./db", () => ({
 }));
 
 import { appRouter } from "./routers";
+import { PENDING_LISTING_UPDATES } from "./pendingListingUpdates";
 
 function createCaller(role: "admin" | "user" | null) {
   return appRouter.createCaller({
@@ -161,6 +162,34 @@ describe("admin.updateOrgListing", () => {
       createCaller("admin").admin.updateOrgListing({ regNo: "19登-000020", consultStatus: "open" })
     ).rejects.toThrow();
     expect(state.updateWhereCalled).toBe(false);
+  });
+});
+
+describe("PENDING_LISTING_UPDATES", () => {
+  it("反映待ちの下書きはすべて updateOrgListing の検証を通る", async () => {
+    for (const entry of PENDING_LISTING_UPDATES) {
+      state.selectRows = [{ id: 1 }];
+      state.updateWhereCalled = false;
+      await expect(
+        createCaller("admin").admin.updateOrgListing({
+          regNo: entry.regNo,
+          ...entry.payload,
+        })
+      ).resolves.toMatchObject({ ok: true });
+      expect(state.updateWhereCalled).toBe(true);
+    }
+  });
+
+  it("同じ登録番号の下書きが重複していない", () => {
+    const regNos = PENDING_LISTING_UPDATES.map((e) => e.regNo);
+    expect(new Set(regNos).size).toBe(regNos.length);
+  });
+
+  it("確認情報には出典が明記されている", () => {
+    for (const entry of PENDING_LISTING_UPDATES) {
+      if (entry.payload.verifiedNote == null) continue;
+      expect(entry.payload.verifiedNote).toMatch(/事業者本人|公式サイト|登録簿/);
+    }
   });
 });
 
