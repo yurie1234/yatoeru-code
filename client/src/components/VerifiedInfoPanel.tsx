@@ -30,11 +30,18 @@ const CONSULT_STATUS_LABELS: Record<string, string> = {
 };
 
 function Row({ label, children }: { label: string | null; children: ReactNode }) {
+  // ラベルの無い行（旧データの本文）はラベル列を空けず、全幅で表示する
+  if (!label) {
+    return (
+      <div className="border-t border-emerald-600/20 py-2.5 first:border-t-0 first:pt-0">
+        <dd className="text-sm leading-relaxed">{children}</dd>
+      </div>
+    );
+  }
+
   return (
     <div className="grid gap-1 border-t border-emerald-600/20 py-2.5 first:border-t-0 first:pt-0 sm:grid-cols-[11rem_1fr] sm:gap-4">
-      <dt className="text-sm font-semibold text-emerald-900/80 dark:text-emerald-200/80">
-        {label ?? ""}
-      </dt>
+      <dt className="text-sm font-semibold text-emerald-900/80 dark:text-emerald-200/80">{label}</dt>
       <dd className="text-sm leading-relaxed">{children}</dd>
     </div>
   );
