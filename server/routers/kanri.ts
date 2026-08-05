@@ -6,6 +6,15 @@ import { getDb } from "../db";
 import { notifyOwner } from "../_core/notification";
 import { publicProcedure, router } from "../_core/trpc";
 import { PREFECTURES } from "../../shared/tokutei";
+import { calcKanriAffinity, hasKanriAffinityCondition, splitCountries } from "../../shared/kanriAffinity";
+
+let countryFacetsCache: { at: number; data: Array<{ country: string; count: number }> } | null = null;
+const COUNTRY_FACETS_TTL = 10 * 60 * 1000;
+
+/** テスト用：受入国の選択肢キャッシュを空にする */
+export function resetCountryFacetsCache() {
+  countryFacetsCache = null;
+}
 
 /**
  * 監理団体（技能実習）→ 監理支援機関（育成就労）移行トラッカーのAPI。
@@ -26,6 +35,10 @@ export const kanriRouter = router({
           .enum(["unconfirmed", "preparing", "applying", "permitted", "not_migrating"])
           .optional(),
         verifiedOnly: z.boolean().optional(),
+        // 親和性スコア（shared/kanriAffinity.ts）の条件。指定しなければ標準順のまま返す
+        targetCountry: z.string().optional(),
+        wantsCare: z.boolean().optional(),
+        sort: z.enum(["default", "affinity"]).optional(),
         page: z.number().min(1).default(1),
         limit: z.number().min(1).max(100).default(20),
       })
@@ -59,6 +72,40 @@ export const kanriRouter = router({
         .where(where);
       const total = Number(countRow?.count ?? 0);
 
+      // 親和性スコアは地域・受入国・介護分野の指定があって初めて算定できる
+      // （分野・言語は監理団体データに存在しないため、無い項目を装って点数を付けない）。
+      // 対象は3,700件台なので、登録支援機関（11,448件）のような候補Cap付き取得は不要で、
+      // 条件に合う全件を取ってからアプリ側でスコア算出・並べ替えする。
+      const affinityInput = {
+        targetPrefecture: input.prefecture ?? null,
+        targetCountry: input.targetCountry ?? null,
+        wantsCare: input.wantsCare ?? false,
+      };
+      if (input.sort === "affinity" && hasKanriAffinityCondition(affinityInput)) {
+        const candidates = await db.select().from(kanriOrgs).where(where);
+        const scored = candidates
+          .map((org) => ({
+            ...org,
+            affinity: calcKanriAffinity(affinityInput, {
+              prefecture: org.prefecture,
+              receiveCountries: org.receiveCountries,
+              kaigoSupport: org.kaigoSupport,
+              migrationStatus: org.migrationStatus,
+              hasPenalty: org.hasPenalty,
+            }),
+          }))
+          // 同点タイブレークは管理ID順（標準順と揃える）
+          .sort((a, b) => b.affinity.score - a.affinity.score || a.managementId.localeCompare(b.managementId));
+
+        const start = (input.page - 1) * input.limit;
+        return {
+          orgs: scored.slice(start, start + input.limit),
+          total,
+          page: input.page,
+          limit: input.limit,
+        };
+      }
+
       const rows = await db
         .select()
         .from(kanriOrgs)
@@ -72,8 +119,47 @@ export const kanriRouter = router({
         .limit(input.limit)
         .offset((input.page - 1) * input.limit);
 
-      return { orgs: rows, total, page: input.page, limit: input.limit };
+      return {
+        orgs: rows.map((org) => ({ ...org, affinity: undefined })),
+        total,
+        page: input.page,
+        limit: input.limit,
+      };
     }),
+
+  /**
+   * 受入国の選択肢（親和性スコアの「受入国一致」で使う都道府県セレクトと同じ役割）。
+   * `receiveCountries` はJSON配列ではなくカンマ・読点区切りの原文テキストなので、
+   * 登録支援機関の言語集計（JSON_TABLE）と同じSQL集計はできない。
+   * 監理団体は3,700件台と小さいため、全件取得してアプリ側で splitCountries と
+   * 同じ関数で分割・集計する（DBとアプリで解釈がずれないようにするため）。
+   */
+  countryFacets: publicProcedure.query(async () => {
+    const cached = countryFacetsCache;
+    if (cached && Date.now() - cached.at < COUNTRY_FACETS_TTL) {
+      return { countries: cached.data };
+    }
+
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+
+    const rows = await db
+      .select({ receiveCountries: kanriOrgs.receiveCountries })
+      .from(kanriOrgs);
+
+    const counts = new Map<string, number>();
+    for (const row of rows) {
+      for (const country of splitCountries(row.receiveCountries)) {
+        counts.set(country, (counts.get(country) ?? 0) + 1);
+      }
+    }
+    const countries = Array.from(counts.entries())
+      .map(([country, count]) => ({ country, count }))
+      .sort((a, b) => b.count - a.count || a.country.localeCompare(b.country));
+
+    countryFacetsCache = { at: Date.now(), data: countries };
+    return { countries };
+  }),
 
   /** 移行ステータスの集計サマリー（トラッカー上部に表示） */
   summary: publicProcedure.query(async () => {

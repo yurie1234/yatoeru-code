@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { trpc } from "@/lib/trpc";
 import { PREFECTURES } from "@shared/tokutei";
 import {
@@ -19,6 +20,8 @@ import {
   CalendarDays,
   ChevronLeft,
   ChevronRight,
+  Globe2,
+  HeartHandshake,
   Info,
   MapPin,
   Search as SearchIcon,
@@ -27,6 +30,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearch } from "wouter";
 import { KANRI_PERMIT_LABEL, KANRI_STATUS_LABEL, kanriPath } from "@shared/kanri";
+import { KANRI_AFFINITY_METHODOLOGY, normalizedKanriScore } from "@shared/kanriAffinity";
 
 const ALL = "__all__";
 
@@ -60,6 +64,10 @@ export default function IkuseiTrackerList() {
   const [permitType, setPermitType] = useState(params.get("permitType") ?? ALL);
   const [migrationStatus, setMigrationStatus] = useState(params.get("status") ?? ALL);
   const [verifiedOnly, setVerifiedOnly] = useState(false);
+  // 親和性スコア（shared/kanriAffinity.ts）の入力。分野・言語は監理団体データに無いため、
+  // 登録支援機関側（都道府県・言語・分野）とは条件が異なる。
+  const [targetCountry, setTargetCountry] = useState(params.get("country") ?? ALL);
+  const [wantsCare, setWantsCare] = useState(false);
   const [page, setPage] = useState(1);
 
   useEffect(() => {
@@ -67,8 +75,13 @@ export default function IkuseiTrackerList() {
     setPrefecture(params.get("prefecture") ?? ALL);
     setPermitType(params.get("permitType") ?? ALL);
     setMigrationStatus(params.get("status") ?? ALL);
+    setTargetCountry(params.get("country") ?? ALL);
     setPage(1);
   }, [params]);
+
+  // キーワードは親和性スコアの入力ではない（Search.tsxの登録支援機関側と同じ考え方）。
+  // 都道府県・受入国・介護希望のいずれかが指定されたときだけ親和性順で並べる。
+  const hasAffinityCondition = prefecture !== ALL || targetCountry !== ALL || wantsCare;
 
   const queryInput = useMemo(
     () => ({
@@ -86,14 +99,28 @@ export default function IkuseiTrackerList() {
               | "not_migrating")
           : undefined,
       verifiedOnly: verifiedOnly || undefined,
+      targetCountry: targetCountry !== ALL ? targetCountry : undefined,
+      wantsCare: wantsCare || undefined,
+      sort: hasAffinityCondition ? ("affinity" as const) : ("default" as const),
       page,
       limit: 20,
     }),
-    [keyword, prefecture, permitType, migrationStatus, verifiedOnly, page]
+    [
+      keyword,
+      prefecture,
+      permitType,
+      migrationStatus,
+      verifiedOnly,
+      targetCountry,
+      wantsCare,
+      hasAffinityCondition,
+      page,
+    ]
   );
 
   const { data, isLoading } = trpc.kanri.search.useQuery(queryInput);
   const { data: summary } = trpc.kanri.summary.useQuery();
+  const { data: countryFacets } = trpc.kanri.countryFacets.useQuery();
 
   const totalPages = data ? Math.max(1, Math.ceil(data.total / data.limit)) : 1;
 
@@ -268,20 +295,55 @@ export default function IkuseiTrackerList() {
                   <SelectItem value="not_migrating">移行しない</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-            <label className="flex items-center gap-2 mt-4 text-sm cursor-pointer w-fit">
-              <Checkbox
-                checked={verifiedOnly}
-                onCheckedChange={(v) => {
-                  setVerifiedOnly(v === true);
+              <Select
+                value={targetCountry}
+                onValueChange={(v) => {
+                  setTargetCountry(v);
                   setPage(1);
                 }}
-              />
-              <span className="flex items-center gap-1">
-                <ShieldCheck className="h-4 w-4 text-emerald-600" />
-                実績確認済み（当サイトが一次確認した団体のみ）
-              </span>
-            </label>
+              >
+                <SelectTrigger>
+                  <Globe2 className="h-4 w-4 mr-1 text-brand" />
+                  <SelectValue placeholder="受入国" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL}>すべての受入国</SelectItem>
+                  {countryFacets?.countries.map((c) => (
+                    <SelectItem key={c.country} value={c.country}>
+                      {c.country}（{c.count}）
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mt-4">
+              <label className="flex items-center gap-2 text-sm cursor-pointer w-fit">
+                <Checkbox
+                  checked={verifiedOnly}
+                  onCheckedChange={(v) => {
+                    setVerifiedOnly(v === true);
+                    setPage(1);
+                  }}
+                />
+                <span className="flex items-center gap-1">
+                  <ShieldCheck className="h-4 w-4 text-emerald-600" />
+                  実績確認済み（当サイトが一次確認した団体のみ）
+                </span>
+              </label>
+              <label className="flex items-center gap-2 text-sm cursor-pointer w-fit">
+                <Checkbox
+                  checked={wantsCare}
+                  onCheckedChange={(v) => {
+                    setWantsCare(v === true);
+                    setPage(1);
+                  }}
+                />
+                <span className="flex items-center gap-1">
+                  <HeartHandshake className="h-4 w-4 text-brand" />
+                  介護職種の受入れに対応している団体のみ
+                </span>
+              </label>
+            </div>
           </CardContent>
         </Card>
 
@@ -297,9 +359,16 @@ export default function IkuseiTrackerList() {
             )}
           </p>
           <p className="text-xs text-muted-foreground">
-            並び順：移行状況の確認済み団体を優先表示
+            並び順：{hasAffinityCondition ? "親和性順" : "移行状況の確認済み団体を優先表示"}
           </p>
         </div>
+
+        {hasAffinityCondition && (
+          <p className="text-xs text-muted-foreground mb-4 leading-relaxed rounded-md bg-muted/40 border px-3 py-2">
+            <Info className="h-3.5 w-3.5 inline-block mr-1 -mt-0.5" />
+            {KANRI_AFFINITY_METHODOLOGY}
+          </p>
+        )}
 
         {/* 一覧 */}
         {isLoading ? (
@@ -330,6 +399,37 @@ export default function IkuseiTrackerList() {
                           <span className="text-xs text-muted-foreground font-mono">
                             {org.managementId}
                           </span>
+                          {hasAffinityCondition && org.affinity && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Badge
+                                  variant="outline"
+                                  className={`gap-1 cursor-help font-bold text-xs ${
+                                    normalizedKanriScore(org.affinity.score, org.affinity.maxScore) >= 70
+                                      ? "border-amber-accent text-amber-700 bg-amber-accent/10"
+                                      : normalizedKanriScore(org.affinity.score, org.affinity.maxScore) >= 40
+                                        ? "border-brand/40 text-brand bg-brand/5"
+                                        : "text-muted-foreground"
+                                  }`}
+                                >
+                                  親和性 {normalizedKanriScore(org.affinity.score, org.affinity.maxScore)}
+                                  <span className="font-normal opacity-70">/100</span>
+                                  <Info className="h-3 w-3 opacity-60" />
+                                </Badge>
+                              </TooltipTrigger>
+                              <TooltipContent side="bottom" className="max-w-xs text-xs">
+                                <p className="font-bold mb-1">
+                                  スコア内訳（{org.affinity.score} / {org.affinity.maxScore}点 →
+                                  100点換算で {normalizedKanriScore(org.affinity.score, org.affinity.maxScore)}点）
+                                </p>
+                                <ul className="space-y-0.5">
+                                  {org.affinity.reasons.map((r) => (
+                                    <li key={r.label}>・{r.label}（+{r.points}）</li>
+                                  ))}
+                                </ul>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
                         </div>
                         <h2 className="font-bold text-base leading-snug">
                           {/* 2026-08-05: 詳細ページへのリンク。それまで一覧にリンク先が無く、
@@ -352,6 +452,15 @@ export default function IkuseiTrackerList() {
                             移行状況の確認日：{org.statusConfirmedAt}
                             {org.statusNote ? `（${org.statusNote}）` : ""}
                           </p>
+                        )}
+                        {hasAffinityCondition && org.affinity && org.affinity.reasons.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 mt-2">
+                            {org.affinity.reasons.map((r) => (
+                              <Badge key={r.label} variant="outline" className="text-xs font-normal text-muted-foreground border-dashed">
+                                {r.label}
+                              </Badge>
+                            ))}
+                          </div>
                         )}
                       </div>
                     </div>
