@@ -37,5 +37,6 @@ export async function buildSsrPrefetch(
       nullOnNotFound(caller.updates.detail({ baseDate })),
     articlesList: () => caller.articles.list(),
     articlesBySlug: slug => nullOnNotFound(caller.articles.bySlug({ slug })),
+    kanriById: managementId => nullOnNotFound(caller.kanri.byId({ managementId })),
   };
 }

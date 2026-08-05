@@ -13,7 +13,7 @@ import { articleListHandler, articlePublishHandler, articleUpdateHandler } from 
 import { rssHandler } from "../rss";
 import { sitemapHandler, sitemapChildHandler } from "../sitemap";
 import { registerLlmsTxtRoute } from "../llms";
-import { registerOrgUrlAlias } from "../orgUrlAlias";
+import { registerKanriUrlAlias, registerOrgUrlAlias } from "../orgUrlAlias";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 
@@ -85,6 +85,8 @@ async function startServer() {
   // 登録番号から組み立てた機関ページのURL（/org/22to-007304）を
   // 正本の /org/<id> へ301で送る。営業文面のURLを照会なしで作れるようにするため
   registerOrgUrlAlias(app);
+  // 監理団体のURLも正本（小文字の管理ID）へ寄せる
+  registerKanriUrlAlias(app);
   // tRPC API
   app.use(
     "/api/trpc",

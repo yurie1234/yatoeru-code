@@ -1,9 +1,10 @@
 import { eq, sql } from "drizzle-orm";
 import type { Request, Response } from "express";
 import { getDb } from "./db";
-import { articles, supportOrgs } from "../drizzle/schema";
+import { articles, kanriOrgs, supportOrgs } from "../drizzle/schema";
 import { PREFECTURES, TOKUTEI_FIELDS, UPCOMING_FIELDS } from "../shared/tokutei";
 import { ALL_BUNYA_PAGES } from "../shared/bunya";
+import { kanriPath } from "../shared/kanri";
 
 const SITE_URL = "https://yatoeru.jp";
 
@@ -201,6 +202,31 @@ async function buildOrgsSitemap(page: number): Promise<string | null> {
   return wrapUrlset(urls);
 }
 
+/**
+ * kanri.xml: 監理団体（監理支援機関）の詳細ページ。
+ * 2026-08-05 に ikusei.yatoeru.jp から本体へ寄せた。3,700件規模なので分割せず1本で足りる。
+ * 移行状況を確認できた団体は priority を上げる（受入企業がいま最も知りたい情報のため）。
+ */
+async function buildKanriSitemap(): Promise<string> {
+  const db = await getDb();
+  if (!db) return wrapUrlset([]);
+  const rows = await db
+    .select({
+      managementId: kanriOrgs.managementId,
+      migrationStatus: kanriOrgs.migrationStatus,
+      statusConfirmedAt: kanriOrgs.statusConfirmedAt,
+      updatedAt: kanriOrgs.updatedAt,
+    })
+    .from(kanriOrgs)
+    .orderBy(kanriOrgs.managementId);
+  const urls = rows.map((o) => {
+    const lastmod = o.statusConfirmedAt ?? o.updatedAt?.toISOString().slice(0, 10);
+    const priority = o.migrationStatus === "unconfirmed" ? "0.5" : "0.8";
+    return `<url><loc>${SITE_URL}${kanriPath(o.managementId)}</loc>${lastmod ? `<lastmod>${lastmod}</lastmod>` : ""}<changefreq>monthly</changefreq><priority>${priority}</priority></url>`;
+  });
+  return wrapUrlset(urls);
+}
+
 // ---------------------------------------------------------------------------
 // ハンドラ
 // ---------------------------------------------------------------------------
@@ -224,6 +250,7 @@ export async function sitemapHandler(_req: Request, res: Response) {
     const entries = [
       `<sitemap><loc>${SITE_URL}/sitemaps/core.xml</loc><lastmod>${today}</lastmod></sitemap>`,
       `<sitemap><loc>${SITE_URL}/sitemaps/articles.xml</loc><lastmod>${today}</lastmod></sitemap>`,
+      `<sitemap><loc>${SITE_URL}/sitemaps/kanri.xml</loc><lastmod>${today}</lastmod></sitemap>`,
       ...Array.from(
         { length: orgPages },
         (_, i) =>
@@ -257,6 +284,10 @@ export async function sitemapChildHandler(req: Request, res: Response) {
     }
     if (name === "articles.xml") {
       sendXml(res, setCache(name, await buildArticlesSitemap()));
+      return;
+    }
+    if (name === "kanri.xml") {
+      sendXml(res, setCache(name, await buildKanriSitemap()));
       return;
     }
     const orgsMatch = name.match(/^orgs-(\d+)\.xml$/);

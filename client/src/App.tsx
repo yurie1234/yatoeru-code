@@ -23,6 +23,7 @@ import GuideGinouJisshuChigai from "./pages/GuideGinouJisshuChigai";
 import GuideIkuseiShuro from "@/pages/GuideIkuseiShuro";
 import IkuseiHub from "@/pages/IkuseiHub";
 import IkuseiTrackerList from "@/pages/IkuseiTrackerList";
+import KanriDetail from "@/pages/KanriDetail";
 import IkuseiSchedule from "@/pages/IkuseiSchedule";
 import IkuseiChecklist from "@/pages/IkuseiChecklist";
 import IkuseiForKanriDantai from "@/pages/IkuseiForKanriDantai";
@@ -92,6 +93,9 @@ function Router() {
       <Route path="/guide/ikusei-shuro" component={GuideIkuseiShuro} />
       <Route path="/ikusei-shuro" component={IkuseiHub} />
       <Route path="/ikusei-shuro/kanri-shien-kikan/list" component={IkuseiTrackerList} />
+      {/* 監理団体の詳細。URLは管理IDの小文字（/kanri/i-0001）。
+          ikusei.yatoeru.jp の静的ページから本体へ寄せた（ops/22） */}
+      <Route path="/kanri/:managementId" component={KanriDetail} />
       <Route path="/ikusei-shuro/schedule" component={IkuseiSchedule} />
       <Route path="/ikusei-shuro/checklist" component={IkuseiChecklist} />
       <Route path="/ikusei-shuro/for-kanri-dantai" component={IkuseiForKanriDantai} />

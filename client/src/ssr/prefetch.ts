@@ -22,6 +22,7 @@ import {
   regionFaqs,
 } from "./jsonld";
 import { pageJsonLd } from "./pageJsonLd";
+import { KANRI_PERMIT_LABEL, KANRI_STATUS_LABEL, kanriPath, parseKanriId } from "@shared/kanri";
 
 export type HeadMeta = {
   title: string;
@@ -57,6 +58,7 @@ export type SsrPrefetch = {
   updatesDetail: (baseDate: string) => Promise<RO["updates"]["detail"] | null>;
   articlesList: () => Promise<RO["articles"]["list"]>;
   articlesBySlug: (slug: string) => Promise<RO["articles"]["bySlug"] | null>;
+  kanriById: (managementId: string) => Promise<RO["kanri"]["byId"] | null>;
 };
 
 function seed(qc: QueryClient, key: unknown, data: unknown) {
@@ -403,6 +405,53 @@ export async function prefetchForPath(
           { name: "ホーム", path: "/" },
           { name: "登録支援機関を検索", path: "/search" },
           { name: org.name, path: `/org/${org.id}` },
+        ]),
+      ],
+    };
+  }
+
+  // 監理団体（監理支援機関）の詳細ページ。
+  // 2026-08-05 に ikusei.yatoeru.jp（静的スナップショット）から本体へ寄せた。
+  // 移行状況の回答がDBに入った瞬間にこのページへ出る（以前は再ビルド待ちだった）。
+  // URLは管理IDを小文字にしたもの（例 /kanri/i-0001）。営業文面から機械的に作れる形にしている。
+  const kanriMatch = clean.match(/^\/kanri\/([^/]+)$/);
+  if (kanriMatch) {
+    const managementId = parseKanriId(kanriMatch[1]);
+    if (!managementId) return { title: SITE, description: DESC, notFound: true };
+    const org = await p.kanriById(managementId);
+    if (!org) return { title: SITE, description: DESC, notFound: true };
+    seed(qc, getQueryKey(trpc.kanri.byId, { managementId }, "query"), org);
+
+    const permit = KANRI_PERMIT_LABEL[org.permitType] ?? "監理事業";
+    const statusLabel = KANRI_STATUS_LABEL[org.migrationStatus] ?? "未確認";
+    const path = kanriPath(managementId);
+    const confirmed = org.statusConfirmedAt
+      ? `移行状況は${org.statusConfirmedAt}に確認。`
+      : "";
+    return {
+      title: `${org.name}｜${org.prefecture ?? ""}の監理団体（${permit}）の監理支援機関への移行状況 - ヤトエル`,
+      description: `${org.name}（${org.prefecture ?? ""}・${permit}）の掲載情報。外国人技能実習機構（OTIT）公表の監理団体許可一覧に基づく基本情報と、2027年4月施行の育成就労制度に伴う監理支援機関への移行状況（${statusLabel}）を掲載しています。${confirmed}`,
+      ogType: "article",
+      canonicalPath: path,
+      modifiedTime: org.statusConfirmedAt
+        ? new Date(org.statusConfirmedAt).toISOString()
+        : undefined,
+      jsonLd: [
+        {
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          name: org.name,
+          identifier: org.managementId,
+          url: `https://yatoeru.jp${path}`,
+          address: org.address ?? undefined,
+          telephone: org.phone ?? undefined,
+          description: `外国人技能実習機構（OTIT）許可の監理団体（${permit}）。監理支援機関への移行状況：${statusLabel}。`,
+        },
+        breadcrumbLd([
+          { name: "ホーム", path: "/" },
+          { name: "育成就労制度まとめ", path: "/ikusei-shuro" },
+          { name: "監理団体の移行状況トラッカー", path: "/ikusei-shuro/kanri-shien-kikan/list" },
+          { name: org.name, path },
         ]),
       ],
     };

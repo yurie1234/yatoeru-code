@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearch } from "wouter";
+import { KANRI_PERMIT_LABEL, KANRI_STATUS_LABEL, kanriPath } from "@shared/kanri";
 
 const ALL = "__all__";
 
@@ -34,17 +35,15 @@ export const MIGRATION_STATUS_LABELS: Record<
   string,
   { label: string; className: string }
 > = {
-  permitted: { label: "許可取得", className: "bg-emerald-100 text-emerald-800 border-emerald-300" },
-  applying: { label: "申請中", className: "bg-blue-100 text-blue-800 border-blue-300" },
-  preparing: { label: "申請準備中", className: "bg-amber-100 text-amber-800 border-amber-300" },
-  unconfirmed: { label: "未確認", className: "bg-muted text-muted-foreground border-border" },
-  not_migrating: { label: "移行しない", className: "bg-red-100 text-red-800 border-red-300" },
+  permitted: { label: KANRI_STATUS_LABEL.permitted, className: "bg-emerald-100 text-emerald-800 border-emerald-300" },
+  applying: { label: KANRI_STATUS_LABEL.applying, className: "bg-blue-100 text-blue-800 border-blue-300" },
+  preparing: { label: KANRI_STATUS_LABEL.preparing, className: "bg-amber-100 text-amber-800 border-amber-300" },
+  unconfirmed: { label: KANRI_STATUS_LABEL.unconfirmed, className: "bg-muted text-muted-foreground border-border" },
+  not_migrating: { label: KANRI_STATUS_LABEL.not_migrating, className: "bg-red-100 text-red-800 border-red-300" },
 };
 
-const PERMIT_TYPE_LABELS: Record<string, string> = {
-  general: "一般監理事業",
-  specific: "特定監理事業",
-};
+// 許可区分の言い換えは shared/kanri.ts を正本にする
+const PERMIT_TYPE_LABELS = KANRI_PERMIT_LABEL;
 
 /**
  * 監理支援機関 一覧・移行状況トラッカー（/ikusei-shuro/kanri-shien-kikan/list/）。
@@ -332,7 +331,13 @@ export default function IkuseiTrackerList() {
                             {org.managementId}
                           </span>
                         </div>
-                        <h2 className="font-bold text-base leading-snug">{org.name}</h2>
+                        <h2 className="font-bold text-base leading-snug">
+                          {/* 2026-08-05: 詳細ページへのリンク。それまで一覧にリンク先が無く、
+                              3,726団体のデータがあるのに個別ページが1つも無かった */}
+                          <Link href={kanriPath(org.managementId)} className="hover:text-brand hover:underline">
+                            {org.name}
+                          </Link>
+                        </h2>
                         <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1.5 text-xs text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <MapPin className="h-3 w-3" />

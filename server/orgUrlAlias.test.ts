@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { normalizeRegNo, orgAliasPath } from "./orgUrlAlias";
+import { kanriPath, parseKanriId } from "../shared/kanri";
 
 // 機関ページの正本URL `/org/35173` の数字はDBの連番で、登録簿にも機関名にも現れない。
 // そのため営業メールを書くたびにサイト内検索でページを探す手作業が発生していた。
@@ -52,5 +53,26 @@ describe("登録番号からURLを組み立てる", () => {
   // 検索エンジンに登録済みの11,448件のURLも動かないため。
   it("別名は正本を置き換えない（記録としてのテスト）", () => {
     expect(orgAliasPath("22登-007304")).not.toBe("/org/35173");
+  });
+});
+
+// 監理団体のURL。登録番号を持たない（OTIT許可一覧に許可番号が無く独自採番）ため、
+// 管理ID（I-0001 / T-0001）をそのままURLに使う。営業文面から機械的に作れる形。
+describe("監理団体のURL", () => {
+  it("正本は管理IDの小文字", () => {
+    expect(kanriPath("I-0001")).toBe("/kanri/i-0001");
+    expect(kanriPath("T-1373")).toBe("/kanri/t-1373");
+  });
+
+  it("大文字・ハイフンなし・桁足らずを吸収する", () => {
+    for (const input of ["I-0001", "i-0001", "I0001", "i0001", "i-1", " i-0001 "]) {
+      expect(parseKanriId(input), input).toBe("I-0001");
+    }
+  });
+
+  it("管理IDでないものは受け付けない", () => {
+    for (const input of ["", "0001", "II-0001", "i-1234567", "登-0001", "i-"]) {
+      expect(parseKanriId(input), input).toBeNull();
+    }
   });
 });

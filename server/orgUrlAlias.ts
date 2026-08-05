@@ -1,4 +1,5 @@
 import type { Express, Request, Response, NextFunction } from "express";
+import { kanriPath, parseKanriId } from "../shared/kanri";
 import { eq } from "drizzle-orm";
 import { supportOrgs } from "../drizzle/schema";
 import { getDb } from "./db";
@@ -82,5 +83,26 @@ export function registerOrgUrlAlias(app: Express): void {
       console.error("[orgUrlAlias] lookup failed:", e instanceof Error ? e.message : String(e));
       return next();
     }
+  });
+}
+
+/**
+ * 監理団体の詳細ページのURLを正本（小文字の管理ID）へ寄せる。
+ *
+ *   /kanri/I-0001 → 301 → /kanri/i-0001
+ *   /kanri/i0001  → 301 → /kanri/i-0001
+ *
+ * 正本を1つに保つのは、同じ内容のページが複数のURLで開けると検索側で
+ * 重複と扱われるため。営業文面では管理IDをそのまま小文字にすれば当たる。
+ */
+export function registerKanriUrlAlias(app: Express): void {
+  app.get(/^\/kanri\/([^/]+)\/?$/, (req: Request, res: Response, next: NextFunction) => {
+    const raw = decodeURIComponent((req.params as unknown as string[])[0] ?? "");
+    const managementId = parseKanriId(raw);
+    if (!managementId) return next(); // 管理IDでなければSSRに任せる（404表示）
+    const canonical = kanriPath(managementId);
+    if (`/kanri/${raw}` === canonical) return next(); // すでに正本
+    const query = req.originalUrl.slice(req.path.length);
+    return res.redirect(301, `${canonical}${query}`);
   });
 }
