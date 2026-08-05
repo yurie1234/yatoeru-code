@@ -29,6 +29,11 @@ const escapeHtml = (s: string) =>
 const CANONICAL_ORIGIN = process.env.CANONICAL_ORIGIN ?? "https://yatoeru.jp";
 const SITE_NAME = process.env.SITE_NAME ?? "ヤトエル";
 const OG_LOCALE = "ja_JP";
+// 既定のOG画像（1200×630）。ページ側が head.ogImage を指定しなければこれを使う。
+// 指定が無かったため全ページで og:image が欠落し、SNS共有・検索のリッチ表示で
+// 画像が出ていなかった。画像は my-scripts の tools/generate-og.mjs で生成し、
+// client/public/og.png に置いている
+const DEFAULT_OG_IMAGE = "/og.png";
 
 // タイトル：空白圧縮＋切り詰めのみ（markdown除去はしない）
 const clampText = (s: string, max: number) => {
@@ -50,13 +55,14 @@ function buildHeadTags(head: HeadMeta, siteName: string): string {
     head.canonicalPath && CANONICAL_ORIGIN
       ? escapeHtml(CANONICAL_ORIGIN + head.canonicalPath)
       : "";
-  const img = head.ogImage?.startsWith("//")
-    ? "https:" + head.ogImage
-    : head.ogImage?.startsWith("/")
+  const ogImage = head.ogImage ?? DEFAULT_OG_IMAGE;
+  const img = ogImage.startsWith("//")
+    ? "https:" + ogImage
+    : ogImage.startsWith("/")
       ? CANONICAL_ORIGIN
-        ? CANONICAL_ORIGIN + head.ogImage
+        ? CANONICAL_ORIGIN + ogImage
         : undefined
-      : head.ogImage;
+      : ogImage;
   const tags = [
     `<title>${title}</title>`,
     `<meta name="description" content="${desc}" />`,
@@ -75,6 +81,13 @@ function buildHeadTags(head: HeadMeta, siteName: string): string {
   if (img) {
     tags.push(`<meta property="og:image" content="${escapeHtml(img)}" />`);
     tags.push(`<meta name="twitter:image" content="${escapeHtml(img)}" />`);
+    tags.push(`<meta property="og:image:alt" content="${title}" />`);
+    // 寸法が分かるのは自前で用意した既定画像のときだけ。
+    // 先に寸法を伝えると、SNS側が画像を取得する前に枠を確保できる
+    if (img.endsWith(DEFAULT_OG_IMAGE)) {
+      tags.push(`<meta property="og:image:width" content="1200" />`);
+      tags.push(`<meta property="og:image:height" content="630" />`);
+    }
   }
   if (head.ogType === "article") {
     if (head.publishedTime)
