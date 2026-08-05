@@ -2,9 +2,9 @@
 <html lang="ja">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+    <!-- maximum-scale は付けない。ピンチズームを禁止するとWCAG 1.4.4違反になり、
+         機関の連絡先や登録番号を拡大して確かめたい利用者が読めなくなる -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!--app-head-->
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="icon" href="/favicon.ico" sizes="any" />
@@ -21,10 +21,10 @@
   <body>
     <div id="root"><!--app-html--></div>
     <script type="module" src="/src/entry-client.tsx"></script>
-    <script
-      defer
-      src="%VITE_ANALYTICS_ENDPOINT%/umami"
-      data-website-id="%VITE_ANALYTICS_WEBSITE_ID%"></script>
+    <!-- 旧ホスティング（Manus）のumami計測タグは削除した。環境変数のプレースホルダが
+         本番ビルドでは置換されず、ブラウザが未置換のパスを取得しに行き、SSRの受け皿が
+         200でHTML（約400KB）を返していた。全ページ表示で毎回この無駄な往復が発生していた。
+         計測はGA4だけで足りている -->
     <!-- Google Analytics 4（運営者除外: localStorage.yt_exclude === '1' で計測無効化） -->
     <script>
       try {

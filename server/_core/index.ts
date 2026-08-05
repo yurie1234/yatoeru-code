@@ -5,6 +5,7 @@ import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerAdminAuthRoutes } from "./adminAuth";
 import { registerStorageProxy } from "./storageProxy";
+import { applyHttpHeaders, registerCspReportRoute } from "./httpHeaders";
 import { appRouter } from "../routers";
 import { registrySyncHandler } from "../registrySync";
 import { sheetSyncHandler } from "../sheetSync";
@@ -60,6 +61,9 @@ async function startServer() {
     }
     next();
   });
+  // セキュリティヘッダとキャッシュ制御（ホスト正規化の直後、各ルートより前）
+  applyHttpHeaders(app);
+  registerCspReportRoute(app);
   registerStorageProxy(app);
   registerAdminAuthRoutes(app);
   // 週次の登録簿同期（AGENT cronからのPOST受け口。/api/scheduled/* は自動登録されないため明示マウント）

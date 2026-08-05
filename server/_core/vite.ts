@@ -7,6 +7,7 @@ import superjson from "superjson";
 import { fileURLToPath } from "url";
 import { createServer as createViteServer } from "vite";
 import viteConfig from "../../vite.config";
+import { htmlCacheControl } from "./httpHeaders";
 import { buildSsrPrefetch } from "./ssrCaller";
 import type { HeadMeta } from "../../client/src/ssr/prefetch";
 
@@ -183,7 +184,7 @@ export async function setupVite(app: Express, server: Server) {
       // noindexメタはbuildHeadTagsがhead.notFoundから付与するのでSEO実害は小さい。
       res
         .status(200)
-        .set("Cache-Control", "no-cache")
+        .set("Cache-Control", htmlCacheControl(req))
         .type("html")
         .end(composeHtml(template, html, head, dehydratedState));
     } catch (e) {
@@ -249,7 +250,7 @@ export function serveStatic(app: Express) {
       // not-foundも200+noindex（soft-404）で返す。noindexメタはhead.notFound経由で付与済み。
       res
         .status(200)
-        .set("Cache-Control", "no-cache")
+        .set("Cache-Control", htmlCacheControl(req))
         .type("html")
         .end(composeHtml(template, html, head, dehydratedState));
     } catch (e) {
@@ -259,7 +260,7 @@ export function serveStatic(app: Express) {
       const fallbackHead = buildHeadTags(FALLBACK_HEAD, SITE_NAME);
       res
         .status(200)
-        .set("Cache-Control", "no-cache")
+        .set("Cache-Control", htmlCacheControl(req))
         .type("html")
         .end(
           template
