@@ -46,6 +46,8 @@ export default function Search() {
   // キーワードだけの検索では算定根拠が無い（以前はキーワードだけでも全機関に同じ点数が
   // 並んでいた）。スコア表示と親和性順ソートは、この3条件のいずれかがある場合だけ。
   const hasAffinityCondition = prefecture !== ALL || language !== ALL || field !== ALL;
+  // 見出し下の説明文の言い回しに使う（キーワード検索も絞り込みに含める）
+  const hasFilter = hasAffinityCondition || keyword.trim() !== "";
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
   // URLパラメータの変化を反映（ページネーション実リンク・戻る進むもここで同期）
@@ -109,8 +111,14 @@ export default function Search() {
       <div className="bg-muted/30 border-b py-8">
         <div className="container">
           <h1 className="text-2xl md:text-3xl font-bold mb-2">登録支援機関を探す</h1>
+          {/* 絞り込み中に「全国◯件」と書くと、絞り込み後の件数を全国の総数として
+              読ませてしまう（長野県で絞ると「全国159件」と出ていた）。
+              条件があるときは「該当◯件」に言い換える */}
           <p className="text-muted-foreground text-sm">
-            出入国在留管理庁の登録簿に基づく全国{data?.total !== undefined ? data.total.toLocaleString() : "11,000"}件を掲載。対応言語・地域・行政処分歴で検索できます（料金・受付状況は実確認済みの機関から順次公開）。
+            出入国在留管理庁の登録簿に基づく
+            {hasFilter ? "該当" : "全国"}
+            {data?.total !== undefined ? data.total.toLocaleString() : "11,000"}
+            件を掲載。対応言語・地域・行政処分歴で検索できます（料金・受付状況は実確認済みの機関から順次公開）。
           </p>
         </div>
       </div>
