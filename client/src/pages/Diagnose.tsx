@@ -33,7 +33,7 @@ import {
   stripScoreIntro,
   type QuestionStep,
 } from "@shared/diagnoseWizard";
-import { AlertTriangle, ArrowLeft, ArrowRight, Building2, CheckCircle2, ChevronDown, Coins, ExternalLink, FileText, Globe2, Languages, Loader2, MapPin, Search as SearchIcon, Sparkles } from "lucide-react";
+import { AlertTriangle, ArrowLeft, ArrowRight, Building2, CheckCircle2, ChevronDown, Coins, ExternalLink, FileText, GitCompareArrows, Globe2, Languages, Loader2, MapPin, Search as SearchIcon, Sparkles } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Link, useLocation, useSearch } from "wouter";
@@ -53,6 +53,41 @@ const ALL = "__all__";
  * （FAQPage）と同じ定義を使う。書き写すと画面と食い違い、Googleの要件
  * （FAQの内容が画面に見えていること）に反する。
  */
+/**
+ * 「特定技能（この診断）」と「育成就労（技能実習の後継）」のどちらで進めるかの判断材料。
+ *
+ * 在留資格の可否判断は行わない方針（本ページ下部の免責）と衝突するため、
+ * 「向いています」と断定せず、事実の差異だけを並べる（ops/22-kanri-yoseru.md の設計方針）。
+ * 根拠は既存の解説記事（/guide/ginou-jisshu-chigai・/guide/tokutei-ginou-ikou）と同じ。
+ */
+export const INSTITUTION_CHOICE_POINTS = [
+  {
+    label: "在留期間",
+    tokutei: "特定技能1号は通算5年（2号は更新上限なし）",
+    ikusei: "育成就労は原則3年（育成後、特定技能1号へ移行する設計）",
+  },
+  {
+    label: "人材の状態",
+    tokutei: "技能試験・日本語試験に合格済み、またはすぐ受験できる人材が対象",
+    ikusei: "未経験から育成する前提の制度（技能実習の後継）",
+  },
+  {
+    label: "受け入れ人数枠",
+    tokutei: "分野ごとの上限はあるが企業単位の人数枠は無い分野が多い",
+    ikusei: "育成就労には人数枠の設計がある（分野・実績により変動）",
+  },
+  {
+    label: "支援・監理の窓口",
+    tokutei: "登録支援機関への委託または自社支援（義務的支援10項目）",
+    ikusei: "監理団体（2027年からは監理支援機関）が監理",
+  },
+  {
+    label: "費用構造の目安",
+    tokutei: "登録支援機関への支援委託費（月2〜3万円/人程度が目安）",
+    ikusei: "監理団体への監理費（月2.5〜5万円/人程度が目安）",
+  },
+] as const;
+
 export const HOW_IT_WORKS = [
   {
     icon: Globe2,
@@ -1351,6 +1386,56 @@ export default function Diagnose() {
                 </Link>
                 ）。
               </p>
+            </section>
+
+            <section>
+              <div className="flex items-center gap-2 mb-2">
+                <GitCompareArrows className="h-5 w-5 text-brand" />
+                <h2 className="text-2xl font-bold">特定技能（この診断）か、育成就労（技能実習の後継）か</h2>
+              </div>
+              <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
+                外国人材の受け入れには特定技能と育成就労の2つの主なルートがあります。どちらが良いかを当サイトが断定することはできません（在留資格に関わる判断のため）。事実の差異のみを整理します。
+              </p>
+              <Card className="overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-muted/50 text-left">
+                        <th className="p-3 font-semibold w-32">比較項目</th>
+                        <th className="p-3 font-semibold">特定技能（この診断が対象）</th>
+                        <th className="p-3 font-semibold">育成就労（技能実習の後継）</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {INSTITUTION_CHOICE_POINTS.map((row) => (
+                        <tr key={row.label}>
+                          <td className="p-3 text-muted-foreground align-top">{row.label}</td>
+                          <td className="p-3 align-top">{row.tokutei}</td>
+                          <td className="p-3 align-top">{row.ikusei}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+              <div className="rounded-lg border border-amber-accent/40 bg-amber-accent/5 p-4 mt-3 text-sm leading-relaxed">
+                <span className="font-bold text-foreground">すでに技能実習生を受け入れている場合：</span>
+                <span className="text-muted-foreground">
+                  {" "}
+                  この判断より先に、委託中の監理団体が「監理支援機関」への移行を予定しているかどうかの確認が重要です。委託先が移行しない場合、2027年4月の制度施行後は委託先の再選定が必要になります。
+                </span>
+                <Link href="/ikusei-shuro/kanri-shien-kikan/list" className="text-brand underline font-medium block mt-1">
+                  監理団体の移行状況トラッカーで確認する
+                </Link>
+              </div>
+              <div className="flex flex-wrap gap-3 mt-4">
+                <Button asChild variant="outline" size="sm">
+                  <Link href="/guide/ginou-jisshu-chigai">技能実習と育成就労の違い（解説記事）</Link>
+                </Button>
+                <Button asChild variant="outline" size="sm">
+                  <Link href="/guide/tokutei-ginou-ikou">技能実習・育成就労から特定技能への移行（解説記事）</Link>
+                </Button>
+              </div>
             </section>
 
             <section id="faq" className="scroll-mt-20">
