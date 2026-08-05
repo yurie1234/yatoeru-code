@@ -120,6 +120,16 @@ export default function Search() {
             {data?.total !== undefined ? data.total.toLocaleString() : "11,000"}
             件を掲載。対応言語・地域・行政処分歴で検索できます（料金・受付状況は実確認済みの機関から順次公開）。
           </p>
+          {/* 監理団体（技能実習・育成就労）を探している人の行き先を作る。
+              一覧そのものを二重に持つと自社内で共食いになるため、
+              ここでは振り分けだけをして、一覧はトラッカー1本に保つ */}
+          <p className="text-sm mt-3">
+            技能実習・育成就労の<strong>監理団体</strong>をお探しの方は{" "}
+            <Link href="/ikusei-shuro/kanri-shien-kikan/list" className="text-brand underline">
+              監理団体の一覧・移行状況トラッカー
+            </Link>
+            へ。2027年4月の制度施行に向けた監理支援機関への移行状況も掲載しています。
+          </p>
         </div>
       </div>
 
