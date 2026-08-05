@@ -172,13 +172,13 @@ export default function OrgDetail() {
 
                 {data.org.languages && data.org.languages.length > 0 && (
                   <div className="mt-6">
-                    <div className="flex items-center gap-1.5 text-sm font-medium mb-2">
+                    <h2 className="flex items-center gap-1.5 text-sm font-medium mb-2">
                       <Languages className="h-4 w-4 text-brand" />
                       対応可能言語
                       {data.org.verifiedAt && (
                         <Badge className="bg-emerald-600 text-white hover:bg-emerald-600 text-[10px] px-1.5 py-0">運営確認済み</Badge>
                       )}
-                    </div>
+                    </h2>
                     <div className="flex flex-wrap gap-1.5">
                       {data.org.languages.map((lang) => (
                         <Badge key={lang} variant="secondary" className="font-normal">
@@ -194,10 +194,10 @@ export default function OrgDetail() {
 
                 {data.org.fields && data.org.fields.length > 0 && (
                   <div className="mt-4">
-                    <div className="flex items-center gap-1.5 text-sm font-medium mb-2">
+                    <h2 className="flex items-center gap-1.5 text-sm font-medium mb-2">
                       <CheckCircle2 className="h-4 w-4 text-brand" />
                       対応分野
-                    </div>
+                    </h2>
                     <div className="flex flex-wrap gap-1.5">
                       {data.org.fields.map((f) => (
                         <Link
