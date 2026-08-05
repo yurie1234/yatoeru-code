@@ -36,7 +36,11 @@ const PLANS = [
   {
     key: "standard" as const,
     name: "スタンダード",
-    price: "月額 30,000円",
+    // 立ち上げ期の価格。ops/12 §5 の独立算出（表示優遇のみ・リード対価を含まない）
+    // に基づく20,000円。問い合わせが増えて実績数字を示せるようになった段階で
+    // 30,000円へ引き上げる。**引き上げ時も契約中の機関は据え置く**
+    // （「ご契約中は価格を維持」と書面で伝えているため）
+    price: "月額 20,000円",
     priceNote: "リード獲得を始めたい機関向け",
     features: [
       "無料掲載のすべて",
@@ -221,7 +225,7 @@ export default function Pricing() {
                       >
                         <div className="font-bold text-sm">{key === "standard" ? "スタンダード" : "プレミアム"}</div>
                         <div className="text-xs text-muted-foreground">
-                          {key === "standard" ? "月額30,000円" : "月額80,000円"}
+                          {key === "standard" ? "月額20,000円" : "月額80,000円"}
                         </div>
                       </button>
                     ))}

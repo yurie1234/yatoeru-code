@@ -29,8 +29,11 @@ const ASSUMED_LEAD_PRICE = 15000;
 // Exit想定マルチプル
 const EXIT_MULTIPLE_BASE = 6;
 const EXIT_MULTIPLE_BULL = 12;
-// 有料プラン月額（円）
-const PLAN_PRICES: Record<string, number> = { standard: 30000, premium: 80000 };
+// 有料プラン月額（円）。Pricing.tsx の表示価格と必ず揃える
+// （ここがずれるとMRRの集計だけ実態と違う数字になる）。
+// standard は立ち上げ期の20,000円。値上げ後は契約時点の価格で計算する必要が出るため、
+// そのときは orgs 側に契約価格を持たせる（このRecordは新規契約の既定値になる）
+const PLAN_PRICES: Record<string, number> = { standard: 20000, premium: 80000 };
 
 export const adminRouter = router({
   // KPIダッシュボード: 月間相談件数・掲載機関数・CVR・リード単価・Exit指標
