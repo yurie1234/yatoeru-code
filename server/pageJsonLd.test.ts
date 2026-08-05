@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { PAGE_JSONLD, pageJsonLd } from "../client/src/ssr/pageJsonLd";
 
 // 構造化データは各ページの useEffect でも作られているが、それはブラウザでしか動かない。
@@ -106,6 +108,19 @@ describe("SSRの構造化データ", () => {
         expect(url.endsWith("/"), `${url} が末尾スラッシュ付き`).toBe(false);
       }
     }
+  });
+
+  // 診断ページは「診断前の画面」だけがクローラーに見える。
+  // FAQを画面に出さずに構造化データだけ付けるとGoogleのFAQPageの要件に反するため、
+  // 画面と構造化データが同じ定義（shared/diagnoseFaq.ts）を使っていることを固定する。
+  it("診断ページのFAQは画面に見えている定義から作っている", () => {
+    expect(typesOf("/diagnose")).toContain("FAQPage");
+    const page = readFileSync(
+      path.resolve(__dirname, "../client/src/pages/Diagnose.tsx"),
+      "utf8"
+    );
+    expect(page, "診断前の画面にFAQを描いていない").toContain("DIAGNOSE_FAQS.map");
+    expect(page, "診断前の画面に見出し（h2）が無い").toMatch(/<h2[^>]*>診断についてよくある質問/);
   });
 
   it("知らないパスには何も返さない", () => {

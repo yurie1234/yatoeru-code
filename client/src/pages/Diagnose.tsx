@@ -21,6 +21,7 @@ import { trpc } from "@/lib/trpc";
 import { captureSource, trackEvent } from "@/lib/track";
 import { FILTER_ACCENT_CLASS } from "@/pages/Proposal";
 import { JOSEIKIN_DISCLAIMER, matchJoseikin } from "@shared/joseikin";
+import { DIAGNOSE_FAQS } from "@shared/diagnoseFaq";
 import { normalizedScore } from "@shared/affinity";
 import { HEADCOUNT_OPTIONS, PREFECTURES, TOKUTEI_FIELDS } from "@shared/tokutei";
 import { languageOptionLabel, useLanguageOptions } from "@/hooks/useLanguageOptions";
@@ -41,6 +42,35 @@ import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "../../../server/routers";
 
 const ALL = "__all__";
+
+/**
+ * 診断前（クローラーが見る初期状態）に見せる説明とよくある質問。
+ *
+ * 実測すると、診断前の生HTMLには h1 の下に本文の見出しが1つも無く、
+ * 「何をしてくれるページなのか」がAI検索から読み取れなかった
+ * （診断後には h2 が8個出るが、クローラーはボタンを押さない）。
+ * よくある質問の本文は shared/diagnoseFaq.ts に置き、SSRの構造化データ
+ * （FAQPage）と同じ定義を使う。書き写すと画面と食い違い、Googleの要件
+ * （FAQの内容が画面に見えていること）に反する。
+ */
+export const HOW_IT_WORKS = [
+  {
+    icon: Globe2,
+    title: "1. 会社名かURLを入力",
+    desc: "会社名またはWebサイトURLを入力するだけ。会員登録は不要です。",
+  },
+  {
+    icon: Sparkles,
+    title: "2. 1問ずつ簡単回答",
+    desc: "AIが読み取った分野・地域を1画面で確認し、人数・時期などに答えるだけ（最短4問）。",
+  },
+  {
+    icon: Building2,
+    title: "3. 支援機関・費用・助成金を提示",
+    desc: "条件に合う支援機関を先に提示し、概算費用と助成金候補も続けてご案内します。",
+  },
+] as const;
+
 
 /** 診断APIが返す推奨支援機関の型（リロード復元の保存内容にも使う） */
 type RecommendedOrgs = inferRouterOutputs<AppRouter>["orgs"]["diagnoseUrl"]["recommendedOrgs"];
@@ -1260,24 +1290,84 @@ export default function Diagnose() {
           </div>
         )}
 
-        {/* 初期状態の説明 */}
+        {/* 診断前の説明。ここがクローラーの見る画面なので、見出しと本文で
+            「何をしてくれるページか」「何は分からないか」を文章で示す。 */}
         {phase === "idle" && !diagnose.isPending && !result && (
-          <div className="grid md:grid-cols-3 gap-6">
-            {[
-              { icon: Globe2, title: "1. 会社名かURLを入力", desc: "会社名またはWebサイトURLを入力するだけ。会員登録は不要です。" },
-              { icon: Sparkles, title: "2. 1問ずつ簡単回答", desc: "AIが読み取った分野・地域を1画面で確認し、人数・時期などに答えるだけ（最短4問）。" },
-              { icon: Building2, title: "3. 支援機関・費用・助成金を提示", desc: "条件に合う支援機関を先に提示し、概算費用と助成金候補も続けてご案内します。" },
-            ].map((item, i) => (
-              <Card key={item.title} className={`fade-up-${i + 1} fade-up`}>
-                <CardHeader>
-                  <div className="h-10 w-10 rounded-lg bg-brand/10 flex items-center justify-center mb-2">
-                    <item.icon className="h-5 w-5 text-brand" />
-                  </div>
-                  <CardTitle className="text-base">{item.title}</CardTitle>
-                </CardHeader>
-                <CardContent className="text-sm text-muted-foreground">{item.desc}</CardContent>
-              </Card>
-            ))}
+          <div className="space-y-12">
+            <section>
+              <h2 className="text-2xl font-bold mb-2">無料診断の進め方（3ステップ）</h2>
+              <p className="text-sm text-muted-foreground mb-6">
+                会員登録は不要です。会社名かWebサイトのURLを入れるところから始まり、最短4問で結果が出ます。
+              </p>
+              <div className="grid md:grid-cols-3 gap-6">
+                {HOW_IT_WORKS.map((item, i) => (
+                  <Card key={item.title} className={`fade-up-${i + 1} fade-up`}>
+                    <CardHeader>
+                      <div className="h-10 w-10 rounded-lg bg-brand/10 flex items-center justify-center mb-2">
+                        <item.icon className="h-5 w-5 text-brand" />
+                      </div>
+                      <h3 className="text-base leading-none font-semibold">{item.title}</h3>
+                    </CardHeader>
+                    <CardContent className="text-sm text-muted-foreground">{item.desc}</CardContent>
+                  </Card>
+                ))}
+              </div>
+            </section>
+
+            <section>
+              <h2 className="text-2xl font-bold mb-4">この診断で分かること・分からないこと</h2>
+              <div className="grid md:grid-cols-2 gap-4">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <h3 className="text-base leading-none font-semibold">分かること</h3>
+                  </CardHeader>
+                  <CardContent className="text-sm text-muted-foreground leading-relaxed">
+                    <ul className="list-disc pl-5 space-y-1.5">
+                      <li>入力した業種から推定される、特定技能の該当分野の目安</li>
+                      <li>受け入れ人数・時期に応じた初期費用と月額費用の概算</li>
+                      <li>取り組みによって使える可能性のある助成金の候補</li>
+                      <li>分野・地域・対応言語などの条件に合う登録支援機関</li>
+                    </ul>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <h3 className="text-base leading-none font-semibold">分からないこと</h3>
+                  </CardHeader>
+                  <CardContent className="text-sm text-muted-foreground leading-relaxed">
+                    <ul className="list-disc pl-5 space-y-1.5">
+                      <li>在留資格が取れるかどうかの判断（出入国在留管理庁の審査事項です）</li>
+                      <li>助成金が実際に支給されるかどうか（労働局等の審査で決まります）</li>
+                      <li>各支援機関の対応可否・品質の保証（掲載は公的な登録簿の転記です）</li>
+                      <li>提示した費用が確定金額であること（相場からの概算です）</li>
+                    </ul>
+                  </CardContent>
+                </Card>
+              </div>
+              <p className="text-xs text-muted-foreground mt-3 leading-relaxed">
+                掲載順は入力条件との適合度だけで決めています。掲載費や紹介料で順位が変わることはありません（
+                <Link href="/neutrality-policy" className="text-brand underline">
+                  中立性ポリシー
+                </Link>
+                ）。
+              </p>
+            </section>
+
+            <section id="faq" className="scroll-mt-20">
+              <h2 className="text-2xl font-bold mb-4">診断についてよくある質問</h2>
+              <div className="space-y-3">
+                {DIAGNOSE_FAQS.map((f) => (
+                  <Card key={f.q}>
+                    <CardHeader className="pb-2">
+                      <h3 className="text-base leading-none font-semibold">{f.q}</h3>
+                    </CardHeader>
+                    <CardContent className="text-sm text-muted-foreground leading-relaxed">
+                      {f.a}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </section>
           </div>
         )}
       </div>

@@ -374,7 +374,7 @@ export default function Bunya() {
             {page.faqs.map((f, i) => (
               <Card key={i}>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-base">Q. {f.q}</CardTitle>
+                  <h3 className="text-base leading-none font-semibold">Q. {f.q}</h3>
                 </CardHeader>
                 <CardContent className="text-sm leading-relaxed text-muted-foreground">
                   A. {f.a}

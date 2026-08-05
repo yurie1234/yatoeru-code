@@ -27,6 +27,7 @@ import { FAQS as IKUSEI_SCHED_FAQS, PUBLISHED_DATE as IKUSEI_SCHED_DATE } from "
 import { FAQS as JISSHU_FAQS, PUBLISHED_DATE as JISSHU_DATE } from "@/pages/GuideGinouJisshuChigai";
 import { FAQS as IKOU_FAQS, PUBLISHED_DATE as IKOU_DATE } from "@/pages/GuideTokuteiGinouIkou";
 import { FAQS as COST_HIKAKU_FAQS, PUBLISHED_DATE as COST_HIKAKU_DATE } from "@/pages/ColumnSaiyouCost";
+import { DIAGNOSE_FAQS } from "@shared/diagnoseFaq";
 import { articleLd, breadcrumbLd, faqLd } from "./jsonld";
 
 const SITE_URL = "https://yatoeru.jp";
@@ -218,6 +219,10 @@ export const PAGE_JSONLD: Record<string, () => Array<Record<string, unknown>>> =
       publisher: ORG,
       isAccessibleForFree: true,
     },
+    // 診断前の画面に見えている「よくある質問」と同じ定義を使う。
+    // 無料であること・掲載順が紹介料で変わらないこと・在留資格の可否判断ではないことは、
+    // AI検索が引用の可否を判断する材料になるため構造化データにも載せる
+    faqLd(DIAGNOSE_FAQS.map((f) => ({ q: f.q, a: f.a }))),
     breadcrumbLd([
       { name: "ホーム", path: "/" },
       { name: "無料診断", path: "/diagnose" },

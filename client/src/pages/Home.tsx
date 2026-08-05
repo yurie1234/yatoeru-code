@@ -336,10 +336,10 @@ export default function Home() {
               {HOME_FAQS.map((f) => (
                 <Card key={f.q}>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-base flex items-start gap-2">
+                    <h3 className="text-base leading-none font-semibold flex items-start gap-2">
                       <ChevronRight className="h-5 w-5 text-brand mt-0.5 shrink-0" />
                       {f.q}
-                    </CardTitle>
+                    </h3>
                   </CardHeader>
                   <CardContent className="text-sm text-muted-foreground leading-relaxed pl-13">
                     {f.a}

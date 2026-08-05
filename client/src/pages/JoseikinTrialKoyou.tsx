@@ -283,7 +283,7 @@ export default function JoseikinTrialKoyou() {
             {FAQS.map((f) => (
               <Card key={f.q}>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-base">{f.q}</CardTitle>
+                  <h3 className="text-base leading-none font-semibold">{f.q}</h3>
                 </CardHeader>
                 <CardContent className="text-sm text-muted-foreground leading-relaxed">
                   {f.a}

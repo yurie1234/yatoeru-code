@@ -340,7 +340,7 @@ export default function ColumnSaiyouCost() {
             {FAQS.map((f) => (
               <Card key={f.q}>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-base">{f.q}</CardTitle>
+                  <h3 className="text-base leading-none font-semibold">{f.q}</h3>
                 </CardHeader>
                 <CardContent className="text-base text-foreground/90 leading-[1.9]">{f.a}</CardContent>
               </Card>
