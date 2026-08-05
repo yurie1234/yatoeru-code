@@ -154,7 +154,25 @@ function vitePluginManusDebugCollector(): Plugin {
   };
 }
 
-const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector()];
+// テンプレート（Manus）付属の開発支援プラグインは本番ビルドから外す。
+//
+// vitePluginManusRuntime は index.html に **358KBのインラインスクリプト**
+// （Reactを再度同梱したもの）を埋め込む。Manusのエディタのプレビュー枠と
+// やり取りするためのもので、当サイトのコードからは参照していない
+// （提供する window.__MANUS_HOST_DEV__ / __WOUTER_ROUTES__ の参照は0件）。
+// 移管後もこれが残っていたため、HTMLが391〜530KBに膨らみ、しかもインライン
+// なのでキャッシュもされず、全ページ表示で毎回転送していた。
+//
+// jsxLocPlugin はJSXに元ソースの位置（data-loc）を足すエディタ向けの機能。
+// SSRビルド（vite.config.ssr.ts）では既に外しているためHTMLとクライアントで
+// 属性が食い違う原因にもなる。本番では外す。
+//
+// devでも要らない（Manusのエディタでは動かしていない）が、
+// 将来テンプレートのプレビュー環境で使う場合に戻せるよう import は残す。
+const plugins = [react(), tailwindcss()];
+void jsxLocPlugin;
+void vitePluginManusRuntime;
+void vitePluginManusDebugCollector;
 
 export default defineConfig({
   plugins,
