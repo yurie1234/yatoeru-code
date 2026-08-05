@@ -191,12 +191,12 @@ export async function setupVite(app: Express, server: Server) {
       const { render } = await vite.ssrLoadModule("/src/entry-server.tsx");
       const prefetch = await buildSsrPrefetch(req, res);
       const { html, dehydratedState, head } = await render(url, prefetch);
-      // NOTE: 本番のManusデプロイゲートウェイはアプリの404応答を横取りして
-      // プレースホルダ未置換のindex.htmlを200で直接返す（SPAフォールバック仕様）。
-      // これを回避するため、not-foundは200+noindex（soft-404）で返す。
-      // noindexメタはbuildHeadTagsがhead.notFoundから付与するのでSEO実害は小さい。
+      // 2026-08-05: 本番がManusデプロイゲートウェイ（404を横取りして生テンプレートを
+      // 200で返すSPAフォールバック仕様）からRailwayに移行済みのため、そのゲートウェイ回避策
+      // だったsoft-404（200+noindex）は不要になった。存在しないURLは実404を返す
+      // （/org/存在しないID・任意の不存在パスが200を返していたのはこの名残）。
       res
-        .status(200)
+        .status(head.notFound ? 404 : 200)
         .set("Cache-Control", htmlCacheControl(req))
         .type("html")
         .end(composeHtml(template, html, head, dehydratedState));
@@ -259,10 +259,10 @@ export function serveStatic(app: Express) {
         req.originalUrl,
         prefetch
       );
-      // 本番ゲートウェイの404横取り（生テンプレート200返却）回避のため、
-      // not-foundも200+noindex（soft-404）で返す。noindexメタはhead.notFound経由で付与済み。
+      // 2026-08-05: Railway移行に伴いsoft-404の理由（Manusゲートウェイの404横取り）が
+      // 無くなったため、実404を返す（詳細はsetupViteの同種コメント参照）。
       res
-        .status(200)
+        .status(head.notFound ? 404 : 200)
         .set("Cache-Control", htmlCacheControl(req))
         .type("html")
         .end(composeHtml(template, html, head, dehydratedState));
