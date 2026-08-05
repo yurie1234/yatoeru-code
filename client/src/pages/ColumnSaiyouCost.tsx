@@ -25,7 +25,7 @@ import {
  */
 
 const CONTENT_BASE_DATE = "2026年7月18日";
-const PUBLISHED_DATE = "2026-07-18";
+export const PUBLISHED_DATE = "2026-07-18";
 
 const TOC_SECTIONS = [
   { id: "matome", label: "結論：採用手法別コスト早見表" },
@@ -83,7 +83,7 @@ const COST_TABLE = [
   },
 ] as const;
 
-const FAQS = [
+export const FAQS = [
   {
     q: "特定技能の採用は人材紹介より本当に安いのですか？",
     a: "1人あたりの初年度総コストで比較すると、国内在住の特定技能人材の採用は約34〜78万円、人材紹介経由の中途採用は約90〜120万円が目安で、特定技能のほうが低くなるケースが多いです。ただし特定技能は支援委託費が毎月継続するため、2年目以降も月2〜4万円/人のランニングコストがかかる点を含めて比較する必要があります。",

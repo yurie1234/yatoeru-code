@@ -18,7 +18,7 @@ import { ArticleBreadcrumb, ArticleToc } from "@/components/ArticleToc";
  */
 
 const CONTENT_BASE_DATE = "2026年7月18日";
-const PUBLISHED_DATE = "2026-07-18";
+export const PUBLISHED_DATE = "2026-07-18";
 
 const TOC_SECTIONS = [
   { id: "zentai", label: "移行ルートの全体像" },
@@ -57,7 +57,7 @@ const HIKAKU_ROWS = [
   },
 ] as const;
 
-const FAQS = [
+export const FAQS = [
   {
     q: "技能実習2号を良好に修了すると、無試験で特定技能1号に移行できますか？",
     a: "技能実習2号を良好に修了し、実習職種と特定技能の業務区分に関連性がある場合は、技能試験と日本語試験が免除されるのが原則です。職種と分野の対応関係は分野ごとに定められているため、移行前に対応表の確認が必要です。",

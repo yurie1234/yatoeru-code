@@ -20,7 +20,7 @@ import { JOSEIKIN_DISCLAIMER } from "@shared/joseikin";
  */
 
 const CONTENT_BASE_DATE = "2026年7月18日";
-const PUBLISHED_DATE = "2026-07-18";
+export const PUBLISHED_DATE = "2026-07-18";
 
 const TOC_SECTIONS = [
   { id: "gaiyou", label: "制度の概要と金額" },
@@ -52,7 +52,7 @@ const CASE_ROWS = [
   },
 ] as const;
 
-const FAQS = [
+export const FAQS = [
   {
     q: "特定技能外国人の採用にトライアル雇用助成金は使えますか？",
     a: "海外から呼び寄せる特定技能の採用では、ハローワーク等の紹介という前提を満たさないため通常は使えません。一方、国内在住で就労制限のない在留資格（永住者・定住者・日本人の配偶者等）を持つ外国人求職者を、ハローワーク経由で試行雇用する場合は検討の余地があります。",

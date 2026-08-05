@@ -17,7 +17,7 @@ import { ArticleBreadcrumb, ArticleToc } from "@/components/ArticleToc";
  */
 
 const CONTENT_BASE_DATE = "2026年7月18日";
-const PUBLISHED_DATE = "2026-07-18";
+export const PUBLISHED_DATE = "2026-07-18";
 
 const TOC_SECTIONS = [
   { id: "haikei", label: "なぜ制度が変わるのか" },
@@ -65,7 +65,7 @@ const HIKAKU_ROWS = [
   },
 ] as const;
 
-const FAQS = [
+export const FAQS = [
   {
     q: "技能実習と育成就労の一番大きな違いは何ですか？",
     a: "制度の目的が「国際貢献（技能移転）」から「人材育成と人材確保」に変わる点です。これに伴い、転籍の制限緩和・特定技能へのキャリアパス接続・日本語要件の導入など、労働者として長く働いてもらう前提の設計に変わります。",

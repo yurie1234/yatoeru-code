@@ -24,7 +24,7 @@ import { JOSEIKIN_DISCLAIMER } from "@shared/joseikin";
  */
 
 const CONTENT_BASE_DATE = "2026年7月18日";
-const PUBLISHED_DATE = "2026-07-18";
+export const PUBLISHED_DATE = "2026-07-18";
 
 const TOC_SECTIONS = [
   { id: "ichiran", label: "外国人雇用で検討できる助成金 一覧比較" },
@@ -35,7 +35,7 @@ const TOC_SECTIONS = [
   { id: "shutten", label: "出典（一次情報）" },
 ] as const;
 
-const JOSEIKIN_ROWS = [
+export const JOSEIKIN_ROWS = [
   {
     slug: "/joseikin/jinzai-kakuho",
     name: "人材確保等支援助成金（外国人労働者就労環境整備助成コース）",
@@ -101,7 +101,7 @@ const CHILD_ARTICLES = [
   },
 ] as const;
 
-const FAQS = [
+export const FAQS = [
   {
     q: "外国人を雇用したら必ず助成金がもらえますか？",
     a: "必ずもらえるわけではありません。各制度には計画の事前提出・離職率・賃金などの要件があり、支給の可否は労働局・ハローワーク等の審査で決定されます。本ページは該当する可能性のある制度を整理した参考情報であり、受給を保証するものではありません。",

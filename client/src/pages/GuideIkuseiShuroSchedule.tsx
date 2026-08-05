@@ -17,7 +17,7 @@ import { ArticleBreadcrumb, ArticleToc } from "@/components/ArticleToc";
  */
 
 const CONTENT_BASE_DATE = "2026年7月18日";
-const PUBLISHED_DATE = "2026-07-18";
+export const PUBLISHED_DATE = "2026-07-18";
 
 const TOC_SECTIONS = [
   { id: "zentai", label: "施行スケジュールの全体像" },
@@ -74,7 +74,7 @@ const CHECKLIST = [
   },
 ] as const;
 
-const FAQS = [
+export const FAQS = [
   {
     q: "育成就労制度はいつから始まりますか？",
     a: "改正法の公布（2024年6月）から3年以内の施行とされており、2027年4月1日の施行が予定されています。正確な施行日や運用細則は政省令で確定するため、出入国在留管理庁の公式発表をご確認ください。",

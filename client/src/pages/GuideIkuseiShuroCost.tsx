@@ -18,7 +18,7 @@ import { ArticleBreadcrumb, ArticleToc } from "@/components/ArticleToc";
  */
 
 const CONTENT_BASE_DATE = "2026年7月18日";
-const PUBLISHED_DATE = "2026-07-18";
+export const PUBLISHED_DATE = "2026-07-18";
 
 const TOC_SECTIONS = [
   { id: "kouzou", label: "費用の全体構造" },
@@ -80,7 +80,7 @@ const GETSUGAKU_ROWS = [
   },
 ] as const;
 
-const FAQS = [
+export const FAQS = [
   {
     q: "外国人材の受け入れ費用は日本人採用より高いですか？",
     a: "初期費用（総額50〜145万円/人程度が目安）は日本人の中途採用の紹介手数料（年収の30〜35%）と比べて必ずしも高くありません。ただし監理費・支援委託費という継続コストが発生する点が特徴です。定着率の高さを含めた総合的な比較が重要です。",

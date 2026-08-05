@@ -20,7 +20,7 @@ import { JOSEIKIN_DISCLAIMER } from "@shared/joseikin";
  */
 
 const CONTENT_BASE_DATE = "2026年7月18日";
-const PUBLISHED_DATE = "2026-07-18";
+export const PUBLISHED_DATE = "2026-07-18";
 
 const TOC_SECTIONS = [
   { id: "gaiyou", label: "制度の概要と金額" },
@@ -31,7 +31,7 @@ const TOC_SECTIONS = [
   { id: "shutten", label: "出典（一次情報）" },
 ] as const;
 
-const FAQS = [
+export const FAQS = [
   {
     q: "外国人労働者向けの日本語研修は助成対象になりますか？",
     a: "業務遂行に必要な日本語能力の習得を目的とする訓練であれば、職務に関連する訓練として対象になりうるとされています。趣味・教養目的の語学学習は対象外のため、訓練カリキュラムと職務の関連性を訓練計画で示すことが重要です。",

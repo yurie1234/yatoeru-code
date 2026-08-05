@@ -20,7 +20,7 @@ import { JOSEIKIN_DISCLAIMER } from "@shared/joseikin";
  */
 
 const CONTENT_BASE_DATE = "2026年7月18日";
-const PUBLISHED_DATE = "2026-07-18";
+export const PUBLISHED_DATE = "2026-07-18";
 
 const TOC_SECTIONS = [
   { id: "gaiyou", label: "制度の概要と金額" },
@@ -54,7 +54,7 @@ const ZAIRYU_ROWS = [
   },
 ] as const;
 
-const FAQS = [
+export const FAQS = [
   {
     q: "外国人労働者でもキャリアアップ助成金の対象になりますか？",
     a: "国籍による除外はなく、要件を満たせば外国人労働者も対象になりえます。ただし、フルタイムでの就労が認められる在留資格であること、転換後の雇用が在留資格の範囲内であることが前提です。在留期間と雇用計画の整合性は事前に確認してください。",

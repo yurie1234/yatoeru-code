@@ -20,7 +20,7 @@ import { JOSEIKIN_DISCLAIMER } from "@shared/joseikin";
  */
 
 const CONTENT_BASE_DATE = "2026年7月18日";
-const PUBLISHED_DATE = "2026-07-18";
+export const PUBLISHED_DATE = "2026-07-18";
 
 const TOC_SECTIONS = [
   { id: "gaiyou", label: "制度の概要と金額" },
@@ -50,7 +50,7 @@ const TAISHO_ROWS = [
   },
 ] as const;
 
-const FAQS = [
+export const FAQS = [
   {
     q: "上限57万円と72万円の違いは何ですか？",
     a: "支給額は支給対象経費の1/2（上限57万円）が基本で、賃金要件（賃金の一定以上の引上げ等）を満たす場合に2/3（上限72万円）へ引き上げられる仕組みです。要件の詳細は年度の支給要領で改定されることがあるため、最新の公式資料をご確認ください。",

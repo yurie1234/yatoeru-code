@@ -20,7 +20,7 @@ import { JOSEIKIN_DISCLAIMER } from "@shared/joseikin";
  */
 
 const CONTENT_BASE_DATE = "2026年7月18日";
-const PUBLISHED_DATE = "2026-07-18";
+export const PUBLISHED_DATE = "2026-07-18";
 
 const TOC_SECTIONS = [
   { id: "gaiyou", label: "制度の概要と金額" },
@@ -31,7 +31,7 @@ const TOC_SECTIONS = [
   { id: "shutten", label: "出典（一次情報）" },
 ] as const;
 
-const FAQS = [
+export const FAQS = [
   {
     q: "外国人労働者の賃金引上げでも対象になりますか？",
     a: "対象になりえます。業務改善助成金は労働者の国籍を問わず、事業場内で最も低い賃金（事業場内最低賃金）を引き上げる中小企業等が対象です。特定技能や育成就労で受け入れた外国人労働者が事業場内最低賃金の労働者に該当する場合、その賃金引上げと設備投資のセットで申請を検討できます。",

@@ -21,6 +21,7 @@ import {
   GUIDE_FAQS,
   regionFaqs,
 } from "./jsonld";
+import { pageJsonLd } from "./pageJsonLd";
 
 export type HeadMeta = {
   title: string;
@@ -441,6 +442,38 @@ export async function prefetchForPath(
       // sitemapに加えページネーション実リンク経由のクロール経路を確保する
       canonicalPath: isPaged && !hasFilter ? `/search?page=${page}` : "/search",
       noindex: hasFilter, // 内部検索結果（フィルタ付き）はnoindex
+      // フィルタなしの一覧は「登録支援機関のデータベースの入口」として構造化する。
+      // noindexのフィルタ付き結果には出さない（インデックスしないページに
+      // 構造化データを付けるのは矛盾したシグナルになる）
+      jsonLd: hasFilter
+        ? undefined
+        : [
+            {
+              "@context": "https://schema.org",
+              "@type": "CollectionPage",
+              name: "登録支援機関を探す",
+              url: "https://yatoeru.jp/search",
+              inLanguage: "ja",
+              description:
+                "出入国在留管理庁の登録支援機関登録簿を出典に、対応言語・地域・業種・行政処分歴・新規相談受付状況で比較できます。",
+              isPartOf: { "@type": "WebSite", url: "https://yatoeru.jp" },
+              mainEntity: {
+                "@type": "ItemList",
+                name: `登録支援機関（${Number(result.total).toLocaleString("ja-JP")}件）`,
+                numberOfItems: Number(result.total),
+                itemListElement: (result.items ?? []).slice(0, 20).map((o, i) => ({
+                  "@type": "ListItem",
+                  position: (page - 1) * 20 + i + 1,
+                  url: `https://yatoeru.jp/org/${o.id}`,
+                  name: o.name,
+                })),
+              },
+            },
+            breadcrumbLd([
+              { name: "ホーム", path: "/" },
+              { name: "登録支援機関を探す", path: "/search" },
+            ]),
+          ],
     };
   }
 
@@ -611,12 +644,41 @@ export async function prefetchForPath(
   // 静的公開ルート（head-only）
   const staticHead = STATIC_HEADS[clean];
   if (staticHead) {
+    const jsonLd: Array<Record<string, unknown>> = [];
     // コラム一覧：DB記事もSSRでHTMLに含める
     if (clean === "/columns") {
       const list = await p.articlesList();
       seed(qc, getQueryKey(trpc.articles.list, undefined, "query"), list);
+      // 記事の一覧そのものを Blog + ItemList で示す。
+      // AI検索が「このサイトのどこに解説記事があるか」を辿れるようにする
+      const items = Array.isArray(list) ? list : [];
+      jsonLd.push(
+        {
+          "@context": "https://schema.org",
+          "@type": "Blog",
+          "@id": "https://yatoeru.jp/columns",
+          name: "ヤトエル コラム",
+          url: "https://yatoeru.jp/columns",
+          inLanguage: "ja",
+          publisher: { "@type": "Organization", name: "ヤトエル", url: "https://yatoeru.jp" },
+          blogPost: items.slice(0, 30).map((a: { slug?: string; title?: string; baseDate?: string }) => ({
+            "@type": "BlogPosting",
+            headline: a.title,
+            url: `https://yatoeru.jp/columns/${a.slug}`,
+            ...(a.baseDate ? { datePublished: a.baseDate } : {}),
+          })),
+        },
+        breadcrumbLd([
+          { name: "ホーム", path: "/" },
+          { name: "コラム", path: "/columns" },
+        ])
+      );
     }
-    const jsonLd: Array<Record<string, unknown>> = [];
+    // ページ別の構造化データ（助成金ガイド・制度ガイド・診断・運営者情報など）。
+    // これらは各ページの useEffect でも同内容を作っているが、
+    // AI検索のクローラーはJavaScriptを実行しないためSSRのHTMLに入れる必要がある
+    const pageLd = pageJsonLd(clean);
+    if (pageLd) jsonLd.push(...pageLd);
     // コラム記事：Article＋FAQPage＋パンくず
     const article = COLUMN_ARTICLES[clean];
     if (article) {
