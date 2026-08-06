@@ -6,9 +6,14 @@
          機関の連絡先や登録番号を拡大して確かめたい利用者が読めなくなる -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!--app-head-->
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <!-- 2026-08-06: Google検索はSVGファビコンをサポートしないため、ICO/PNGを先に置く。
+         元の並び（svgが先頭）だと、Googleのファビコン取得がsvgで止まり、後続の
+         ico/pngへフォールバックしない可能性がある（1週間経ってもGSCに反映されない
+         事象の原因候補）。ブラウザ側はtype/sizesで適切な形式を選ぶため、
+         並び順を変えてもモダンブラウザでのsvg使用には影響しない -->
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="icon" href="/icon-192.png" type="image/png" sizes="192x192" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
     <meta name="theme-color" content="#1c3357" />
