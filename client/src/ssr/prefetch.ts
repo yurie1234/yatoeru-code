@@ -99,7 +99,7 @@ const STATIC_HEADS: Record<string, { title: string; description: string }> = {
   },
   "/columns/kanri-dantai-ikou-guide": {
     title:
-      "監理団体から監理支援機関への移行ガイド｜2026年9月の期限までにやること - ヤトエル",
+      "監理団体から監理支援機関への移行ガイド｜2027年4月施行までの手続き一覧と申請期限（9月30日） - ヤトエル",
     description:
       "技能実習の監理団体から育成就労制度の監理支援機関への移行を実務目線で解説。施行日前申請（2026年4月15日開始）・監理団体新規許可申請期限（2026年9月30日）・施行日（2027年4月1日）のスケジュールと準備ステップを整理します。",
   },
@@ -392,7 +392,9 @@ export async function prefetchForPath(
         ? `対応言語：${(org.languages as string[]).slice(0, 3).join("・")}。`
         : "";
     return {
-      title: `${org.name}｜${prefPart}登録支援機関${fieldsPart} - ヤトエル`,
+      // 2026-08-07: 指名検索（社名＋登録番号での検索）のCTR向上のため、
+      // 登録番号を社名の直後に置く（ops/23-gsc-kaizen-shiji.md セクションA-4）
+      title: `${org.name}（登録番号：${org.regNo}）｜${prefPart}登録支援機関${fieldsPart} - ヤトエル`,
       description: `${org.name}（登録番号：${org.regNo}）は${prefPart}登録支援機関です。${org.address ? `所在地：${org.address}。` : ""}${langPart}${verified}処分歴・相談受付状況も掲載しています。`,
       ogType: "article",
       canonicalPath: `/org/${org.id}`,

@@ -20,7 +20,7 @@ import {
 } from "@/components/ArticleExtras";
 
 /**
- * コラム②「監理団体から監理支援機関への移行ガイド：2026年9月の期限までにやること」
+ * コラム②「監理団体から監理支援機関への移行ガイド：2027年4月施行までの手続き一覧と申請期限（9月30日）」
  * 新語SEOの先取り（「監理支援機関 移行」「監理団体 移行」群）。
  * 制度記述はすべて入管庁・OTITの一次情報と突合済み。
  */
@@ -120,7 +120,7 @@ export default function ColumnIkouGuide() {
 
   useEffect(() => {
     document.title =
-      "監理団体から監理支援機関への移行ガイド｜2026年9月の期限までにやること - ヤトエル";
+      "監理団体から監理支援機関への移行ガイド｜2027年4月施行までの手続き一覧と申請期限（9月30日） - ヤトエル";
     const meta = document.querySelector('meta[name="description"]');
     const prev = meta?.getAttribute("content") ?? "";
     meta?.setAttribute(
@@ -133,7 +133,7 @@ export default function ColumnIkouGuide() {
         {
           "@type": "Article",
           headline:
-            "監理団体から監理支援機関への移行ガイド：2026年9月の期限までにやること",
+            "監理団体から監理支援機関への移行ガイド：2027年4月施行までの手続き一覧と申請期限（9月30日）",
           datePublished: PUBLISHED_DATE,
           dateModified: PUBLISHED_DATE,
           author: { "@type": "Organization", name: "ヤトエル運営チーム" },
@@ -172,13 +172,13 @@ export default function ColumnIkouGuide() {
       <div className="bg-brand text-brand-foreground py-12">
         <div className="container">
           <ArticleBreadcrumb
-            articleTitle="監理団体から監理支援機関への移行ガイド：2026年9月の期限までにやること"
+            articleTitle="監理団体から監理支援機関への移行ガイド：2027年4月施行までの手続き一覧と申請期限（9月30日）"
             articlePath="/columns/kanri-dantai-ikou-guide"
             shortTitle="監理支援機関への移行ガイド"
           />
           <h1 className="text-3xl md:text-4xl font-bold mb-4 flex items-center gap-3">
             <Milestone className="h-8 w-8 text-amber-accent shrink-0" />
-            監理団体から監理支援機関への移行ガイド：2026年9月の期限までにやること
+            監理団体から監理支援機関への移行ガイド：2027年4月施行までの手続き一覧と申請期限（9月30日）
           </h1>
           <p className="text-brand-foreground/80 max-w-3xl leading-relaxed">
             「いまの許可があるのだから、新制度でもそのままやれるはずだ」——監理団体の現場ではこう考えたくなるはずです。ところが
